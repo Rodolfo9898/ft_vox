@@ -1,0 +1,10 @@
+ctoc_cobol_transpiler
+ctoc_cobol_transpiler_debug
+cblc_lsp
+ft_vox
+ft_vox_debug
+automated_tests
+objs/
+objs_debug/
+objs_tests/
+build_logs/
