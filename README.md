@@ -11,6 +11,10 @@ where possible.
 
 - Added the basic voxel engine support to `Libft`, including the voxel region
   backend. It can be enabled with `#define GAME_USE_VOXEL_REGION_BACKEND 1`.
+- Added submodule helpers for `Libft`: `make submodule_init` initializes missing
+  submodules and updates them to the remote branch configured in `.gitmodules`, while
+  `make submodule_update` fetches the configured `Libft` branch, shows the current and
+  latest commits, and updates only after confirming with `yes`.
 
 ## Team
 
@@ -320,6 +324,12 @@ Submodule initialization:
 
 ```sh
 make submodule_init
+```
+
+Submodule update:
+
+```sh
+make submodule_update
 ```
 
 Clean build files:

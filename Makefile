@@ -149,6 +149,7 @@ tests_with_cobc: install_cobc
 
 submodule_init:
 	git submodule update --init --recursive
+	git submodule update --remote --recursive
 
 submodule_update:
 	@branch="$$(git config -f .gitmodules --get submodule.Libft.branch || printf main)"; \
