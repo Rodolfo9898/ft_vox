@@ -151,7 +151,19 @@ submodule_init:
 	git submodule update --init --recursive
 
 submodule_update:
-	git submodule update --remote --merge Libft
+	@branch="$$(git config -f .gitmodules --get submodule.Libft.branch || printf main)"; \
+	printf '\033[1;36m[FT_VOX SUBMODULE] Fetching Libft origin/%s\033[0m\n' "$$branch"; \
+	git -C Libft fetch origin "$$branch"; \
+	printf 'Current Libft commit: %s\n' "$$(git -C Libft rev-parse --short HEAD)"; \
+	printf 'Latest origin/%s:   %s\n' "$$branch" "$$(git -C Libft rev-parse --short origin/$$branch)"; \
+	printf 'Type yes to update Libft to origin/%s: ' "$$branch"; \
+	read answer; \
+	if [ "$$answer" = "yes" ]; then \
+		git -C Libft checkout "origin/$$branch"; \
+		printf '\033[1;36m[FT_VOX SUBMODULE] Libft updated to %s\033[0m\n' "$$(git -C Libft rev-parse --short HEAD)"; \
+	else \
+		printf 'Cancelled. Libft was not updated.\n'; \
+	fi
 
 debug:
 	$(MAKE) all DEBUG=1

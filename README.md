@@ -7,6 +7,11 @@ This project should mainly use the `Libft` submodule already present in the repo
 especially its DUMB implementation for the application/window/input/rendering layer
 where possible.
 
+## Tasks Done
+
+- Added the basic voxel engine support to `Libft`, including the voxel region
+  backend. It can be enabled with `#define GAME_USE_VOXEL_REGION_BACKEND 1`.
+
 ## Team
 
 - `rperez-t`
