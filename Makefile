@@ -19,7 +19,18 @@ COVERAGE_SCRIPT  = scripts/coverage_report.py
 GOINFRE_LOCAL_PREFIX ?= /goinfre/$(USER)/local
 
 SRC         = \
-    main.cpp
+    main.cpp \
+    src/camera/camera.cpp \
+    src/platform/libft_min.cpp \
+    src/platform/libft_recursive_mutex_min.cpp \
+    src/render/debug_view.cpp
+
+LIBFT_DIR   = Libft
+LIBFT_LIBS  =
+LIBFT_COMPILE_FLAGS = -Wall -Wextra -std=c++17 -DLIBFT_INTERNAL_HEADERS $(OPT_FLAGS)
+LIBFT_DUMB_SRC = \
+    $(LIBFT_DIR)/Modules/DUMB/dumb_controls.cpp \
+    $(LIBFT_DIR)/Modules/DUMB/dumb_render.cpp
 
 CC          = g++
 
@@ -39,9 +50,12 @@ endif
 
 COMPILE_FLAGS = -Wall -Werror -Wextra -std=c++17 -Wmissing-declarations \
                 -Wold-style-cast -Wshadow -Wconversion -Wformat=2 -Wundef \
-                -Wfloat-equal -Wconversion -Wodr -Wuseless-cast \
-                -Wzero-as-null-pointer-constant -Wmaybe-uninitialized \
+                -Wfloat-equal -Wconversion -Wzero-as-null-pointer-constant \
                 -I. $(OPT_FLAGS)
+
+ifneq ($(shell uname -s 2>/dev/null),Darwin)
+    COMPILE_FLAGS += -Wodr -Wuseless-cast -Wmaybe-uninitialized
+endif
 DEPFLAGS = -MMD -MP
 
 CFLAGS = $(COMPILE_FLAGS)
@@ -104,8 +118,23 @@ export COMPILE_FLAGS
 ifeq ($(OS),Windows_NT)
     LDFLAGS     =
 else
-    LDFLAGS     = -lreadline
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        LIBFT_DUMB_SRC += \
+            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_controls_platform_macos.mm \
+            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_render_platform_macos.mm
+        LDFLAGS = -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore
+    else
+        LIBFT_DUMB_SRC += \
+            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_controls_linux_x11.cpp \
+            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_render_linux_x11.cpp
+        LDFLAGS = -lX11 -lXext -lGL
+    endif
 endif
+
+LIBFT_DUMB_OBJS = \
+    $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp,$(LIBFT_DUMB_SRC))) \
+    $(patsubst %.mm,$(OBJ_DIR)/%.o,$(filter %.mm,$(LIBFT_DUMB_SRC)))
 
 OBJS        = $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
@@ -122,9 +151,7 @@ TEST_OBJS   = $(TEST_SRC:%.cpp=$(OBJ_DIR_TEST)/%.o)
 TOTAL_TEST_OBJS     := $(words $(TEST_OBJS))
 DEPS        = $(OBJS:.o=.d) $(TEST_OBJS:.o=.d)
 
-all: dirs ft_vox
-
-ft_vox: $(TARGET)
+all: dirs $(TARGET)
 
 tests: dirs $(TEST_NAME)
 
@@ -169,13 +196,28 @@ submodule_update:
 debug:
 	$(MAKE) all DEBUG=1
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) $(LIBFT_DUMB_OBJS) $(LIBFT_LIBS)
 	@printf '\033[1;36m[FT_VOX BUILD] Linking %s\033[0m\n' "$@"
-	@$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
+	@$(CC) $(CFLAGS) $(OBJS) $(LIBFT_DUMB_OBJS) $(LIBFT_LIBS) -o $@ $(LDFLAGS)
 
-$(TEST_NAME): $(TEST_OBJS) $(OBJS_NO_MAIN) $(TARGET)
+ifneq ($(strip $(LIBFT_LIBS)),)
+$(LIBFT_LIBS):
+	@$(MAKE) -C $(dir $@) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)"
+endif
+
+$(TEST_NAME): $(TEST_OBJS) $(OBJS_NO_MAIN) $(TARGET) $(LIBFT_DUMB_OBJS) $(LIBFT_LIBS)
 	@printf '\033[1;36m[FT_VOX BUILD] Linking %s\033[0m\n' "$@"
-	@$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS_NO_MAIN) -o $@ $(LDFLAGS)
+	@$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS_NO_MAIN) $(LIBFT_DUMB_OBJS) $(LIBFT_LIBS) -o $@ $(LDFLAGS)
+
+$(OBJ_DIR)/$(LIBFT_DIR)/%.o: $(LIBFT_DIR)/%.cpp
+	@-$(MKDIR) $(dir $@)
+	@$(CC) $(LIBFT_COMPILE_FLAGS) $(DEPFLAGS) -c $< -o $@
+	@printf '\033[1;36m[FT_VOX LIBFT] %s\033[0m\n' "$<"
+
+$(OBJ_DIR)/$(LIBFT_DIR)/%.o: $(LIBFT_DIR)/%.mm
+	@-$(MKDIR) $(dir $@)
+	@$(CC) $(LIBFT_COMPILE_FLAGS) -x objective-c++ $(DEPFLAGS) -c $< -o $@
+	@printf '\033[1;36m[FT_VOX LIBFT] %s\033[0m\n' "$<"
 
 $(OBJ_DIR)/%.o: %.cpp
 	@-$(MKDIR) $(dir $@)
