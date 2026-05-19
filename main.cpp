@@ -1,21 +1,23 @@
 #include "Libft/Modules/DUMB/controls.hpp"
 #include "Libft/Modules/DUMB/render_window.hpp"
 #include "Libft/Modules/Errno/errno.hpp"
-#include <cstdint>
+#include "src/camera/camera.hpp"
+#include "src/render/debug_view.hpp"
+#include <chrono>
 
-static uint32_t ft_vox_color_from_frame(uint32_t frame_index)
+static ft_vox_camera_input ft_vox_read_camera_input()
 {
-    uint8_t red;
-    uint8_t green;
-    uint8_t blue;
+    ft_vox_camera_input input;
 
-    red = static_cast<uint8_t>((frame_index * 2U) & 0xFFU);
-    green = static_cast<uint8_t>((64U + frame_index) & 0xFFU);
-    blue = static_cast<uint8_t>(128U);
-    return ((static_cast<uint32_t>(red) << 24U)
-        | (static_cast<uint32_t>(green) << 16U)
-        | (static_cast<uint32_t>(blue) << 8U)
-        | 0xFFU);
+    input.move_forward = (ft_dumb_control_is_down(FT_DUMB_CONTROL_UP)
+        == FT_TRUE);
+    input.move_backward = (ft_dumb_control_is_down(FT_DUMB_CONTROL_DOWN)
+        == FT_TRUE);
+    input.move_left = (ft_dumb_control_is_down(FT_DUMB_CONTROL_LEFT)
+        == FT_TRUE);
+    input.move_right = (ft_dumb_control_is_down(FT_DUMB_CONTROL_RIGHT)
+        == FT_TRUE);
+    return (input);
 }
 
 int main()
@@ -23,7 +25,11 @@ int main()
     ft_render_window       window;
     ft_render_window_desc  description;
     ft_render_screen_size  screen_size;
-    uint32_t               frame_index;
+    ft_vox_camera          camera;
+    std::chrono::steady_clock::time_point previous_time;
+    std::chrono::steady_clock::time_point current_time;
+    std::chrono::duration<double> elapsed_time;
+    double                 delta_seconds;
     int32_t                error_code;
 
     error_code = window.initialize();
@@ -45,9 +51,16 @@ int main()
         (void)window.destroy();
         return (1);
     }
-    frame_index = 0U;
+    ft_vox_camera_init(&camera);
+    previous_time = std::chrono::steady_clock::now();
     while (window.should_close() == FT_FALSE)
     {
+        current_time = std::chrono::steady_clock::now();
+        elapsed_time = current_time - previous_time;
+        previous_time = current_time;
+        delta_seconds = elapsed_time.count();
+        if (delta_seconds > 0.1)
+            delta_seconds = 0.1;
         if (window.poll_events() != FT_ERR_SUCCESS)
             break ;
         if (window.should_close() == FT_TRUE)
@@ -55,11 +68,11 @@ int main()
         ft_dumb_controls_poll();
         if (ft_dumb_control_is_down(FT_DUMB_CONTROL_BACK) == FT_TRUE)
             break ;
-        if (window.clear(ft_vox_color_from_frame(frame_index)) != FT_ERR_SUCCESS)
-            break ;
+        ft_vox_camera_update(&camera, ft_vox_read_camera_input(),
+            delta_seconds);
+        ft_vox_debug_view_draw(window.framebuffer(), camera);
         if (window.present() != FT_ERR_SUCCESS)
             break ;
-        frame_index = frame_index + 1U;
     }
     if (window.destroy() != FT_ERR_SUCCESS)
         return (1);

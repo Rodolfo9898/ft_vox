@@ -20,8 +20,10 @@ GOINFRE_LOCAL_PREFIX ?= /goinfre/$(USER)/local
 
 SRC         = \
     main.cpp \
+    src/camera/camera.cpp \
     src/platform/libft_min.cpp \
-    src/platform/libft_recursive_mutex_min.cpp
+    src/platform/libft_recursive_mutex_min.cpp \
+    src/render/debug_view.cpp
 
 LIBFT_DIR   = Libft
 LIBFT_LIBS  =
@@ -121,7 +123,7 @@ else
         LIBFT_DUMB_SRC += \
             $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_controls_platform_macos.mm \
             $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_render_platform_macos.mm
-        LDFLAGS = -framework Cocoa -framework CoreGraphics -framework ApplicationServices
+        LDFLAGS = -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore
     else
         LIBFT_DUMB_SRC += \
             $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_controls_linux_x11.cpp \
