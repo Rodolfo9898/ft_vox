@@ -1,6 +1,6 @@
-#include "../../Libft/CPP_class/class_nullptr.hpp"
-#include "../../Libft/Errno/errno.hpp"
-#include "../../Libft/PThread/recursive_mutex.hpp"
+#include "../../Libft/Modules/CPP_class/class_nullptr.hpp"
+#include "../../Libft/Modules/Errno/errno.hpp"
+#include "../../Libft/Modules/PThread/recursive_mutex.hpp"
 #include <new>
 
 static pt_thread_id_type ft_vox_empty_thread_id()

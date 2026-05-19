@@ -1,6 +1,6 @@
-#include "Libft/DUMB/controls.hpp"
-#include "Libft/DUMB/render_window.hpp"
-#include "Libft/Errno/errno.hpp"
+#include "Libft/Modules/DUMB/controls.hpp"
+#include "Libft/Modules/DUMB/render_window.hpp"
+#include "Libft/Modules/Errno/errno.hpp"
 #include <cstdint>
 
 static uint32_t ft_vox_color_from_frame(uint32_t frame_index)

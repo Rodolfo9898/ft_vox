@@ -25,10 +25,10 @@ SRC         = \
 
 LIBFT_DIR   = Libft
 LIBFT_LIBS  =
-LIBFT_COMPILE_FLAGS = -Wall -Wextra -std=c++17 $(OPT_FLAGS)
+LIBFT_COMPILE_FLAGS = -Wall -Wextra -std=c++17 -DLIBFT_INTERNAL_HEADERS $(OPT_FLAGS)
 LIBFT_DUMB_SRC = \
-    $(LIBFT_DIR)/DUMB/dumb_controls.cpp \
-    $(LIBFT_DIR)/DUMB/dumb_render.cpp
+    $(LIBFT_DIR)/Modules/DUMB/dumb_controls.cpp \
+    $(LIBFT_DIR)/Modules/DUMB/dumb_render.cpp
 
 CC          = g++
 
@@ -119,13 +119,13 @@ else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
         LIBFT_DUMB_SRC += \
-            $(LIBFT_DIR)/Compatebility/Compatebility_dumb_controls_platform_macos.mm \
-            $(LIBFT_DIR)/Compatebility/Compatebility_dumb_render_platform_macos.mm
+            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_controls_platform_macos.mm \
+            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_render_platform_macos.mm
         LDFLAGS = -framework Cocoa -framework CoreGraphics -framework ApplicationServices
     else
         LIBFT_DUMB_SRC += \
-            $(LIBFT_DIR)/Compatebility/Compatebility_dumb_controls_linux_x11.cpp \
-            $(LIBFT_DIR)/Compatebility/Compatebility_dumb_render_linux_x11.cpp
+            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_controls_linux_x11.cpp \
+            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_render_linux_x11.cpp
         LDFLAGS = -lX11 -lXext -lGL
     endif
 endif

@@ -1,7 +1,11 @@
-#include "../../Libft/Basic/basic.hpp"
-#include "../../Libft/CPP_class/class_nullptr.hpp"
-#include "../../Libft/Errno/errno.hpp"
-#include "../../Libft/Errno/errno_internal.hpp"
+#ifndef LIBFT_INTERNAL_HEADERS
+# define LIBFT_INTERNAL_HEADERS
+#endif
+
+#include "../../Libft/Modules/Basic/basic.hpp"
+#include "../../Libft/Modules/CPP_class/class_nullptr.hpp"
+#include "../../Libft/Modules/Errno/errno.hpp"
+#include "../../Libft/Modules/Errno/errno_internal.hpp"
 #include <cstdlib>
 
 const ft_nullptr_t ft_nullptr_instance;
