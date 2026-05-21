@@ -21,16 +21,11 @@ GOINFRE_LOCAL_PREFIX ?= /goinfre/$(USER)/local
 SRC         = \
     main.cpp \
     src/camera/camera.cpp \
-    src/platform/libft_min.cpp \
-    src/platform/libft_recursive_mutex_min.cpp \
     src/render/debug_view.cpp
 
 LIBFT_DIR   = Libft
-LIBFT_LIBS  =
 LIBFT_COMPILE_FLAGS = -Wall -Wextra -std=c++17 -DLIBFT_INTERNAL_HEADERS $(OPT_FLAGS)
-LIBFT_DUMB_SRC = \
-    $(LIBFT_DIR)/Modules/DUMB/dumb_controls.cpp \
-    $(LIBFT_DIR)/Modules/DUMB/dumb_render.cpp
+LIBFT_FULL_LIB = $(LIBFT_DIR)/Full_Libft.a
 
 CC          = g++
 
@@ -120,21 +115,11 @@ ifeq ($(OS),Windows_NT)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
-        LIBFT_DUMB_SRC += \
-            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_controls_platform_macos.mm \
-            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_render_platform_macos.mm
         LDFLAGS = -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore
     else
-        LIBFT_DUMB_SRC += \
-            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_controls_linux_x11.cpp \
-            $(LIBFT_DIR)/Modules/Compatebility/Compatebility_dumb_render_linux_x11.cpp
         LDFLAGS = -lX11 -lXext -lGL
     endif
 endif
-
-LIBFT_DUMB_OBJS = \
-    $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(filter %.cpp,$(LIBFT_DUMB_SRC))) \
-    $(patsubst %.mm,$(OBJ_DIR)/%.o,$(filter %.mm,$(LIBFT_DUMB_SRC)))
 
 OBJS        = $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
@@ -196,28 +181,16 @@ submodule_update:
 debug:
 	$(MAKE) all DEBUG=1
 
-$(TARGET): $(OBJS) $(LIBFT_DUMB_OBJS) $(LIBFT_LIBS)
+$(TARGET): $(OBJS) $(LIBFT_FULL_LIB)
 	@printf '\033[1;36m[FT_VOX BUILD] Linking %s\033[0m\n' "$@"
-	@$(CC) $(CFLAGS) $(OBJS) $(LIBFT_DUMB_OBJS) $(LIBFT_LIBS) -o $@ $(LDFLAGS)
+	@$(CC) $(CFLAGS) $(OBJS) $(LIBFT_FULL_LIB) -o $@ $(LDFLAGS)
 
-ifneq ($(strip $(LIBFT_LIBS)),)
-$(LIBFT_LIBS):
-	@$(MAKE) -C $(dir $@) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)"
-endif
+$(LIBFT_FULL_LIB):
+	@$(MAKE) -C $(LIBFT_DIR) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)"
 
-$(TEST_NAME): $(TEST_OBJS) $(OBJS_NO_MAIN) $(TARGET) $(LIBFT_DUMB_OBJS) $(LIBFT_LIBS)
+$(TEST_NAME): $(TEST_OBJS) $(OBJS_NO_MAIN) $(TARGET) $(LIBFT_FULL_LIB)
 	@printf '\033[1;36m[FT_VOX BUILD] Linking %s\033[0m\n' "$@"
-	@$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS_NO_MAIN) $(LIBFT_DUMB_OBJS) $(LIBFT_LIBS) -o $@ $(LDFLAGS)
-
-$(OBJ_DIR)/$(LIBFT_DIR)/%.o: $(LIBFT_DIR)/%.cpp
-	@-$(MKDIR) $(dir $@)
-	@$(CC) $(LIBFT_COMPILE_FLAGS) $(DEPFLAGS) -c $< -o $@
-	@printf '\033[1;36m[FT_VOX LIBFT] %s\033[0m\n' "$<"
-
-$(OBJ_DIR)/$(LIBFT_DIR)/%.o: $(LIBFT_DIR)/%.mm
-	@-$(MKDIR) $(dir $@)
-	@$(CC) $(LIBFT_COMPILE_FLAGS) -x objective-c++ $(DEPFLAGS) -c $< -o $@
-	@printf '\033[1;36m[FT_VOX LIBFT] %s\033[0m\n' "$<"
+	@$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS_NO_MAIN) $(LIBFT_FULL_LIB) -o $@ $(LDFLAGS)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@-$(MKDIR) $(dir $@)
