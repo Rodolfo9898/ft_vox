@@ -221,6 +221,7 @@ clean:
 	-$(RMDIR) $(BUILD_LOG_DIR)
 
 fclean: clean
+	@$(MAKE) -C $(LIBFT_DIR) fclean
 	-$(RM) $(NAME) $(NAME_DEBUG) $(TEST_NAME)
 	-$(RMDIR) $(OBJ_DIR) $(OBJ_DIR_DEBUG) $(OBJ_DIR_TEST) data
 
