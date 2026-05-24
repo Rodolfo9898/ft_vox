@@ -225,7 +225,9 @@ fclean: clean
 	-$(RM) $(NAME) $(NAME_DEBUG) $(TEST_NAME)
 	-$(RMDIR) $(OBJ_DIR) $(OBJ_DIR_DEBUG) $(OBJ_DIR_TEST) data
 
-re: fclean all
+re:
+	@$(MAKE) fclean
+	@$(MAKE) all
 
 test: $(TEST_NAME)
 	@if [ -x "$(GOINFRE_LOCAL_PREFIX)/bin/cobc" ]; then \
