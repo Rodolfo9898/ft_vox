@@ -26,6 +26,8 @@ SRC         = \
 LIBFT_DIR   = Libft
 LIBFT_COMPILE_FLAGS = -Wall -Wextra -std=c++17 -DLIBFT_INTERNAL_HEADERS $(OPT_FLAGS)
 LIBFT_FULL_LIB = $(LIBFT_DIR)/Full_Libft.a
+LIBFT_FULL_DEBUG_LIB = $(LIBFT_DIR)/Full_Libft_debug.a
+LIBFT_LINK_LIB = $(LIBFT_FULL_LIB)
 
 CC          = g++
 
@@ -101,9 +103,10 @@ ifeq ($(COVERAGE),1)
 endif
 
 ifeq ($(DEBUG),1)
-    CFLAGS    += -DDEBUG=1
+    CFLAGS    += -DDEBUG=1 -fno-omit-frame-pointer
     OBJ_DIR    = $(OBJ_DIR_DEBUG)
     TARGET     = $(NAME_DEBUG)
+    LIBFT_LINK_LIB = $(LIBFT_FULL_DEBUG_LIB)
 else
     TARGET     = $(NAME)
 endif
@@ -118,6 +121,14 @@ else
         LDFLAGS = -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore
     else
         LDFLAGS = -lX11 -lXext -lGL
+    endif
+endif
+
+ifeq ($(DEBUG),1)
+    ifneq ($(OS),Windows_NT)
+        ifneq ($(UNAME_S),Darwin)
+            LDFLAGS += -rdynamic
+        endif
     endif
 endif
 
@@ -181,11 +192,14 @@ submodule_update:
 debug:
 	$(MAKE) all DEBUG=1
 
-$(TARGET): $(OBJS) $(LIBFT_FULL_LIB)
+$(TARGET): $(OBJS) $(LIBFT_LINK_LIB)
 	@printf '\033[1;36m[FT_VOX BUILD] Linking %s\033[0m\n' "$@"
-	@$(CC) $(CFLAGS) $(OBJS) $(LIBFT_FULL_LIB) -o $@ $(LDFLAGS)
+	@$(CC) $(CFLAGS) $(OBJS) $(LIBFT_LINK_LIB) -o $@ $(LDFLAGS)
 
 $(LIBFT_FULL_LIB):
+	@$(MAKE) -C $(LIBFT_DIR) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)"
+
+$(LIBFT_FULL_DEBUG_LIB):
 	@$(MAKE) -C $(LIBFT_DIR) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)"
 
 $(TEST_NAME): $(TEST_OBJS) $(OBJS_NO_MAIN) $(TARGET) $(LIBFT_FULL_LIB)

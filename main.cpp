@@ -1,5 +1,6 @@
 #include "Libft/Modules/DUMB/controls.hpp"
 #include "Libft/Modules/DUMB/render_window.hpp"
+#include "Libft/Modules/Debug/debug.hpp"
 #include "Libft/Modules/Errno/errno.hpp"
 #include "src/camera/camera.hpp"
 #include "src/render/debug_view.hpp"
@@ -11,6 +12,18 @@ static int ft_vox_fail(const char *operation, int32_t error_code)
     std::fprintf(stderr, "ft_vox: %s failed: %s (%d)\n", operation,
         ft_strerror(error_code), error_code);
     return (1);
+}
+
+static int ft_vox_enable_debug_crash_traces()
+{
+#ifdef DEBUG
+    int32_t error_code;
+
+    error_code = dbg_enable_crash_stack_traces();
+    if (error_code != FT_ERR_SUCCESS)
+        return (ft_vox_fail("debug crash stack trace setup", error_code));
+#endif
+    return (0);
 }
 
 static ft_vox_camera_input ft_vox_read_camera_input()
@@ -40,6 +53,8 @@ int main()
     double                 delta_seconds;
     int32_t                error_code;
 
+    if (ft_vox_enable_debug_crash_traces() != 0)
+        return (1);
     error_code = window.initialize();
     if (error_code != FT_ERR_SUCCESS)
         return (ft_vox_fail("window object initialization", error_code));
