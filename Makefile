@@ -1,153 +1,14 @@
 SHELL := /bin/bash
 
-ifeq ($(OS),Windows_NT)
-    EXE_EXT := .exe
-else
-    EXE_EXT :=
-endif
-
-NAME        = ft_vox$(EXE_EXT)
-NAME_DEBUG  = ft_vox_debug$(EXE_EXT)
-TEST_NAME   = automated_tests$(EXE_EXT)
-
-ifdef FORWARD_TRANSLATION
-export FT_VOX_ENABLE_FORWARD_TRANSLATION := $(FORWARD_TRANSLATION)
-endif
-PYTHON          ?= python3
-LINT_SCRIPT      = scripts/lint_sources.py
-COVERAGE_SCRIPT  = scripts/coverage_report.py
-GOINFRE_LOCAL_PREFIX ?= /goinfre/$(USER)/local
-
-SRC         = \
-    main.cpp \
-    src/camera/camera.cpp \
-    src/render/debug_view.cpp
-
-LIBFT_DIR   = Libft
-LIBFT_COMPILE_FLAGS = -Wall -Wextra -std=c++17 -DLIBFT_INTERNAL_HEADERS $(OPT_FLAGS)
-LIBFT_FULL_LIB = $(LIBFT_DIR)/Full_Libft.a
-LIBFT_FULL_DEBUG_LIB = $(LIBFT_DIR)/Full_Libft_debug.a
-LIBFT_LINK_LIB = $(LIBFT_FULL_LIB)
-LIBFT_JOBS ?= 4
-LIBFT_PARALLEL_FLAGS = $(if $(filter -j%,$(MAKEFLAGS)),,-j$(LIBFT_JOBS))
-
-CC          = g++
-
-OPT_LEVEL ?= 0
-
-ifeq ($(OPT_LEVEL),0)
-    OPT_FLAGS = -O0 -g
-else ifeq ($(OPT_LEVEL),1)
-    OPT_FLAGS = -O1 -flto -s -ffunction-sections -fdata-sections -Wl,--gc-sections
-else ifeq ($(OPT_LEVEL),2)
-    OPT_FLAGS = -O2 -flto -s -ffunction-sections -fdata-sections -Wl,--gc-sections
-else ifeq ($(OPT_LEVEL),3)
-    OPT_FLAGS = -O3 -flto -s -ffunction-sections -fdata-sections -Wl,--gc-sections
-else
-    $(error Unsupported OPT_LEVEL=$(OPT_LEVEL))
-endif
-
-COMPILE_FLAGS = -Wall -Werror -Wextra -std=c++17 -Wmissing-declarations \
-                -Wold-style-cast -Wshadow -Wconversion -Wformat=2 -Wundef \
-                -Wfloat-equal -Wconversion -Wzero-as-null-pointer-constant \
-                -I. $(OPT_FLAGS)
-
-ifneq ($(shell uname -s 2>/dev/null),Darwin)
-    COMPILE_FLAGS += -Wodr -Wuseless-cast -Wmaybe-uninitialized
-endif
-DEPFLAGS = -MMD -MP
-
-CFLAGS = $(COMPILE_FLAGS)
-
-REPRODUCIBLE ?= 1
-SOURCE_DATE_EPOCH ?= 1700000000
-
-ifneq ($(REPRODUCIBLE),0)
-    export SOURCE_DATE_EPOCH
-    COMPILE_FLAGS += -ffile-prefix-map=$(CURDIR)=. -fmacro-prefix-map=$(CURDIR)=. -fdebug-prefix-map=$(CURDIR)=. -frandom-seed=ft_vox
-endif
-
-ifeq ($(OS),Windows_NT)
-    MKDIR   = mkdir
-    RMDIR   = rmdir /S /Q
-    RM      = del /F /Q
-else
-    MKDIR   = mkdir -p
-    RMDIR   = rm -rf
-    RM      = rm -f
-endif
-
-BUILD_LOG_DIR = ./build_logs
-
-OBJ_DIR         = ./objs
-OBJ_DIR_DEBUG   = ./objs_debug
-OBJ_DIR_TEST    = ./objs_tests
-
-ENABLE_LTO  ?= 0
-ENABLE_PGO  ?= 0
-COVERAGE    ?= 0
-COVERAGE_LINE_THRESHOLD ?= 60
-COVERAGE_BRANCH_THRESHOLD ?= 65
-export ENABLE_LTO ENABLE_PGO COVERAGE
-
-ifeq ($(ENABLE_LTO),1)
-    COMPILE_FLAGS   += -flto
-    LDFLAGS  += -flto
-endif
-
-ifeq ($(ENABLE_PGO),1)
-    COMPILE_FLAGS  += -fprofile-generate
-endif
-
-ifeq ($(COVERAGE),1)
-    COMPILE_FLAGS  += --coverage
-    LDFLAGS        += --coverage
-endif
-
-ifeq ($(DEBUG),1)
-    CFLAGS    += -DDEBUG=1 -fno-omit-frame-pointer
-    OBJ_DIR    = $(OBJ_DIR_DEBUG)
-    TARGET     = $(NAME_DEBUG)
-    LIBFT_LINK_LIB = $(LIBFT_FULL_DEBUG_LIB)
-else
-    TARGET     = $(NAME)
-endif
-
-export COMPILE_FLAGS
-
-ifeq ($(OS),Windows_NT)
-    LDFLAGS     =
-else
-    UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Darwin)
-        LDFLAGS = -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore
-    else
-        LDFLAGS = -lX11 -lXext -lGL
-    endif
-endif
-
-ifeq ($(DEBUG),1)
-    ifneq ($(OS),Windows_NT)
-        ifneq ($(UNAME_S),Darwin)
-            LDFLAGS += -rdynamic
-        endif
-    endif
-endif
-
-OBJS        = $(SRC:%.cpp=$(OBJ_DIR)/%.o)
-
-OBJS_NO_MAIN = $(filter-out $(OBJ_DIR)/main.o,$(OBJS))
+include mk/project.mk
+include mk/tools.mk
+include mk/sources.mk
+include mk/directories.mk
+include mk/libft.mk
+include mk/compiler.mk
+include mk/objects.mk
 
 .SILENT:
-
-TOTAL_OBJS          := $(words $(OBJS))
-
-TEST_SRC    = main.cpp
-
-TEST_OBJS   = $(TEST_SRC:%.cpp=$(OBJ_DIR_TEST)/%.o)
-
-TOTAL_TEST_OBJS     := $(words $(TEST_OBJS))
-DEPS        = $(OBJS:.o=.d) $(TEST_OBJS:.o=.d)
 
 all: dirs $(TARGET)
 
@@ -293,4 +154,6 @@ ci:
 	$(MAKE) ci-lint
 	$(MAKE) ci-coverage
 
-.PHONY: all dirs clean fclean re debug both re_both tests test lint coverage ci-build ci-test ci-lint ci-coverage ci submodule_init submodule_update ft_vox
+.PHONY: all dirs clean fclean re debug both re_both tests test lint coverage \
+        ci-build ci-test ci-lint ci-coverage ci submodule_init submodule_update \
+        ft_vox install_cobc tests_with_cobc
