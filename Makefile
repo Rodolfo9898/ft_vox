@@ -57,7 +57,7 @@ debug:
 
 $(TARGET): $(OBJS) $(LIBFT_LINK_LIB)
 	@printf '\033[1;36m[FT_VOX BUILD] Linking %s\033[0m\n' "$@"
-	@$(CC) $(CFLAGS) $(OBJS) $(LIBFT_LINK_LIB) -o $@ $(LDFLAGS)
+	@$(CC) $(CFLAGS) $(OBJS) $(LIBFT_LINK_FLAGS) -o $@ $(LDFLAGS)
 
 $(LIBFT_FULL_LIB):
 	@$(MAKE) -C $(LIBFT_DIR) $(LIBFT_PARALLEL_FLAGS) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)"
@@ -67,7 +67,7 @@ $(LIBFT_FULL_DEBUG_LIB):
 
 $(TEST_NAME): $(TEST_OBJS) $(OBJS_NO_MAIN) $(TARGET) $(LIBFT_FULL_LIB)
 	@printf '\033[1;36m[FT_VOX BUILD] Linking %s\033[0m\n' "$@"
-	@$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS_NO_MAIN) $(LIBFT_FULL_LIB) -o $@ $(LDFLAGS)
+	@$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS_NO_MAIN) $(LIBFT_LINK_FLAGS) -o $@ $(LDFLAGS)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@-$(MKDIR) $(dir $@)

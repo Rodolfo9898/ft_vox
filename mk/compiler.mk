@@ -60,6 +60,7 @@ ifeq ($(DEBUG),1)
     OBJ_DIR          = $(OBJ_DIR_DEBUG)
     TARGET           = $(NAME_DEBUG)
     LIBFT_LINK_LIB   = $(LIBFT_FULL_DEBUG_LIB)
+    LIBFT_LINK_FLAGS = $(LIBFT_LINK_LIB)
 else
     TARGET           = $(NAME)
 endif
@@ -71,7 +72,8 @@ ifeq ($(OS),Windows_NT)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
-        LDFLAGS = -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore
+        LIBFT_LINK_FLAGS = -Wl,-force_load,$(LIBFT_LINK_LIB)
+        LDFLAGS = -lz -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore -framework AudioToolbox -lobjc -lpthread -lsqlite3
     else
         LDFLAGS = -lX11 -lXext -lGL
     endif
