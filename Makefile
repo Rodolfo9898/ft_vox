@@ -2,6 +2,7 @@ SHELL := /bin/bash
 
 include mk/project.mk
 include mk/tools.mk
+include mk/output.mk
 include mk/sources.mk
 include mk/directories.mk
 include mk/libft.mk
@@ -59,32 +60,59 @@ $(TARGET): $(OBJS) $(LIBFT_LINK_LIB)
 	@printf '\033[1;36m[FT_VOX BUILD] Linking %s\033[0m\n' "$@"
 	@$(CC) $(CFLAGS) $(OBJS) $(LIBFT_LINK_FLAGS) -o $@ $(LDFLAGS)
 
-$(LIBFT_FULL_LIB):
-	@$(MAKE) -C $(LIBFT_DIR) $(LIBFT_PARALLEL_FLAGS) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)"
+$(LIBFT_FULL_LIB): FORCE
+	@$(MAKE) -C $(LIBFT_DIR) $(LIBFT_PARALLEL_FLAGS) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)" LIBFT_BATCH_OUTPUT=$(LIBFT_CHILD_BATCH_OUTPUT)
 
-$(LIBFT_FULL_DEBUG_LIB):
-	@$(MAKE) -C $(LIBFT_DIR) $(LIBFT_PARALLEL_FLAGS) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)"
+$(LIBFT_FULL_DEBUG_LIB): FORCE
+	@$(MAKE) -C $(LIBFT_DIR) $(LIBFT_PARALLEL_FLAGS) $(notdir $@) COMPILE_FLAGS="$(LIBFT_COMPILE_FLAGS)" LIBFT_BATCH_OUTPUT=$(LIBFT_CHILD_BATCH_OUTPUT)
 
 $(TEST_NAME): $(TEST_OBJS) $(OBJS_NO_MAIN) $(TARGET) $(LIBFT_FULL_LIB)
 	@printf '\033[1;36m[FT_VOX BUILD] Linking %s\033[0m\n' "$@"
 	@$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS_NO_MAIN) $(LIBFT_LINK_FLAGS) -o $@ $(LDFLAGS)
 
+$(OBJS) $(TEST_OBJS): | $(LIBFT_LINK_LIB)
+
 $(OBJ_DIR)/%.o: %.cpp
-	@-$(MKDIR) $(dir $@)
-	@$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
-	@if [ $(TOTAL_OBJS) -gt 0 ] && [[ " $(OBJS) " == *" $@ "* ]]; then \
-		built=0; \
-		for obj in $(OBJS); do \
-			[ -f "$$obj" ] && built=$$((built + 1)); \
-		done; \
+	@if [ "$(FT_VOX_BATCH_OUTPUT)" = "1" ]; then \
+		log_file=".ft_vox_build_$$(printf '%s' "$@" | tr '/.' '__')_$$$$.log"; \
+		{ \
+			$(MKDIR) $(dir $@); \
+			$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@; \
+			built=$$(find $(OBJ_DIR) -type f -name '*.o' 2>/dev/null | wc -l); \
+			printf '\033[1;36m[FT_VOX PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_OBJS); \
+		} > "$$log_file" 2>&1; \
+		status=$$?; \
+		while ! mkdir $(FT_VOX_OUTPUT_LOCK) 2>/dev/null; do sleep 0.02; done; \
+		cat "$$log_file"; \
+		rmdir $(FT_VOX_OUTPUT_LOCK); \
+		$(RM) "$$log_file"; \
+		if [ $$status -ne 0 ]; then exit $$status; fi; \
+	else \
+		$(MKDIR) $(dir $@); \
+		$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@; \
+		built=$$(find $(OBJ_DIR) -type f -name '*.o' 2>/dev/null | wc -l); \
 		printf '\033[1;36m[FT_VOX PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_OBJS); \
 	fi
 
 $(OBJ_DIR_TEST)/%.o: %.cpp
-	@-$(MKDIR) $(dir $@)
-	@$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
-	@if [ $(TOTAL_TEST_OBJS) -gt 0 ]; then \
-		built=$$(find $(OBJ_DIR_TEST) -type f -name '*.o' | wc -l); \
+	@if [ "$(FT_VOX_BATCH_OUTPUT)" = "1" ]; then \
+		log_file=".ft_vox_build_$$(printf '%s' "$@" | tr '/.' '__')_$$$$.log"; \
+		{ \
+			$(MKDIR) $(dir $@); \
+			$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@; \
+			built=$$(find $(OBJ_DIR_TEST) -type f -name '*.o' 2>/dev/null | wc -l); \
+			printf '\033[1;36m[FT_VOX TEST PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_TEST_OBJS); \
+		} > "$$log_file" 2>&1; \
+		status=$$?; \
+		while ! mkdir $(FT_VOX_OUTPUT_LOCK) 2>/dev/null; do sleep 0.02; done; \
+		cat "$$log_file"; \
+		rmdir $(FT_VOX_OUTPUT_LOCK); \
+		$(RM) "$$log_file"; \
+		if [ $$status -ne 0 ]; then exit $$status; fi; \
+	else \
+		$(MKDIR) $(dir $@); \
+		$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@; \
+		built=$$(find $(OBJ_DIR_TEST) -type f -name '*.o' 2>/dev/null | wc -l); \
 		printf '\033[1;36m[FT_VOX TEST PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_TEST_OBJS); \
 	fi
 
@@ -95,7 +123,8 @@ clean:
 	-$(RM) test_example_compiler.c test_example_compiler.bin test_example_compiler.txt
 	-$(RM) test_example_invalid_compiler.c test_example_invalid_compiler.bin test_example_invalid_compiler.log
 	-$(RM) test_runtime_file.txt
-	-$(RMDIR) $(BUILD_LOG_DIR)
+	-$(RMDIR) $(BUILD_LOG_DIR) $(FT_VOX_OUTPUT_LOCK)
+	-$(RM) $(FT_VOX_OUTPUT_LOGS)
 
 fclean: clean
 	@$(MAKE) -C $(LIBFT_DIR) $(LIBFT_PARALLEL_FLAGS) fclean
@@ -156,4 +185,6 @@ ci:
 
 .PHONY: all dirs clean fclean re debug both re_both tests test lint coverage \
         ci-build ci-test ci-lint ci-coverage ci submodule_init submodule_update \
-        ft_vox install_cobc tests_with_cobc
+        ft_vox install_cobc tests_with_cobc FORCE
+
+FORCE:
