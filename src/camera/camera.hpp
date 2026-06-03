@@ -7,6 +7,11 @@ struct ft_vox_camera_input
     bool move_backward;
     bool move_left;
     bool move_right;
+    bool turn_left;
+    bool turn_right;
+    bool look_up;
+    bool look_down;
+    bool speed_boost;
 };
 
 struct ft_vox_camera
@@ -15,6 +20,7 @@ struct ft_vox_camera
     double y;
     double z;
     double yaw;
+    double pitch;
     double speed;
 };
 

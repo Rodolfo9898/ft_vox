@@ -3,7 +3,8 @@
 #include "Libft/Modules/Debug/debug.hpp"
 #include "Libft/Modules/Errno/errno.hpp"
 #include "src/camera/camera.hpp"
-#include "src/render/debug_view.hpp"
+#include "src/render/voxel_renderer.hpp"
+#include "src/world/voxel_world.hpp"
 #include <chrono>
 #include <cstdio>
 
@@ -38,6 +39,12 @@ static ft_vox_camera_input ft_vox_read_camera_input()
         == FT_TRUE);
     input.move_right = (ft_dumb_control_is_down(FT_DUMB_CONTROL_RIGHT)
         == FT_TRUE);
+    input.turn_left = false;
+    input.turn_right = false;
+    input.look_up = false;
+    input.look_down = false;
+    input.speed_boost = (ft_dumb_control_is_down(FT_DUMB_CONTROL_CONFIRM)
+        == FT_TRUE);
     return (input);
 }
 
@@ -47,6 +54,7 @@ int main()
     ft_render_window_desc  description;
     ft_render_screen_size  screen_size;
     ft_vox_camera          camera;
+    ft_vox_world           world;
     std::chrono::steady_clock::time_point previous_time;
     std::chrono::steady_clock::time_point current_time;
     std::chrono::duration<double> elapsed_time;
@@ -55,9 +63,15 @@ int main()
 
     if (ft_vox_enable_debug_crash_traces() != 0)
         return (1);
+    error_code = ft_vox_world_initialize(&world, "ft_vox-integration-seed");
+    if (error_code != FT_ERR_SUCCESS)
+        return (ft_vox_fail("voxel world initialization", error_code));
     error_code = window.initialize();
     if (error_code != FT_ERR_SUCCESS)
+    {
+        ft_vox_world_destroy(&world);
         return (ft_vox_fail("window object initialization", error_code));
+    }
     screen_size = ft_render_get_primary_screen_size();
     if (screen_size.width <= 0 || screen_size.height <= 0)
     {
@@ -72,12 +86,14 @@ int main()
     if (error_code != FT_ERR_SUCCESS)
     {
         (void)window.destroy();
+        ft_vox_world_destroy(&world);
         return (ft_vox_fail("window creation", error_code));
     }
     error_code = window.set_fullscreen(FT_TRUE);
     if (error_code != FT_ERR_SUCCESS)
     {
         (void)window.destroy();
+        ft_vox_world_destroy(&world);
         return (ft_vox_fail("fullscreen activation", error_code));
     }
     ft_vox_camera_init(&camera);
@@ -100,11 +116,12 @@ int main()
             break ;
         ft_vox_camera_update(&camera, ft_vox_read_camera_input(),
             delta_seconds);
-        ft_vox_debug_view_draw(window.framebuffer(), camera);
+        ft_vox_render_world(window.framebuffer(), camera, world);
         error_code = window.present();
         if (error_code != FT_ERR_SUCCESS)
             break ;
     }
+    ft_vox_world_destroy(&world);
     if (window.destroy() != FT_ERR_SUCCESS)
         return (1);
     if (error_code != FT_ERR_SUCCESS)

@@ -17,7 +17,7 @@ endif
 COMPILE_FLAGS = -Wall -Werror -Wextra -std=c++17 -Wmissing-declarations \
                 -Wold-style-cast -Wshadow -Wconversion -Wformat=2 -Wundef \
                 -Wfloat-equal -Wconversion -Wzero-as-null-pointer-constant \
-                -I. $(OPT_FLAGS)
+                -I. -DLIBFT_INTERNAL_HEADERS -DGAME_USE_VOXEL_REGION_BACKEND $(OPT_FLAGS)
 
 ifneq ($(shell uname -s 2>/dev/null),Darwin)
     COMPILE_FLAGS += -Wodr -Wuseless-cast -Wmaybe-uninitialized
