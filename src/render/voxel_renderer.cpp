@@ -15,10 +15,9 @@ struct ft_vox_screen_vertex
 
 static uint32_t ft_vox_rgba(uint8_t red, uint8_t green, uint8_t blue)
 {
-    return ((static_cast<uint32_t>(red) << 24U)
-        | (static_cast<uint32_t>(green) << 16U)
-        | (static_cast<uint32_t>(blue) << 8U)
-        | 0xFFU);
+    return ((static_cast<uint32_t>(red) << 16U)
+        | (static_cast<uint32_t>(green) << 8U)
+        | static_cast<uint32_t>(blue));
 }
 
 static uint8_t ft_vox_shade_channel(uint8_t channel, double shade)
@@ -265,6 +264,35 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
     }
 }
 
+static bool ft_vox_chunk_is_near_camera(const ft_vox_camera &camera,
+    const ft_vox_world_chunk &world_chunk)
+{
+    double center_x;
+    double center_z;
+    double delta_x;
+    double delta_z;
+    double distance_squared;
+    double forward_x;
+    double forward_z;
+    double forward_dot;
+
+    center_x = static_cast<double>(world_chunk.world_x)
+        + (static_cast<double>(GAME_VOXEL_CHUNK_WIDTH) * 0.5);
+    center_z = static_cast<double>(world_chunk.world_z)
+        + (static_cast<double>(GAME_VOXEL_CHUNK_DEPTH) * 0.5);
+    delta_x = center_x - camera.x;
+    delta_z = center_z - camera.z;
+    distance_squared = (delta_x * delta_x) + (delta_z * delta_z);
+    if (distance_squared > 95.0 * 95.0)
+        return (false);
+    forward_x = std::sin(camera.yaw);
+    forward_z = std::cos(camera.yaw);
+    forward_dot = (delta_x * forward_x) + (delta_z * forward_z);
+    if (forward_dot < -24.0)
+        return (false);
+    return (true);
+}
+
 static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
     std::vector<double> &depth_buffer, const ft_vox_camera &camera,
     const ft_vox_world_chunk &world_chunk)
@@ -274,6 +302,8 @@ static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
     ft_vox_screen_vertex projected_vertices[3];
     uint32_t color;
 
+    if (ft_vox_chunk_is_near_camera(camera, world_chunk) == false)
+        return ;
     index = 0U;
     while (index + 2U < world_chunk.mesh.indices.size())
     {
@@ -330,27 +360,63 @@ static void ft_vox_draw_crosshair(ft_render_framebuffer &framebuffer)
     }
 }
 
+static void ft_vox_blit_scaled(ft_render_framebuffer &destination,
+    const ft_render_framebuffer &source)
+{
+    int32_t x;
+    int32_t y;
+    int32_t source_x;
+    int32_t source_y;
+
+    y = 0;
+    while (y < destination.height)
+    {
+        source_y = (y * source.height) / destination.height;
+        x = 0;
+        while (x < destination.width)
+        {
+            source_x = (x * source.width) / destination.width;
+            destination.pixels[(y * destination.width) + x]
+                = source.pixels[(source_y * source.width) + source_x];
+            x = x + 1;
+        }
+        y = y + 1;
+    }
+}
+
 void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     const ft_vox_camera &camera, const ft_vox_world &world)
 {
+    static std::vector<uint32_t> color_buffer;
     static std::vector<double> depth_buffer;
+    ft_render_framebuffer render_target;
     size_t required_size;
     int32_t chunk_index;
 
     if (framebuffer.pixels == nullptr || framebuffer.width <= 0
         || framebuffer.height <= 0)
         return ;
-    required_size = static_cast<size_t>(framebuffer.width)
-        * static_cast<size_t>(framebuffer.height);
+    render_target.width = framebuffer.width / 2;
+    render_target.height = framebuffer.height / 2;
+    if (render_target.width < 320)
+        render_target.width = framebuffer.width;
+    if (render_target.height < 180)
+        render_target.height = framebuffer.height;
+    required_size = static_cast<size_t>(render_target.width)
+        * static_cast<size_t>(render_target.height);
+    if (color_buffer.size() != required_size)
+        color_buffer.resize(required_size);
     if (depth_buffer.size() != required_size)
         depth_buffer.resize(required_size);
-    ft_vox_clear_frame(framebuffer, depth_buffer);
+    render_target.pixels = color_buffer.data();
+    ft_vox_clear_frame(render_target, depth_buffer);
     chunk_index = 0;
     while (chunk_index < world.chunk_count)
     {
-        ft_vox_draw_mesh(framebuffer, depth_buffer, camera,
+        ft_vox_draw_mesh(render_target, depth_buffer, camera,
             world.chunks[chunk_index]);
         chunk_index = chunk_index + 1;
     }
+    ft_vox_blit_scaled(framebuffer, render_target);
     ft_vox_draw_crosshair(framebuffer);
 }
