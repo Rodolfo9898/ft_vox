@@ -1,6 +1,44 @@
 #include "voxel_world.hpp"
 #include "../../Libft/Modules/Errno/errno.hpp"
 
+static int32_t ft_vox_floor_divide(int32_t value, int32_t divisor)
+{
+    if (value >= 0)
+        return (value / divisor);
+    return (-(((-value) + divisor - 1) / divisor));
+}
+
+static int32_t ft_vox_positive_modulo(int32_t value, int32_t divisor)
+{
+    int32_t result;
+
+    result = value % divisor;
+    if (result < 0)
+        result += divisor;
+    return (result);
+}
+
+static const ft_vox_world_chunk *ft_vox_find_chunk(const ft_vox_world *world,
+    int32_t chunk_x, int32_t chunk_z)
+{
+    int32_t index;
+
+    if (world == nullptr)
+        return (nullptr);
+    index = 0;
+    while (index < world->chunk_count)
+    {
+        if (world->chunks[index].initialized == true
+            && world->chunks[index].chunk_x == chunk_x
+            && world->chunks[index].chunk_z == chunk_z)
+        {
+            return (&world->chunks[index]);
+        }
+        index = index + 1;
+    }
+    return (nullptr);
+}
+
 static int32_t ft_vox_initialize_chunk(ft_vox_world_chunk *world_chunk,
     int32_t chunk_x, int32_t chunk_z, const char *seed)
 {
@@ -88,4 +126,40 @@ void ft_vox_world_destroy(ft_vox_world *world)
     }
     world->chunk_count = 0;
     return ;
+}
+
+bool ft_vox_world_surface_top_at(const ft_vox_world *world,
+    int32_t world_x, int32_t world_z, double *surface_top)
+{
+    const ft_vox_world_chunk *world_chunk;
+    int32_t chunk_x;
+    int32_t chunk_z;
+    int32_t local_x;
+    int32_t local_z;
+    int32_t local_y;
+    uint32_t block_id;
+
+    if (world == nullptr || surface_top == nullptr)
+        return (false);
+    chunk_x = ft_vox_floor_divide(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    chunk_z = ft_vox_floor_divide(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    world_chunk = ft_vox_find_chunk(world, chunk_x, chunk_z);
+    if (world_chunk == nullptr)
+        return (false);
+    local_x = ft_vox_positive_modulo(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    local_z = ft_vox_positive_modulo(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    local_y = GAME_VOXEL_CHUNK_HEIGHT - 1;
+    while (local_y >= 0)
+    {
+        if (world_chunk->chunk.read_block(local_x, local_y, local_z,
+                &block_id) == FT_ERR_SUCCESS
+            && block_id != GAME_VOXEL_AIR_BLOCK
+            && terrain_block_is_solid(block_id) == FT_TRUE)
+        {
+            *surface_top = static_cast<double>(local_y + 1);
+            return (true);
+        }
+        local_y = local_y - 1;
+    }
+    return (false);
 }

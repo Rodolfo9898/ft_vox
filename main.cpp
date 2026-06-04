@@ -6,6 +6,7 @@
 #include "src/render/voxel_renderer.hpp"
 #include "src/world/voxel_world.hpp"
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -33,7 +34,9 @@ static int ft_vox_enable_debug_crash_traces()
 static ft_vox_camera_input ft_vox_read_camera_input()
 {
     ft_vox_camera_input input;
+    ft_dumb_mouse_delta mouse_delta;
 
+    mouse_delta = ft_dumb_controls_mouse_delta();
     input.move_forward = (ft_dumb_control_is_down(FT_DUMB_CONTROL_UP)
         == FT_TRUE);
     input.move_backward = (ft_dumb_control_is_down(FT_DUMB_CONTROL_DOWN)
@@ -48,6 +51,8 @@ static ft_vox_camera_input ft_vox_read_camera_input()
     input.look_down = false;
     input.speed_boost = (ft_dumb_control_is_down(FT_DUMB_CONTROL_CONFIRM)
         == FT_TRUE);
+    input.mouse_delta_x = static_cast<double>(mouse_delta.x);
+    input.mouse_delta_y = static_cast<double>(mouse_delta.y);
     return (input);
 }
 
@@ -64,6 +69,8 @@ static ft_vox_camera_input ft_vox_empty_camera_input()
     input.look_up = false;
     input.look_down = false;
     input.speed_boost = false;
+    input.mouse_delta_x = 0.0;
+    input.mouse_delta_y = 0.0;
     return (input);
 }
 
@@ -143,6 +150,25 @@ static uint64_t ft_vox_hash_framebuffer(const ft_render_framebuffer &framebuffer
         index += 1;
     }
     return (hash);
+}
+
+static void ft_vox_camera_follow_ground(ft_vox_camera *camera,
+    const ft_vox_world &world)
+{
+    const double eye_height = 1.62;
+    double surface_top;
+    int32_t block_x;
+    int32_t block_z;
+
+    if (camera == nullptr)
+        return ;
+    block_x = static_cast<int32_t>(std::floor(camera->x));
+    block_z = static_cast<int32_t>(std::floor(camera->z));
+    if (ft_vox_world_surface_top_at(&world, block_x, block_z,
+            &surface_top) == true)
+    {
+        camera->y = surface_top + eye_height;
+    }
 }
 
 int main(int argc, char **argv)
@@ -228,6 +254,7 @@ int main(int argc, char **argv)
         headless_framebuffer.pixels = headless_pixels.data();
     }
     ft_vox_camera_init(&camera);
+    ft_vox_camera_follow_ground(&camera, world);
     previous_time = std::chrono::steady_clock::now();
     perf_start_time = previous_time;
     frame_count = 0;
@@ -253,11 +280,13 @@ int main(int argc, char **argv)
                 break ;
             ft_vox_camera_update(&camera, ft_vox_read_camera_input(),
                 delta_seconds);
+            ft_vox_camera_follow_ground(&camera, world);
         }
         else
         {
             ft_vox_camera_update(&camera, ft_vox_empty_camera_input(),
                 delta_seconds);
+            ft_vox_camera_follow_ground(&camera, world);
             error_code = FT_ERR_SUCCESS;
         }
         ft_vox_render_world(headless_framebuffer, camera, world);

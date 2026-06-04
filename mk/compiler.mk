@@ -72,7 +72,6 @@ ifeq ($(OS),Windows_NT)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
-        LIBFT_LINK_FLAGS = -Wl,-force_load,$(LIBFT_LINK_LIB)
         LDFLAGS = -lz -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore -framework AudioToolbox -lobjc -lpthread -lsqlite3
     else
         LDFLAGS = -lX11 -lXext -lGL

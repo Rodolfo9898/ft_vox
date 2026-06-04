@@ -29,5 +29,7 @@ struct ft_vox_world
 
 int32_t ft_vox_world_initialize(ft_vox_world *world, const char *seed);
 void    ft_vox_world_destroy(ft_vox_world *world);
+bool    ft_vox_world_surface_top_at(const ft_vox_world *world,
+    int32_t world_x, int32_t world_z, double *surface_top);
 
 #endif

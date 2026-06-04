@@ -15,11 +15,11 @@ void ft_vox_camera_init(ft_vox_camera *camera)
     if (camera == nullptr)
         return ;
     camera->x = 0.0;
-    camera->y = 92.0;
-    camera->z = -42.0;
+    camera->y = 78.62;
+    camera->z = -8.0;
     camera->yaw = 0.0;
-    camera->pitch = -0.22;
-    camera->speed = 10.0;
+    camera->pitch = 0.0;
+    camera->speed = 4.3;
     return ;
 }
 
@@ -36,6 +36,8 @@ void ft_vox_camera_update(ft_vox_camera *camera,
 
     if (camera == nullptr || delta_seconds <= 0.0)
         return ;
+    camera->yaw = camera->yaw + (input.mouse_delta_x * 0.0025);
+    camera->pitch = camera->pitch - (input.mouse_delta_y * 0.0025);
     if (input.turn_left == true)
         camera->yaw = camera->yaw - (1.8 * delta_seconds);
     if (input.turn_right == true)
@@ -44,7 +46,7 @@ void ft_vox_camera_update(ft_vox_camera *camera,
         camera->pitch = camera->pitch + (1.2 * delta_seconds);
     if (input.look_down == true)
         camera->pitch = camera->pitch - (1.2 * delta_seconds);
-    camera->pitch = ft_vox_clamp(camera->pitch, -1.1, 0.35);
+    camera->pitch = ft_vox_clamp(camera->pitch, -1.2, 1.2);
     local_x = 0.0;
     local_z = 0.0;
     if (input.move_forward == true)

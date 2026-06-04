@@ -12,6 +12,8 @@ struct ft_vox_camera_input
     bool look_up;
     bool look_down;
     bool speed_boost;
+    double mouse_delta_x;
+    double mouse_delta_y;
 };
 
 struct ft_vox_camera
