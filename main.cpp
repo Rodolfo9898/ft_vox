@@ -154,6 +154,78 @@ static uint64_t ft_vox_hash_framebuffer(const ft_render_framebuffer &framebuffer
     return (hash);
 }
 
+static int32_t ft_vox_clamp_int(int32_t value, int32_t minimum,
+    int32_t maximum)
+{
+    if (value < minimum)
+        return (minimum);
+    if (value > maximum)
+        return (maximum);
+    return (value);
+}
+
+static void ft_vox_camera_forward(const ft_vox_camera &camera,
+    double *direction_x, double *direction_y, double *direction_z)
+{
+    double pitch_cos;
+
+    if (direction_x == nullptr || direction_y == nullptr
+        || direction_z == nullptr)
+        return ;
+    pitch_cos = std::cos(camera.pitch);
+    *direction_x = std::sin(camera.yaw) * pitch_cos;
+    *direction_y = std::sin(camera.pitch);
+    *direction_z = std::cos(camera.yaw) * pitch_cos;
+}
+
+static int32_t ft_vox_try_delete_target_block(ft_vox_world *world,
+    const ft_vox_camera &camera)
+{
+    double direction_x;
+    double direction_y;
+    double direction_z;
+    int32_t block_x;
+    int32_t block_y;
+    int32_t block_z;
+    int32_t error_code;
+
+    if (world == nullptr)
+        return (FT_ERR_INVALID_ARGUMENT);
+    ft_vox_camera_forward(camera, &direction_x, &direction_y, &direction_z);
+    error_code = ft_vox_world_raycast_solid(world, camera.x, camera.y,
+        camera.z, direction_x, direction_y, direction_z, 6.0, &block_x,
+        &block_y, &block_z);
+    if (error_code != FT_ERR_SUCCESS)
+        return (FT_ERR_SUCCESS);
+    return (ft_vox_world_delete_block_at(world, block_x, block_y, block_z));
+}
+
+static int32_t ft_vox_update_render_distance(int32_t current_distance,
+    double frame_ms, bool boost_enabled)
+{
+    int32_t next_distance;
+
+    next_distance = current_distance;
+    if (frame_ms > 34.0 || boost_enabled == true)
+        next_distance = next_distance - 16;
+    else if (frame_ms > 25.0)
+        next_distance = next_distance - 8;
+    else if (frame_ms < 15.0)
+        next_distance = next_distance + 8;
+    return (ft_vox_clamp_int(next_distance, FT_VOX_WORLD_MIN_RENDER_DISTANCE,
+        FT_VOX_WORLD_REQUIRED_VISIBLE_DISTANCE));
+}
+
+static int32_t ft_vox_generation_budget_for_frame(double frame_ms,
+    bool boost_enabled)
+{
+    if (boost_enabled == true || frame_ms > 25.0)
+        return (1);
+    if (frame_ms < 12.0)
+        return (4);
+    return (2);
+}
+
 static void ft_vox_camera_follow_ground(ft_vox_camera *camera,
     const ft_vox_world &world)
 {
@@ -299,13 +371,18 @@ int main(int argc, char **argv)
     double                 perf_frame_ms;
     double                 perf_seconds_limit;
     double                 fps_accumulator;
+    double                 render_distance_accumulator;
     double                 display_fps;
+    double                 frame_ms;
     uint64_t               perf_frame_hash;
     uint64_t               frame_count;
     uint64_t               fps_frame_count;
     int32_t                error_code;
+    int32_t                active_render_distance;
+    int32_t                generation_budget;
     bool                   perf_test_mode;
     bool                   perf_headless_mode;
+    bool                   validate_visible_distance_mode;
     bool                   boost_enabled;
     std::vector<uint32_t>  headless_pixels;
 
@@ -314,6 +391,8 @@ int main(int argc, char **argv)
     perf_headless_mode = ft_vox_has_flag(argc, argv, "--perf-test-headless");
     perf_test_mode = ft_vox_has_flag(argc, argv, "--perf-test")
         || perf_headless_mode;
+    validate_visible_distance_mode = ft_vox_has_flag(argc, argv,
+        "--validate-visible-distance");
     perf_seconds_limit = 10.0;
     error_code = ft_vox_parse_perf_seconds(argc, argv, &perf_seconds_limit);
     if (error_code < 0)
@@ -325,6 +404,37 @@ int main(int argc, char **argv)
     error_code = ft_vox_world_initialize(&world, "ft_vox-integration-seed");
     if (error_code != FT_ERR_SUCCESS)
         return (ft_vox_fail("voxel world initialization", error_code));
+    if (validate_visible_distance_mode == true)
+    {
+        ft_vox_camera validation_camera;
+
+        ft_vox_camera_init(&validation_camera);
+        ft_vox_camera_follow_ground(&validation_camera, world);
+        error_code = ft_vox_world_update_around(&world, validation_camera.x,
+            validation_camera.z, FT_VOX_WORLD_CHUNK_COUNT);
+        if (error_code != FT_ERR_SUCCESS)
+        {
+            ft_vox_world_destroy(&world);
+            return (ft_vox_fail("visible-distance chunk preparation",
+                error_code));
+        }
+        if (ft_vox_world_validate_visible_distance(&world,
+                validation_camera.x, validation_camera.z,
+                validation_camera.yaw,
+                FT_VOX_WORLD_REQUIRED_VISIBLE_DISTANCE) == false)
+        {
+            std::fprintf(stderr,
+                "visible-distance: failed required=%d chunks_loaded=%d\n",
+                FT_VOX_WORLD_REQUIRED_VISIBLE_DISTANCE,
+                world.loaded_chunk_count);
+            ft_vox_world_destroy(&world);
+            return (1);
+        }
+        std::printf("visible-distance: ok required=%d chunks_loaded=%d\n",
+            FT_VOX_WORLD_REQUIRED_VISIBLE_DISTANCE, world.loaded_chunk_count);
+        ft_vox_world_destroy(&world);
+        return (0);
+    }
     if (perf_headless_mode == false)
     {
         error_code = window.initialize();
@@ -374,7 +484,10 @@ int main(int argc, char **argv)
     frame_count = 0;
     fps_frame_count = 0;
     fps_accumulator = 0.0;
+    render_distance_accumulator = 0.0;
     display_fps = 0.0;
+    frame_ms = 0.0;
+    active_render_distance = FT_VOX_WORLD_REQUIRED_VISIBLE_DISTANCE;
     boost_enabled = false;
     perf_frame_hash = UINT64_C(0);
     while (perf_headless_mode == true || window.should_close() == FT_FALSE)
@@ -403,6 +516,19 @@ int main(int argc, char **argv)
             camera_input = ft_vox_read_camera_input(boost_enabled);
             ft_vox_update_player_horizontal_motion(&camera, camera_input,
                 world, delta_seconds);
+            generation_budget = ft_vox_generation_budget_for_frame(frame_ms,
+                boost_enabled);
+            error_code = ft_vox_world_update_around(&world, camera.x,
+                camera.z, generation_budget, active_render_distance);
+            if (error_code != FT_ERR_SUCCESS)
+                break ;
+            if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_MOUSE_PRIMARY)
+                == FT_TRUE)
+            {
+                error_code = ft_vox_try_delete_target_block(&world, camera);
+                if (error_code != FT_ERR_SUCCESS)
+                    break ;
+            }
             ft_vox_update_player_vertical_motion(&camera, camera_input, world,
                 delta_seconds);
         }
@@ -415,6 +541,15 @@ int main(int argc, char **argv)
                 delta_seconds);
             error_code = FT_ERR_SUCCESS;
         }
+        frame_ms = delta_seconds * 1000.0;
+        render_distance_accumulator = render_distance_accumulator
+            + delta_seconds;
+        if (perf_headless_mode == false && render_distance_accumulator >= 0.25)
+        {
+            active_render_distance = ft_vox_update_render_distance(
+                active_render_distance, frame_ms, boost_enabled);
+            render_distance_accumulator = 0.0;
+        }
         fps_accumulator = fps_accumulator + delta_seconds;
         fps_frame_count = fps_frame_count + 1U;
         if (fps_accumulator >= 0.25)
@@ -424,8 +559,23 @@ int main(int argc, char **argv)
             fps_accumulator = 0.0;
             fps_frame_count = 0;
         }
-        ft_vox_render_world(headless_framebuffer, camera, world,
-            perf_headless_mode == true ? -1.0 : display_fps);
+        if (perf_headless_mode == true)
+        {
+            ft_vox_render_world(headless_framebuffer, camera, world,
+                static_cast<const ft_vox_render_debug *>(nullptr));
+        }
+        else
+        {
+            ft_vox_render_debug render_debug;
+
+            render_debug.fps = display_fps;
+            render_debug.frame_ms = frame_ms;
+            render_debug.visible_chunks = 0;
+            render_debug.loaded_chunks = world.loaded_chunk_count;
+            render_debug.render_distance = world.active_render_distance;
+            ft_vox_render_world(headless_framebuffer, camera, world,
+                &render_debug);
+        }
         if (perf_headless_mode == false)
         {
             error_code = window.present();

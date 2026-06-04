@@ -22,9 +22,12 @@ struct ft_vox_render_cache
     double yaw_sin;
     double pitch_cos;
     double pitch_sin;
+    double fov_tangent;
+    double aspect_ratio;
     double focal_length;
     double half_width;
     double half_height;
+    double render_distance;
 };
 
 static uint32_t ft_vox_rgba(uint8_t red, uint8_t green, uint8_t blue)
@@ -109,7 +112,42 @@ static uint32_t ft_vox_block_color(uint32_t block_id, uint8_t face)
         ft_vox_shade_channel(green, shade), ft_vox_shade_channel(blue, shade)));
 }
 
-static uint32_t ft_vox_sky_color(int32_t y, int32_t height)
+static uint32_t ft_vox_shade_color(uint32_t color, double shade)
+{
+    return (ft_vox_rgba(
+        ft_vox_shade_channel(static_cast<uint8_t>((color >> 16U) & 0xFFU),
+            shade),
+        ft_vox_shade_channel(static_cast<uint8_t>((color >> 8U) & 0xFFU),
+            shade),
+        ft_vox_shade_channel(static_cast<uint8_t>(color & 0xFFU), shade)));
+}
+
+static void ft_vox_texture_atlas_colors(uint32_t block_id, uint8_t face,
+    uint32_t colors[2])
+{
+    uint32_t base_color;
+    double shade_a;
+    double shade_b;
+
+    base_color = ft_vox_block_color(block_id, face);
+    shade_a = 1.0;
+    shade_b = 0.88;
+    if (block_id == TERRAIN_GENERATOR_GRASS_BLOCK
+        && face == CHUNK_MESH_FACE_UP)
+    {
+        shade_a = 1.08;
+        shade_b = 0.90;
+    }
+    else if (block_id == TERRAIN_GENERATOR_OAK_LOG_BLOCK)
+    {
+        shade_a = 1.12;
+        shade_b = 0.72;
+    }
+    colors[0] = ft_vox_shade_color(base_color, shade_a);
+    colors[1] = ft_vox_shade_color(base_color, shade_b);
+}
+
+static uint32_t ft_vox_skybox_row_color(int32_t y, int32_t height)
 {
     double factor;
     uint8_t red;
@@ -122,34 +160,89 @@ static uint32_t ft_vox_sky_color(int32_t y, int32_t height)
     red = static_cast<uint8_t>(82.0 + (62.0 * factor));
     green = static_cast<uint8_t>(154.0 + (44.0 * factor));
     blue = static_cast<uint8_t>(224.0 + (22.0 * factor));
+    if (y > (height / 2))
+    {
+        red = static_cast<uint8_t>(66.0 + (32.0 * factor));
+        green = static_cast<uint8_t>(132.0 + (38.0 * factor));
+        blue = static_cast<uint8_t>(202.0 + (26.0 * factor));
+    }
     return (ft_vox_rgba(red, green, blue));
 }
 
-static void ft_vox_clear_frame(ft_render_framebuffer &framebuffer,
-    std::vector<double> &depth_buffer)
+static void ft_vox_draw_skybox_sun(ft_render_framebuffer &framebuffer,
+    const ft_vox_camera &camera)
 {
-    static std::vector<uint32_t> sky_row_colors;
+    const double sun_radius = 38.0;
+    double sun_x;
+    double sun_y;
+    double delta_x;
+    double delta_y;
+    double distance_squared;
+    int32_t start_x;
+    int32_t end_x;
+    int32_t start_y;
+    int32_t end_y;
+    int32_t x;
     int32_t y;
-    size_t row_index;
+    size_t pixel_index;
 
-    if (sky_row_colors.size() != static_cast<size_t>(framebuffer.height))
-        sky_row_colors.resize(static_cast<size_t>(framebuffer.height));
-    y = 0;
-    while (y < framebuffer.height)
+    sun_x = (static_cast<double>(framebuffer.width) * 0.5)
+        + (std::sin(camera.yaw) * static_cast<double>(framebuffer.width)
+            * 0.32);
+    sun_y = (static_cast<double>(framebuffer.height) * 0.22)
+        + (camera.pitch * static_cast<double>(framebuffer.height) * 0.18);
+    start_x = static_cast<int32_t>(std::floor(sun_x - sun_radius));
+    end_x = static_cast<int32_t>(std::ceil(sun_x + sun_radius));
+    start_y = static_cast<int32_t>(std::floor(sun_y - sun_radius));
+    end_y = static_cast<int32_t>(std::ceil(sun_y + sun_radius));
+    if (start_x < 0)
+        start_x = 0;
+    if (start_y < 0)
+        start_y = 0;
+    if (end_x >= framebuffer.width)
+        end_x = framebuffer.width - 1;
+    if (end_y >= framebuffer.height)
+        end_y = framebuffer.height - 1;
+    y = start_y;
+    while (y <= end_y)
     {
-        sky_row_colors[static_cast<size_t>(y)] = ft_vox_sky_color(y,
-            framebuffer.height);
+        x = start_x;
+        while (x <= end_x)
+        {
+            delta_x = static_cast<double>(x) - sun_x;
+            delta_y = static_cast<double>(y) - sun_y;
+            distance_squared = (delta_x * delta_x) + (delta_y * delta_y);
+            pixel_index = static_cast<size_t>((y * framebuffer.width) + x);
+            if (distance_squared < 360.0)
+                framebuffer.pixels[pixel_index] = ft_vox_rgba(254U, 238U,
+                    160U);
+            else if (distance_squared < 1440.0)
+                framebuffer.pixels[pixel_index] = ft_vox_rgba(182U, 208U,
+                    226U);
+            x = x + 1;
+        }
         y = y + 1;
     }
+}
+
+static void ft_vox_clear_frame(ft_render_framebuffer &framebuffer,
+    std::vector<double> &depth_buffer, const ft_vox_camera &camera)
+{
+    int32_t y;
+    uint32_t sky_color;
+    size_t row_index;
+
     y = 0;
     while (y < framebuffer.height)
     {
         row_index = static_cast<size_t>(y * framebuffer.width);
+        sky_color = ft_vox_skybox_row_color(y, framebuffer.height);
         std::fill_n(framebuffer.pixels + row_index, framebuffer.width,
-            sky_row_colors[static_cast<size_t>(y)]);
+            sky_color);
         std::fill_n(depth_buffer.data() + row_index, framebuffer.width, 1.0e30);
         y = y + 1;
     }
+    ft_vox_draw_skybox_sun(framebuffer, camera);
 }
 
 static bool ft_vox_project_vertex(const ft_vox_camera &camera,
@@ -222,30 +315,6 @@ static double ft_vox_edge_step_y(const ft_vox_screen_vertex &a,
     return (a.x - b.x);
 }
 
-static uint32_t ft_vox_sample_block_texture(uint32_t block_id, uint8_t face,
-    double texture_u, double texture_v)
-{
-    uint32_t color;
-    double shade;
-    int32_t checker;
-
-    color = ft_vox_block_color(block_id, face);
-    checker = (static_cast<int32_t>(std::floor(texture_u * 0.125))
-        + static_cast<int32_t>(std::floor(texture_v * 0.125))) & 1;
-    shade = checker == 0 ? 1.0 : 0.88;
-    if (block_id == TERRAIN_GENERATOR_GRASS_BLOCK
-        && face == CHUNK_MESH_FACE_UP)
-        shade = checker == 0 ? 1.08 : 0.90;
-    else if (block_id == TERRAIN_GENERATOR_OAK_LOG_BLOCK)
-        shade = checker == 0 ? 1.12 : 0.72;
-    return (ft_vox_rgba(
-        ft_vox_shade_channel(static_cast<uint8_t>((color >> 16U) & 0xFFU),
-            shade),
-        ft_vox_shade_channel(static_cast<uint8_t>((color >> 8U) & 0xFFU),
-            shade),
-        ft_vox_shade_channel(static_cast<uint8_t>(color & 0xFFU), shade)));
-}
-
 static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
     std::vector<double> &depth_buffer, const ft_vox_screen_vertex vertices[3],
     uint32_t block_id, uint8_t face)
@@ -273,14 +342,26 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
     double step_y1;
     double step_x2;
     double step_y2;
+    double inv_area;
+    double depth_row;
+    double texture_u_row;
+    double texture_v_row;
+    double depth_step_x;
+    double depth_step_y;
+    double texture_u_step_x;
+    double texture_u_step_y;
+    double texture_v_step_x;
+    double texture_v_step_y;
     double depth;
     double texture_u;
     double texture_v;
+    uint32_t texture_colors[2];
     size_t pixel_index;
 
     area = ft_vox_edge(vertices[0], vertices[1], vertices[2].x, vertices[2].y);
     if (std::fabs(area) < 0.000001)
         return ;
+    inv_area = 1.0 / area;
     min_x = std::min(vertices[0].x, std::min(vertices[1].x, vertices[2].x));
     max_x = std::max(vertices[0].x, std::max(vertices[1].x, vertices[2].x));
     min_y = std::min(vertices[0].y, std::min(vertices[1].y, vertices[2].y));
@@ -297,6 +378,8 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
         end_x = framebuffer.width - 1;
     if (end_y >= framebuffer.height)
         end_y = framebuffer.height - 1;
+    if (start_x > end_x || start_y > end_y)
+        return ;
     step_x0 = ft_vox_edge_step_x(vertices[1], vertices[2]);
     step_y0 = ft_vox_edge_step_y(vertices[1], vertices[2]);
     step_x1 = ft_vox_edge_step_x(vertices[2], vertices[0]);
@@ -309,44 +392,72 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
         static_cast<double>(start_x) + 0.5, static_cast<double>(start_y) + 0.5);
     edge2_row = ft_vox_edge(vertices[0], vertices[1],
         static_cast<double>(start_x) + 0.5, static_cast<double>(start_y) + 0.5);
+    depth_step_x = ((vertices[0].depth * step_x0)
+        + (vertices[1].depth * step_x1)
+        + (vertices[2].depth * step_x2)) * inv_area;
+    depth_step_y = ((vertices[0].depth * step_y0)
+        + (vertices[1].depth * step_y1)
+        + (vertices[2].depth * step_y2)) * inv_area;
+    texture_u_step_x = ((vertices[0].texture_u * step_x0)
+        + (vertices[1].texture_u * step_x1)
+        + (vertices[2].texture_u * step_x2)) * inv_area;
+    texture_u_step_y = ((vertices[0].texture_u * step_y0)
+        + (vertices[1].texture_u * step_y1)
+        + (vertices[2].texture_u * step_y2)) * inv_area;
+    texture_v_step_x = ((vertices[0].texture_v * step_x0)
+        + (vertices[1].texture_v * step_x1)
+        + (vertices[2].texture_v * step_x2)) * inv_area;
+    texture_v_step_y = ((vertices[0].texture_v * step_y0)
+        + (vertices[1].texture_v * step_y1)
+        + (vertices[2].texture_v * step_y2)) * inv_area;
+    depth_row = ((vertices[0].depth * edge0_row)
+        + (vertices[1].depth * edge1_row)
+        + (vertices[2].depth * edge2_row)) * inv_area;
+    texture_u_row = ((vertices[0].texture_u * edge0_row)
+        + (vertices[1].texture_u * edge1_row)
+        + (vertices[2].texture_u * edge2_row)) * inv_area;
+    texture_v_row = ((vertices[0].texture_v * edge0_row)
+        + (vertices[1].texture_v * edge1_row)
+        + (vertices[2].texture_v * edge2_row)) * inv_area;
+    ft_vox_texture_atlas_colors(block_id, face, texture_colors);
     y = start_y;
     while (y <= end_y)
     {
         edge0 = edge0_row;
         edge1 = edge1_row;
         edge2 = edge2_row;
+        depth = depth_row;
+        texture_u = texture_u_row;
+        texture_v = texture_v_row;
         x = start_x;
         while (x <= end_x)
         {
             if ((edge0 >= 0.0 && edge1 >= 0.0 && edge2 >= 0.0)
                 || (edge0 <= 0.0 && edge1 <= 0.0 && edge2 <= 0.0))
             {
-                depth = (vertices[0].depth * (edge0 / area))
-                    + (vertices[1].depth * (edge1 / area))
-                    + (vertices[2].depth * (edge2 / area));
                 pixel_index = static_cast<size_t>((y * framebuffer.width) + x);
                 if (depth > 0.0 && depth < depth_buffer[pixel_index])
                 {
-                    texture_u = (vertices[0].texture_u * (edge0 / area))
-                        + (vertices[1].texture_u * (edge1 / area))
-                        + (vertices[2].texture_u * (edge2 / area));
-                    texture_v = (vertices[0].texture_v * (edge0 / area))
-                        + (vertices[1].texture_v * (edge1 / area))
-                        + (vertices[2].texture_v * (edge2 / area));
                     depth_buffer[pixel_index] = depth;
-                    framebuffer.pixels[pixel_index] =
-                        ft_vox_sample_block_texture(block_id, face,
-                            texture_u, texture_v);
+                    framebuffer.pixels[pixel_index] = texture_colors[
+                        (static_cast<int32_t>(texture_u * 0.125)
+                            + static_cast<int32_t>(texture_v * 0.125)) & 1];
                 }
             }
             edge0 += step_x0;
             edge1 += step_x1;
             edge2 += step_x2;
+            depth += depth_step_x;
+            texture_u += texture_u_step_x;
+            texture_v += texture_v_step_x;
             x = x + 1;
         }
         edge0_row += step_y0;
         edge1_row += step_y1;
         edge2_row += step_y2;
+        depth_row += depth_step_y;
+        texture_u_row += texture_u_step_y;
+        texture_v_row += texture_v_step_y;
         y = y + 1;
     }
 }
@@ -419,8 +530,10 @@ static bool ft_vox_chunk_is_near_camera(const ft_vox_camera &camera,
     double view_z;
     double pitched_y;
     double pitched_z;
+    double half_extent_x;
+    double half_extent_y;
+    double half_extent_z;
     double radius;
-    double aspect_ratio;
     double horizontal_limit;
     double vertical_limit;
 
@@ -435,13 +548,18 @@ static bool ft_vox_chunk_is_near_camera(const ft_vox_camera &camera,
         center_z = static_cast<double>(world_chunk.world_z)
             + (static_cast<double>(world_chunk.mesh.occupied_bounds.minimum_z
                     + world_chunk.mesh.occupied_bounds.maximum_z) * 0.5);
-        radius = static_cast<double>(
-            (world_chunk.mesh.occupied_bounds.maximum_x
-                - world_chunk.mesh.occupied_bounds.minimum_x)
-            + (world_chunk.mesh.occupied_bounds.maximum_y
-                - world_chunk.mesh.occupied_bounds.minimum_y)
-            + (world_chunk.mesh.occupied_bounds.maximum_z
-                - world_chunk.mesh.occupied_bounds.minimum_z)) * 0.5;
+        half_extent_x = static_cast<double>(
+            world_chunk.mesh.occupied_bounds.maximum_x
+            - world_chunk.mesh.occupied_bounds.minimum_x) * 0.5;
+        half_extent_y = static_cast<double>(
+            world_chunk.mesh.occupied_bounds.maximum_y
+            - world_chunk.mesh.occupied_bounds.minimum_y) * 0.5;
+        half_extent_z = static_cast<double>(
+            world_chunk.mesh.occupied_bounds.maximum_z
+            - world_chunk.mesh.occupied_bounds.minimum_z) * 0.5;
+        radius = std::sqrt((half_extent_x * half_extent_x)
+            + (half_extent_y * half_extent_y)
+            + (half_extent_z * half_extent_z));
     }
     else
     {
@@ -450,7 +568,12 @@ static bool ft_vox_chunk_is_near_camera(const ft_vox_camera &camera,
         center_y = static_cast<double>(GAME_VOXEL_CHUNK_HEIGHT) * 0.5;
         center_z = static_cast<double>(world_chunk.world_z)
             + (static_cast<double>(GAME_VOXEL_CHUNK_DEPTH) * 0.5);
-        radius = 140.0;
+        half_extent_x = static_cast<double>(GAME_VOXEL_CHUNK_WIDTH) * 0.5;
+        half_extent_y = static_cast<double>(GAME_VOXEL_CHUNK_HEIGHT) * 0.5;
+        half_extent_z = static_cast<double>(GAME_VOXEL_CHUNK_DEPTH) * 0.5;
+        radius = std::sqrt((half_extent_x * half_extent_x)
+            + (half_extent_y * half_extent_y)
+            + (half_extent_z * half_extent_z));
     }
     delta_x = center_x - camera.x;
     delta_y = center_y - camera.y;
@@ -462,20 +585,18 @@ static bool ft_vox_chunk_is_near_camera(const ft_vox_camera &camera,
     pitched_z = (view_y * cache.pitch_sin) + (view_z * cache.pitch_cos);
     if (pitched_z < -radius)
         return (false);
-    if (pitched_z > 170.0 + radius)
+    if (pitched_z > cache.render_distance + radius)
         return (false);
-    aspect_ratio = cache.half_width / cache.half_height;
-    horizontal_limit = (pitched_z * std::tan(40.0 * 0.017453292519943295)
-        * aspect_ratio) + radius;
-    vertical_limit = (pitched_z * std::tan(40.0 * 0.017453292519943295))
+    horizontal_limit = (pitched_z * cache.fov_tangent * cache.aspect_ratio)
         + radius;
+    vertical_limit = (pitched_z * cache.fov_tangent) + radius;
     if (std::fabs(view_x) > horizontal_limit
         || std::fabs(pitched_y) > vertical_limit)
         return (false);
     return (true);
 }
 
-static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
+static bool ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
     std::vector<double> &depth_buffer, const ft_vox_camera &camera,
     const ft_vox_render_cache &render_cache,
     const ft_vox_world_chunk &world_chunk)
@@ -484,9 +605,11 @@ static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
     chunk_mesh_vertex source_vertices[3];
     ft_vox_screen_vertex projected_vertices[3];
 
+    if (world_chunk.initialized == false)
+        return (false);
     if (ft_vox_chunk_is_near_camera(camera, world_chunk, render_cache)
         == false)
-        return ;
+        return (false);
     index = 0U;
     while (index + 2U < world_chunk.mesh.indices.size())
     {
@@ -517,6 +640,7 @@ static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
         }
         index = index + 3U;
     }
+    return (true);
 }
 
 static void ft_vox_draw_crosshair(ft_render_framebuffer &framebuffer)
@@ -564,6 +688,11 @@ static const uint8_t *ft_vox_digit_bitmap(char character)
     static const uint8_t letter_f[5] = { 7U, 4U, 6U, 4U, 4U };
     static const uint8_t letter_p[5] = { 6U, 5U, 6U, 4U, 4U };
     static const uint8_t letter_s[5] = { 7U, 4U, 7U, 1U, 7U };
+    static const uint8_t letter_m[5] = { 5U, 7U, 7U, 5U, 5U };
+    static const uint8_t letter_c[5] = { 7U, 4U, 4U, 4U, 7U };
+    static const uint8_t letter_l[5] = { 4U, 4U, 4U, 4U, 7U };
+    static const uint8_t letter_r[5] = { 6U, 5U, 6U, 5U, 5U };
+    static const uint8_t letter_d[5] = { 6U, 5U, 5U, 5U, 6U };
 
     if (character >= '0' && character <= '9')
         return (digits[character - '0']);
@@ -573,6 +702,16 @@ static const uint8_t *ft_vox_digit_bitmap(char character)
         return (letter_p);
     if (character == 'S')
         return (letter_s);
+    if (character == 'M')
+        return (letter_m);
+    if (character == 'C')
+        return (letter_c);
+    if (character == 'L')
+        return (letter_l);
+    if (character == 'R')
+        return (letter_r);
+    if (character == 'D')
+        return (letter_d);
     return (nullptr);
 }
 
@@ -611,25 +750,41 @@ static void ft_vox_draw_debug_char(ft_render_framebuffer &framebuffer,
     }
 }
 
-static void ft_vox_draw_fps_overlay(ft_render_framebuffer &framebuffer,
-    double display_fps)
+static void ft_vox_draw_debug_text(ft_render_framebuffer &framebuffer,
+    int32_t origin_x, int32_t origin_y, const char *text)
 {
-    char text[16];
     int32_t index;
     int32_t x;
 
-    if (display_fps < 0.0)
+    if (text == nullptr)
         return ;
-    std::snprintf(text, sizeof(text), "FPS%03d",
-        static_cast<int32_t>(display_fps + 0.5));
     index = 0;
-    x = 8;
+    x = origin_x;
     while (text[index] != '\0')
     {
-        ft_vox_draw_debug_char(framebuffer, x, 8, text[index]);
-        x = x + 5;
+        if (text[index] == ' ')
+            x = x + 5;
+        else
+        {
+            ft_vox_draw_debug_char(framebuffer, x, origin_y, text[index]);
+            x = x + 5;
+        }
         index = index + 1;
     }
+}
+
+static void ft_vox_draw_debug_overlay(ft_render_framebuffer &framebuffer,
+    const ft_vox_render_debug *debug)
+{
+    char text[64];
+
+    if (debug == nullptr)
+        return ;
+    std::snprintf(text, sizeof(text), "FPS%03d MS%03d C%03d L%03d R%03d",
+        static_cast<int32_t>(debug->fps + 0.5),
+        static_cast<int32_t>(debug->frame_ms + 0.5),
+        debug->visible_chunks, debug->loaded_chunks, debug->render_distance);
+    ft_vox_draw_debug_text(framebuffer, 8, 8, text);
 }
 
 static void ft_vox_blit_scaled(ft_render_framebuffer &destination,
@@ -660,10 +815,31 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     const ft_vox_camera &camera, const ft_vox_world &world,
     double display_fps)
 {
+    ft_vox_render_debug debug;
+
+    if (display_fps < 0.0)
+    {
+        ft_vox_render_world(framebuffer, camera, world,
+            static_cast<const ft_vox_render_debug *>(nullptr));
+        return ;
+    }
+    debug.fps = display_fps;
+    debug.frame_ms = 0.0;
+    debug.visible_chunks = 0;
+    debug.loaded_chunks = world.loaded_chunk_count;
+    debug.render_distance = world.active_render_distance;
+    ft_vox_render_world(framebuffer, camera, world, &debug);
+}
+
+void ft_vox_render_world(ft_render_framebuffer &framebuffer,
+    const ft_vox_camera &camera, const ft_vox_world &world,
+    const ft_vox_render_debug *debug)
+{
     static std::vector<uint32_t> color_buffer;
     static std::vector<double> depth_buffer;
     ft_render_framebuffer render_target;
     ft_vox_render_cache render_cache;
+    ft_vox_render_debug local_debug;
     size_t required_size;
     int32_t chunk_index;
 
@@ -687,19 +863,33 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     render_cache.yaw_sin = std::sin(camera.yaw);
     render_cache.pitch_cos = std::cos(camera.pitch);
     render_cache.pitch_sin = std::sin(camera.pitch);
+    render_cache.fov_tangent = std::tan(40.0 * 0.017453292519943295);
+    render_cache.aspect_ratio = (static_cast<double>(render_target.width)
+        * 0.5) / (static_cast<double>(render_target.height) * 0.52);
     render_cache.focal_length = (static_cast<double>(render_target.width) * 0.5)
-        / std::tan(40.0 * 0.017453292519943295);
+        / render_cache.fov_tangent;
     render_cache.half_width = static_cast<double>(render_target.width) * 0.5;
     render_cache.half_height = static_cast<double>(render_target.height) * 0.52;
-    ft_vox_clear_frame(render_target, depth_buffer);
+    render_cache.render_distance = static_cast<double>(
+        world.active_render_distance);
+    local_debug.fps = 0.0;
+    local_debug.frame_ms = 0.0;
+    local_debug.visible_chunks = 0;
+    local_debug.loaded_chunks = world.loaded_chunk_count;
+    local_debug.render_distance = world.active_render_distance;
+    if (debug != nullptr)
+        local_debug = *debug;
+    ft_vox_clear_frame(render_target, depth_buffer, camera);
     chunk_index = 0;
     while (chunk_index < world.chunk_count)
     {
-        ft_vox_draw_mesh(render_target, depth_buffer, camera, render_cache,
-            world.chunks[chunk_index]);
+        if (ft_vox_draw_mesh(render_target, depth_buffer, camera, render_cache,
+                world.chunks[chunk_index]) == true)
+            local_debug.visible_chunks = local_debug.visible_chunks + 1;
         chunk_index = chunk_index + 1;
     }
     ft_vox_blit_scaled(framebuffer, render_target);
-    ft_vox_draw_fps_overlay(framebuffer, display_fps);
+    if (debug != nullptr)
+        ft_vox_draw_debug_overlay(framebuffer, &local_debug);
     ft_vox_draw_crosshair(framebuffer);
 }
