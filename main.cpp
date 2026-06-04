@@ -31,7 +31,7 @@ static int ft_vox_enable_debug_crash_traces()
     return (0);
 }
 
-static ft_vox_camera_input ft_vox_read_camera_input()
+static ft_vox_camera_input ft_vox_read_camera_input(bool boost_enabled)
 {
     ft_vox_camera_input input;
     ft_dumb_mouse_delta mouse_delta;
@@ -49,7 +49,8 @@ static ft_vox_camera_input ft_vox_read_camera_input()
     input.turn_right = false;
     input.look_up = false;
     input.look_down = false;
-    input.speed_boost = (ft_dumb_control_is_down(FT_DUMB_CONTROL_BOOST)
+    input.speed_boost = boost_enabled;
+    input.jump_pressed = (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_JUMP)
         == FT_TRUE);
     input.mouse_delta_x = static_cast<double>(mouse_delta.x);
     input.mouse_delta_y = static_cast<double>(mouse_delta.y);
@@ -69,6 +70,7 @@ static ft_vox_camera_input ft_vox_empty_camera_input()
     input.look_up = false;
     input.look_down = false;
     input.speed_boost = false;
+    input.jump_pressed = false;
     input.mouse_delta_x = 0.0;
     input.mouse_delta_y = 0.0;
     return (input);
@@ -168,7 +170,115 @@ static void ft_vox_camera_follow_ground(ft_vox_camera *camera,
             &surface_top) == true)
     {
         camera->y = surface_top + eye_height;
+        camera->vertical_velocity = 0.0;
+        camera->on_ground = true;
     }
+}
+
+static bool ft_vox_player_intersects_world(const ft_vox_world &world,
+    double x, double y, double z)
+{
+    const double player_radius = 0.28;
+    const double eye_height = 1.62;
+    const double player_height = 1.80;
+    int32_t min_x;
+    int32_t max_x;
+    int32_t min_y;
+    int32_t max_y;
+    int32_t min_z;
+    int32_t max_z;
+    int32_t block_x;
+    int32_t block_y;
+    int32_t block_z;
+    double feet_y;
+
+    feet_y = y - eye_height;
+    min_x = static_cast<int32_t>(std::floor(x - player_radius));
+    max_x = static_cast<int32_t>(std::floor(x + player_radius));
+    min_y = static_cast<int32_t>(std::floor(feet_y + 0.08));
+    max_y = static_cast<int32_t>(std::floor(feet_y + player_height - 0.08));
+    min_z = static_cast<int32_t>(std::floor(z - player_radius));
+    max_z = static_cast<int32_t>(std::floor(z + player_radius));
+    block_y = min_y;
+    while (block_y <= max_y)
+    {
+        block_z = min_z;
+        while (block_z <= max_z)
+        {
+            block_x = min_x;
+            while (block_x <= max_x)
+            {
+                if (ft_vox_world_solid_block_at(&world, block_x, block_y,
+                        block_z) == true)
+                    return (true);
+                block_x = block_x + 1;
+            }
+            block_z = block_z + 1;
+        }
+        block_y = block_y + 1;
+    }
+    return (false);
+}
+
+static void ft_vox_update_player_horizontal_motion(ft_vox_camera *camera,
+    const ft_vox_camera_input &input, const ft_vox_world &world,
+    double delta_seconds)
+{
+    (void)world;
+    if (camera == nullptr || delta_seconds <= 0.0)
+        return ;
+    ft_vox_camera_update(camera, input, delta_seconds);
+}
+
+static void ft_vox_update_player_vertical_motion(ft_vox_camera *camera,
+    const ft_vox_camera_input &input, const ft_vox_world &world,
+    double delta_seconds)
+{
+    const double eye_height = 1.62;
+    const double jump_speed = 7.2;
+    const double gravity = 22.0;
+    const double max_fall_speed = -42.0;
+    double new_y;
+    double surface_top;
+    double ground_eye_y;
+    int32_t block_x;
+    int32_t block_z;
+
+    if (camera == nullptr || delta_seconds <= 0.0)
+        return ;
+    if (camera->on_ground == true && input.jump_pressed == true)
+    {
+        camera->vertical_velocity = jump_speed;
+        camera->on_ground = false;
+    }
+    camera->vertical_velocity = camera->vertical_velocity
+        - (gravity * delta_seconds);
+    if (camera->vertical_velocity < max_fall_speed)
+        camera->vertical_velocity = max_fall_speed;
+    new_y = camera->y + (camera->vertical_velocity * delta_seconds);
+    if (camera->vertical_velocity > 0.0
+        && ft_vox_player_intersects_world(world, camera->x, new_y,
+            camera->z) == true)
+    {
+        camera->vertical_velocity = 0.0;
+        return ;
+    }
+    block_x = static_cast<int32_t>(std::floor(camera->x));
+    block_z = static_cast<int32_t>(std::floor(camera->z));
+    if (ft_vox_world_surface_top_at(&world, block_x, block_z,
+            &surface_top) == true)
+    {
+        ground_eye_y = surface_top + eye_height;
+        if (new_y <= ground_eye_y && camera->vertical_velocity <= 0.0)
+        {
+            camera->y = ground_eye_y;
+            camera->vertical_velocity = 0.0;
+            camera->on_ground = true;
+            return ;
+        }
+    }
+    camera->y = new_y;
+    camera->on_ground = false;
 }
 
 int main(int argc, char **argv)
@@ -188,11 +298,15 @@ int main(int argc, char **argv)
     double                 perf_fps;
     double                 perf_frame_ms;
     double                 perf_seconds_limit;
+    double                 fps_accumulator;
+    double                 display_fps;
     uint64_t               perf_frame_hash;
     uint64_t               frame_count;
+    uint64_t               fps_frame_count;
     int32_t                error_code;
     bool                   perf_test_mode;
     bool                   perf_headless_mode;
+    bool                   boost_enabled;
     std::vector<uint32_t>  headless_pixels;
 
     if (ft_vox_enable_debug_crash_traces() != 0)
@@ -258,9 +372,15 @@ int main(int argc, char **argv)
     previous_time = std::chrono::steady_clock::now();
     perf_start_time = previous_time;
     frame_count = 0;
+    fps_frame_count = 0;
+    fps_accumulator = 0.0;
+    display_fps = 0.0;
+    boost_enabled = false;
     perf_frame_hash = UINT64_C(0);
     while (perf_headless_mode == true || window.should_close() == FT_FALSE)
     {
+        ft_vox_camera_input camera_input;
+
         current_time = std::chrono::steady_clock::now();
         elapsed_time = current_time - previous_time;
         previous_time = current_time;
@@ -278,18 +398,34 @@ int main(int argc, char **argv)
             if (perf_test_mode == false
                 && ft_dumb_control_is_down(FT_DUMB_CONTROL_BACK) == FT_TRUE)
                 break ;
-            ft_vox_camera_update(&camera, ft_vox_read_camera_input(),
+            if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_BOOST) == FT_TRUE)
+                boost_enabled = !boost_enabled;
+            camera_input = ft_vox_read_camera_input(boost_enabled);
+            ft_vox_update_player_horizontal_motion(&camera, camera_input,
+                world, delta_seconds);
+            ft_vox_update_player_vertical_motion(&camera, camera_input, world,
                 delta_seconds);
-            ft_vox_camera_follow_ground(&camera, world);
         }
         else
         {
-            ft_vox_camera_update(&camera, ft_vox_empty_camera_input(),
+            camera_input = ft_vox_empty_camera_input();
+            ft_vox_update_player_horizontal_motion(&camera, camera_input,
+                world, delta_seconds);
+            ft_vox_update_player_vertical_motion(&camera, camera_input, world,
                 delta_seconds);
-            ft_vox_camera_follow_ground(&camera, world);
             error_code = FT_ERR_SUCCESS;
         }
-        ft_vox_render_world(headless_framebuffer, camera, world);
+        fps_accumulator = fps_accumulator + delta_seconds;
+        fps_frame_count = fps_frame_count + 1U;
+        if (fps_accumulator >= 0.25)
+        {
+            display_fps = static_cast<double>(fps_frame_count)
+                / fps_accumulator;
+            fps_accumulator = 0.0;
+            fps_frame_count = 0;
+        }
+        ft_vox_render_world(headless_framebuffer, camera, world,
+            perf_headless_mode == true ? -1.0 : display_fps);
         if (perf_headless_mode == false)
         {
             error_code = window.present();

@@ -3,6 +3,7 @@
 #include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdint>
 #include <vector>
 
@@ -11,6 +12,8 @@ struct ft_vox_screen_vertex
     double x;
     double y;
     double depth;
+    double texture_u;
+    double texture_v;
 };
 
 struct ft_vox_render_cache
@@ -196,6 +199,8 @@ static bool ft_vox_project_vertex(const ft_vox_camera &camera,
     screen_vertex->y = render_cache.half_height
         - ((pitched_y / pitched_z) * focal_length);
     screen_vertex->depth = pitched_z;
+    screen_vertex->texture_u = static_cast<double>(vertex.texture_u);
+    screen_vertex->texture_v = static_cast<double>(vertex.texture_v);
     return (true);
 }
 
@@ -217,9 +222,33 @@ static double ft_vox_edge_step_y(const ft_vox_screen_vertex &a,
     return (a.x - b.x);
 }
 
+static uint32_t ft_vox_sample_block_texture(uint32_t block_id, uint8_t face,
+    double texture_u, double texture_v)
+{
+    uint32_t color;
+    double shade;
+    int32_t checker;
+
+    color = ft_vox_block_color(block_id, face);
+    checker = (static_cast<int32_t>(std::floor(texture_u * 0.125))
+        + static_cast<int32_t>(std::floor(texture_v * 0.125))) & 1;
+    shade = checker == 0 ? 1.0 : 0.88;
+    if (block_id == TERRAIN_GENERATOR_GRASS_BLOCK
+        && face == CHUNK_MESH_FACE_UP)
+        shade = checker == 0 ? 1.08 : 0.90;
+    else if (block_id == TERRAIN_GENERATOR_OAK_LOG_BLOCK)
+        shade = checker == 0 ? 1.12 : 0.72;
+    return (ft_vox_rgba(
+        ft_vox_shade_channel(static_cast<uint8_t>((color >> 16U) & 0xFFU),
+            shade),
+        ft_vox_shade_channel(static_cast<uint8_t>((color >> 8U) & 0xFFU),
+            shade),
+        ft_vox_shade_channel(static_cast<uint8_t>(color & 0xFFU), shade)));
+}
+
 static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
     std::vector<double> &depth_buffer, const ft_vox_screen_vertex vertices[3],
-    uint32_t color)
+    uint32_t block_id, uint8_t face)
 {
     double min_x;
     double max_x;
@@ -245,6 +274,8 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
     double step_x2;
     double step_y2;
     double depth;
+    double texture_u;
+    double texture_v;
     size_t pixel_index;
 
     area = ft_vox_edge(vertices[0], vertices[1], vertices[2].x, vertices[2].y);
@@ -296,8 +327,16 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
                 pixel_index = static_cast<size_t>((y * framebuffer.width) + x);
                 if (depth > 0.0 && depth < depth_buffer[pixel_index])
                 {
+                    texture_u = (vertices[0].texture_u * (edge0 / area))
+                        + (vertices[1].texture_u * (edge1 / area))
+                        + (vertices[2].texture_u * (edge2 / area));
+                    texture_v = (vertices[0].texture_v * (edge0 / area))
+                        + (vertices[1].texture_v * (edge1 / area))
+                        + (vertices[2].texture_v * (edge2 / area));
                     depth_buffer[pixel_index] = depth;
-                    framebuffer.pixels[pixel_index] = color;
+                    framebuffer.pixels[pixel_index] =
+                        ft_vox_sample_block_texture(block_id, face,
+                            texture_u, texture_v);
                 }
             }
             edge0 += step_x0;
@@ -370,27 +409,68 @@ static bool ft_vox_chunk_is_near_camera(const ft_vox_camera &camera,
     const ft_vox_world_chunk &world_chunk, const ft_vox_render_cache &cache)
 {
     double center_x;
+    double center_y;
     double center_z;
     double delta_x;
+    double delta_y;
     double delta_z;
-    double distance_squared;
-    double forward_x;
-    double forward_z;
-    double forward_dot;
+    double view_x;
+    double view_y;
+    double view_z;
+    double pitched_y;
+    double pitched_z;
+    double radius;
+    double aspect_ratio;
+    double horizontal_limit;
+    double vertical_limit;
 
-    center_x = static_cast<double>(world_chunk.world_x)
-        + (static_cast<double>(GAME_VOXEL_CHUNK_WIDTH) * 0.5);
-    center_z = static_cast<double>(world_chunk.world_z)
-        + (static_cast<double>(GAME_VOXEL_CHUNK_DEPTH) * 0.5);
+    if (world_chunk.mesh.has_occupied_bounds == FT_TRUE)
+    {
+        center_x = static_cast<double>(world_chunk.world_x)
+            + (static_cast<double>(world_chunk.mesh.occupied_bounds.minimum_x
+                    + world_chunk.mesh.occupied_bounds.maximum_x) * 0.5);
+        center_y = static_cast<double>(
+            world_chunk.mesh.occupied_bounds.minimum_y
+            + world_chunk.mesh.occupied_bounds.maximum_y) * 0.5;
+        center_z = static_cast<double>(world_chunk.world_z)
+            + (static_cast<double>(world_chunk.mesh.occupied_bounds.minimum_z
+                    + world_chunk.mesh.occupied_bounds.maximum_z) * 0.5);
+        radius = static_cast<double>(
+            (world_chunk.mesh.occupied_bounds.maximum_x
+                - world_chunk.mesh.occupied_bounds.minimum_x)
+            + (world_chunk.mesh.occupied_bounds.maximum_y
+                - world_chunk.mesh.occupied_bounds.minimum_y)
+            + (world_chunk.mesh.occupied_bounds.maximum_z
+                - world_chunk.mesh.occupied_bounds.minimum_z)) * 0.5;
+    }
+    else
+    {
+        center_x = static_cast<double>(world_chunk.world_x)
+            + (static_cast<double>(GAME_VOXEL_CHUNK_WIDTH) * 0.5);
+        center_y = static_cast<double>(GAME_VOXEL_CHUNK_HEIGHT) * 0.5;
+        center_z = static_cast<double>(world_chunk.world_z)
+            + (static_cast<double>(GAME_VOXEL_CHUNK_DEPTH) * 0.5);
+        radius = 140.0;
+    }
     delta_x = center_x - camera.x;
+    delta_y = center_y - camera.y;
     delta_z = center_z - camera.z;
-    distance_squared = (delta_x * delta_x) + (delta_z * delta_z);
-    if (distance_squared > 95.0 * 95.0)
+    view_x = (delta_x * cache.yaw_cos) - (delta_z * cache.yaw_sin);
+    view_z = (delta_x * cache.yaw_sin) + (delta_z * cache.yaw_cos);
+    view_y = delta_y;
+    pitched_y = (view_y * cache.pitch_cos) - (view_z * cache.pitch_sin);
+    pitched_z = (view_y * cache.pitch_sin) + (view_z * cache.pitch_cos);
+    if (pitched_z < -radius)
         return (false);
-    forward_x = cache.yaw_sin;
-    forward_z = cache.yaw_cos;
-    forward_dot = (delta_x * forward_x) + (delta_z * forward_z);
-    if (forward_dot < -24.0)
+    if (pitched_z > 170.0 + radius)
+        return (false);
+    aspect_ratio = cache.half_width / cache.half_height;
+    horizontal_limit = (pitched_z * std::tan(40.0 * 0.017453292519943295)
+        * aspect_ratio) + radius;
+    vertical_limit = (pitched_z * std::tan(40.0 * 0.017453292519943295))
+        + radius;
+    if (std::fabs(view_x) > horizontal_limit
+        || std::fabs(pitched_y) > vertical_limit)
         return (false);
     return (true);
 }
@@ -403,7 +483,6 @@ static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
     size_t index;
     chunk_mesh_vertex source_vertices[3];
     ft_vox_screen_vertex projected_vertices[3];
-    uint32_t color;
 
     if (ft_vox_chunk_is_near_camera(camera, world_chunk, render_cache)
         == false)
@@ -433,10 +512,8 @@ static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
                 world_chunk.world_x, world_chunk.world_z, render_cache,
                 &projected_vertices[2]) == true)
         {
-            color = ft_vox_block_color(source_vertices[0].block_id,
-                source_vertices[0].face);
             ft_vox_draw_triangle(framebuffer, depth_buffer, projected_vertices,
-                color);
+                source_vertices[0].block_id, source_vertices[0].face);
         }
         index = index + 3U;
     }
@@ -470,6 +547,91 @@ static void ft_vox_draw_crosshair(ft_render_framebuffer &framebuffer)
     }
 }
 
+static const uint8_t *ft_vox_digit_bitmap(char character)
+{
+    static const uint8_t digits[10][5] = {
+        { 7U, 5U, 5U, 5U, 7U },
+        { 2U, 6U, 2U, 2U, 7U },
+        { 7U, 1U, 7U, 4U, 7U },
+        { 7U, 1U, 7U, 1U, 7U },
+        { 5U, 5U, 7U, 1U, 1U },
+        { 7U, 4U, 7U, 1U, 7U },
+        { 7U, 4U, 7U, 5U, 7U },
+        { 7U, 1U, 1U, 1U, 1U },
+        { 7U, 5U, 7U, 5U, 7U },
+        { 7U, 5U, 7U, 1U, 7U }
+    };
+    static const uint8_t letter_f[5] = { 7U, 4U, 6U, 4U, 4U };
+    static const uint8_t letter_p[5] = { 6U, 5U, 6U, 4U, 4U };
+    static const uint8_t letter_s[5] = { 7U, 4U, 7U, 1U, 7U };
+
+    if (character >= '0' && character <= '9')
+        return (digits[character - '0']);
+    if (character == 'F')
+        return (letter_f);
+    if (character == 'P')
+        return (letter_p);
+    if (character == 'S')
+        return (letter_s);
+    return (nullptr);
+}
+
+static void ft_vox_draw_debug_char(ft_render_framebuffer &framebuffer,
+    int32_t origin_x, int32_t origin_y, char character)
+{
+    const uint8_t *bitmap;
+    int32_t row;
+    int32_t column;
+    int32_t pixel_x;
+    int32_t pixel_y;
+
+    bitmap = ft_vox_digit_bitmap(character);
+    if (bitmap == nullptr)
+        return ;
+    row = 0;
+    while (row < 5)
+    {
+        column = 0;
+        while (column < 3)
+        {
+            if ((bitmap[row] & (1U << (2 - column))) != 0)
+            {
+                pixel_x = origin_x + column;
+                pixel_y = origin_y + row;
+                if (pixel_x >= 0 && pixel_x < framebuffer.width
+                    && pixel_y >= 0 && pixel_y < framebuffer.height)
+                {
+                    framebuffer.pixels[(pixel_y * framebuffer.width)
+                        + pixel_x] = ft_vox_rgba(245U, 245U, 235U);
+                }
+            }
+            column = column + 1;
+        }
+        row = row + 1;
+    }
+}
+
+static void ft_vox_draw_fps_overlay(ft_render_framebuffer &framebuffer,
+    double display_fps)
+{
+    char text[16];
+    int32_t index;
+    int32_t x;
+
+    if (display_fps < 0.0)
+        return ;
+    std::snprintf(text, sizeof(text), "FPS%03d",
+        static_cast<int32_t>(display_fps + 0.5));
+    index = 0;
+    x = 8;
+    while (text[index] != '\0')
+    {
+        ft_vox_draw_debug_char(framebuffer, x, 8, text[index]);
+        x = x + 5;
+        index = index + 1;
+    }
+}
+
 static void ft_vox_blit_scaled(ft_render_framebuffer &destination,
     const ft_render_framebuffer &source)
 {
@@ -495,7 +657,8 @@ static void ft_vox_blit_scaled(ft_render_framebuffer &destination,
 }
 
 void ft_vox_render_world(ft_render_framebuffer &framebuffer,
-    const ft_vox_camera &camera, const ft_vox_world &world)
+    const ft_vox_camera &camera, const ft_vox_world &world,
+    double display_fps)
 {
     static std::vector<uint32_t> color_buffer;
     static std::vector<double> depth_buffer;
@@ -537,5 +700,6 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
         chunk_index = chunk_index + 1;
     }
     ft_vox_blit_scaled(framebuffer, render_target);
+    ft_vox_draw_fps_overlay(framebuffer, display_fps);
     ft_vox_draw_crosshair(framebuffer);
 }

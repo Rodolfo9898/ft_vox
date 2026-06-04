@@ -20,6 +20,8 @@ void ft_vox_camera_init(ft_vox_camera *camera)
     camera->yaw = 0.0;
     camera->pitch = 0.0;
     camera->speed = 4.3;
+    camera->vertical_velocity = 0.0;
+    camera->on_ground = false;
     return ;
 }
 

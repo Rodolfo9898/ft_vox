@@ -39,6 +39,27 @@ static const ft_vox_world_chunk *ft_vox_find_chunk(const ft_vox_world *world,
     return (nullptr);
 }
 
+static ft_vox_world_chunk *ft_vox_find_chunk_mutable(ft_vox_world *world,
+    int32_t chunk_x, int32_t chunk_z)
+{
+    int32_t index;
+
+    if (world == nullptr)
+        return (nullptr);
+    index = 0;
+    while (index < world->chunk_count)
+    {
+        if (world->chunks[index].initialized == true
+            && world->chunks[index].chunk_x == chunk_x
+            && world->chunks[index].chunk_z == chunk_z)
+        {
+            return (&world->chunks[index]);
+        }
+        index = index + 1;
+    }
+    return (nullptr);
+}
+
 static int32_t ft_vox_initialize_chunk(ft_vox_world_chunk *world_chunk,
     int32_t chunk_x, int32_t chunk_z, const char *seed)
 {
@@ -162,4 +183,62 @@ bool ft_vox_world_surface_top_at(const ft_vox_world *world,
         local_y = local_y - 1;
     }
     return (false);
+}
+
+bool ft_vox_world_solid_block_at(const ft_vox_world *world,
+    int32_t world_x, int32_t world_y, int32_t world_z)
+{
+    const ft_vox_world_chunk *world_chunk;
+    int32_t chunk_x;
+    int32_t chunk_z;
+    int32_t local_x;
+    int32_t local_z;
+    uint32_t block_id;
+
+    if (world == nullptr || world_y < 0
+        || world_y >= GAME_VOXEL_CHUNK_HEIGHT)
+        return (false);
+    chunk_x = ft_vox_floor_divide(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    chunk_z = ft_vox_floor_divide(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    world_chunk = ft_vox_find_chunk(world, chunk_x, chunk_z);
+    if (world_chunk == nullptr)
+        return (false);
+    local_x = ft_vox_positive_modulo(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    local_z = ft_vox_positive_modulo(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    if (world_chunk->chunk.read_block(local_x, world_y, local_z,
+            &block_id) != FT_ERR_SUCCESS)
+        return (false);
+    return (block_id != GAME_VOXEL_AIR_BLOCK
+        && terrain_block_is_solid(block_id) == FT_TRUE);
+}
+
+int32_t ft_vox_world_delete_block_at(ft_vox_world *world,
+    int32_t world_x, int32_t world_y, int32_t world_z)
+{
+    ft_vox_world_chunk *world_chunk;
+    int32_t chunk_x;
+    int32_t chunk_z;
+    int32_t local_x;
+    int32_t local_z;
+    int32_t error_code;
+
+    if (world == nullptr || world_y < 0
+        || world_y >= GAME_VOXEL_CHUNK_HEIGHT)
+        return (FT_ERR_INVALID_ARGUMENT);
+    chunk_x = ft_vox_floor_divide(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    chunk_z = ft_vox_floor_divide(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    world_chunk = ft_vox_find_chunk_mutable(world, chunk_x, chunk_z);
+    if (world_chunk == nullptr)
+        return (FT_ERR_INVALID_ARGUMENT);
+    local_x = ft_vox_positive_modulo(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    local_z = ft_vox_positive_modulo(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    error_code = world_chunk->chunk.write_block(local_x, world_y, local_z,
+        GAME_VOXEL_AIR_BLOCK);
+    if (error_code != FT_ERR_SUCCESS)
+        return (error_code);
+    error_code = chunk_mesh_clear(world_chunk->mesh);
+    if (error_code == FT_ERR_SUCCESS)
+        error_code = chunk_mesh_generate_from_chunk(world_chunk->mesh,
+            world_chunk->chunk);
+    return (error_code);
 }

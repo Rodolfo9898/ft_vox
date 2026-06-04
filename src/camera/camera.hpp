@@ -12,6 +12,7 @@ struct ft_vox_camera_input
     bool look_up;
     bool look_down;
     bool speed_boost;
+    bool jump_pressed;
     double mouse_delta_x;
     double mouse_delta_y;
 };
@@ -24,6 +25,8 @@ struct ft_vox_camera
     double yaw;
     double pitch;
     double speed;
+    double vertical_velocity;
+    bool on_ground;
 };
 
 void ft_vox_camera_init(ft_vox_camera *camera);

@@ -6,6 +6,7 @@
 #include "../world/voxel_world.hpp"
 
 void ft_vox_render_world(ft_render_framebuffer &framebuffer,
-    const ft_vox_camera &camera, const ft_vox_world &world);
+    const ft_vox_camera &camera, const ft_vox_world &world,
+    double display_fps = -1.0);
 
 #endif
