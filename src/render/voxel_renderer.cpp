@@ -13,6 +13,17 @@ struct ft_vox_screen_vertex
     double depth;
 };
 
+struct ft_vox_render_cache
+{
+    double yaw_cos;
+    double yaw_sin;
+    double pitch_cos;
+    double pitch_sin;
+    double focal_length;
+    double half_width;
+    double half_height;
+};
+
 static uint32_t ft_vox_rgba(uint8_t red, uint8_t green, uint8_t blue)
 {
     return ((static_cast<uint32_t>(red) << 16U)
@@ -114,28 +125,33 @@ static uint32_t ft_vox_sky_color(int32_t y, int32_t height)
 static void ft_vox_clear_frame(ft_render_framebuffer &framebuffer,
     std::vector<double> &depth_buffer)
 {
-    int32_t x;
+    static std::vector<uint32_t> sky_row_colors;
     int32_t y;
+    size_t row_index;
 
+    if (sky_row_colors.size() != static_cast<size_t>(framebuffer.height))
+        sky_row_colors.resize(static_cast<size_t>(framebuffer.height));
     y = 0;
     while (y < framebuffer.height)
     {
-        x = 0;
-        while (x < framebuffer.width)
-        {
-            framebuffer.pixels[(y * framebuffer.width) + x]
-                = ft_vox_sky_color(y, framebuffer.height);
-            depth_buffer[static_cast<size_t>((y * framebuffer.width) + x)]
-                = 1.0e30;
-            x = x + 1;
-        }
+        sky_row_colors[static_cast<size_t>(y)] = ft_vox_sky_color(y,
+            framebuffer.height);
+        y = y + 1;
+    }
+    y = 0;
+    while (y < framebuffer.height)
+    {
+        row_index = static_cast<size_t>(y * framebuffer.width);
+        std::fill_n(framebuffer.pixels + row_index, framebuffer.width,
+            sky_row_colors[static_cast<size_t>(y)]);
+        std::fill_n(depth_buffer.data() + row_index, framebuffer.width, 1.0e30);
         y = y + 1;
     }
 }
 
 static bool ft_vox_project_vertex(const ft_vox_camera &camera,
     const chunk_mesh_vertex &vertex, int32_t origin_x, int32_t origin_z,
-    int32_t framebuffer_width, int32_t framebuffer_height,
+    const ft_vox_render_cache &render_cache,
     ft_vox_screen_vertex *screen_vertex)
 {
     double world_x;
@@ -163,22 +179,21 @@ static bool ft_vox_project_vertex(const ft_vox_camera &camera,
     translated_x = world_x - camera.x;
     translated_y = world_y - camera.y;
     translated_z = world_z - camera.z;
-    yaw_cos = std::cos(camera.yaw);
-    yaw_sin = std::sin(camera.yaw);
+    yaw_cos = render_cache.yaw_cos;
+    yaw_sin = render_cache.yaw_sin;
     view_x = (translated_x * yaw_cos) - (translated_z * yaw_sin);
     view_z = (translated_x * yaw_sin) + (translated_z * yaw_cos);
     view_y = translated_y;
-    pitch_cos = std::cos(camera.pitch);
-    pitch_sin = std::sin(camera.pitch);
+    pitch_cos = render_cache.pitch_cos;
+    pitch_sin = render_cache.pitch_sin;
     pitched_y = (view_y * pitch_cos) - (view_z * pitch_sin);
     pitched_z = (view_y * pitch_sin) + (view_z * pitch_cos);
     if (pitched_z <= 0.1)
         return (false);
-    focal_length = (static_cast<double>(framebuffer_width) * 0.5)
-        / std::tan(40.0 * 0.017453292519943295);
-    screen_vertex->x = (static_cast<double>(framebuffer_width) * 0.5)
+    focal_length = render_cache.focal_length;
+    screen_vertex->x = render_cache.half_width
         + ((view_x / pitched_z) * focal_length);
-    screen_vertex->y = (static_cast<double>(framebuffer_height) * 0.52)
+    screen_vertex->y = render_cache.half_height
         - ((pitched_y / pitched_z) * focal_length);
     screen_vertex->depth = pitched_z;
     return (true);
@@ -188,6 +203,18 @@ static double ft_vox_edge(const ft_vox_screen_vertex &a,
     const ft_vox_screen_vertex &b, double x, double y)
 {
     return (((x - a.x) * (b.y - a.y)) - ((y - a.y) * (b.x - a.x)));
+}
+
+static double ft_vox_edge_step_x(const ft_vox_screen_vertex &a,
+    const ft_vox_screen_vertex &b) noexcept
+{
+    return (b.y - a.y);
+}
+
+static double ft_vox_edge_step_y(const ft_vox_screen_vertex &a,
+    const ft_vox_screen_vertex &b) noexcept
+{
+    return (a.x - b.x);
 }
 
 static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
@@ -205,9 +232,18 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
     int32_t end_y;
     int32_t x;
     int32_t y;
-    double weight0;
-    double weight1;
-    double weight2;
+    double edge0_row;
+    double edge1_row;
+    double edge2_row;
+    double edge0;
+    double edge1;
+    double edge2;
+    double step_x0;
+    double step_y0;
+    double step_x1;
+    double step_y1;
+    double step_x2;
+    double step_y2;
     double depth;
     size_t pixel_index;
 
@@ -230,27 +266,33 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
         end_x = framebuffer.width - 1;
     if (end_y >= framebuffer.height)
         end_y = framebuffer.height - 1;
+    step_x0 = ft_vox_edge_step_x(vertices[1], vertices[2]);
+    step_y0 = ft_vox_edge_step_y(vertices[1], vertices[2]);
+    step_x1 = ft_vox_edge_step_x(vertices[2], vertices[0]);
+    step_y1 = ft_vox_edge_step_y(vertices[2], vertices[0]);
+    step_x2 = ft_vox_edge_step_x(vertices[0], vertices[1]);
+    step_y2 = ft_vox_edge_step_y(vertices[0], vertices[1]);
+    edge0_row = ft_vox_edge(vertices[1], vertices[2],
+        static_cast<double>(start_x) + 0.5, static_cast<double>(start_y) + 0.5);
+    edge1_row = ft_vox_edge(vertices[2], vertices[0],
+        static_cast<double>(start_x) + 0.5, static_cast<double>(start_y) + 0.5);
+    edge2_row = ft_vox_edge(vertices[0], vertices[1],
+        static_cast<double>(start_x) + 0.5, static_cast<double>(start_y) + 0.5);
     y = start_y;
     while (y <= end_y)
     {
+        edge0 = edge0_row;
+        edge1 = edge1_row;
+        edge2 = edge2_row;
         x = start_x;
         while (x <= end_x)
         {
-            weight0 = ft_vox_edge(vertices[1], vertices[2],
-                static_cast<double>(x) + 0.5, static_cast<double>(y) + 0.5);
-            weight1 = ft_vox_edge(vertices[2], vertices[0],
-                static_cast<double>(x) + 0.5, static_cast<double>(y) + 0.5);
-            weight2 = ft_vox_edge(vertices[0], vertices[1],
-                static_cast<double>(x) + 0.5, static_cast<double>(y) + 0.5);
-            if ((weight0 >= 0.0 && weight1 >= 0.0 && weight2 >= 0.0)
-                || (weight0 <= 0.0 && weight1 <= 0.0 && weight2 <= 0.0))
+            if ((edge0 >= 0.0 && edge1 >= 0.0 && edge2 >= 0.0)
+                || (edge0 <= 0.0 && edge1 <= 0.0 && edge2 <= 0.0))
             {
-                weight0 = weight0 / area;
-                weight1 = weight1 / area;
-                weight2 = weight2 / area;
-                depth = (vertices[0].depth * weight0)
-                    + (vertices[1].depth * weight1)
-                    + (vertices[2].depth * weight2);
+                depth = (vertices[0].depth * (edge0 / area))
+                    + (vertices[1].depth * (edge1 / area))
+                    + (vertices[2].depth * (edge2 / area));
                 pixel_index = static_cast<size_t>((y * framebuffer.width) + x);
                 if (depth > 0.0 && depth < depth_buffer[pixel_index])
                 {
@@ -258,14 +300,74 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
                     framebuffer.pixels[pixel_index] = color;
                 }
             }
+            edge0 += step_x0;
+            edge1 += step_x1;
+            edge2 += step_x2;
             x = x + 1;
         }
+        edge0_row += step_y0;
+        edge1_row += step_y1;
+        edge2_row += step_y2;
         y = y + 1;
     }
 }
 
+static ft_bool ft_vox_triangle_faces_camera(
+    const ft_vox_camera &camera, const ft_vox_world_chunk &world_chunk,
+    const chunk_mesh_vertex triangle_vertices[3]) noexcept
+{
+    double normal_x;
+    double normal_y;
+    double normal_z;
+    double center_x;
+    double center_y;
+    double center_z;
+    double to_camera_x;
+    double to_camera_y;
+    double to_camera_z;
+    uint8_t face;
+
+    face = triangle_vertices[0].face;
+    normal_x = 0.0;
+    normal_y = 0.0;
+    normal_z = 0.0;
+    if (face == CHUNK_MESH_FACE_WEST)
+        normal_x = -1.0;
+    else if (face == CHUNK_MESH_FACE_EAST)
+        normal_x = 1.0;
+    else if (face == CHUNK_MESH_FACE_DOWN)
+        normal_y = -1.0;
+    else if (face == CHUNK_MESH_FACE_UP)
+        normal_y = 1.0;
+    else if (face == CHUNK_MESH_FACE_NORTH)
+        normal_z = -1.0;
+    else
+        normal_z = 1.0;
+    center_x = static_cast<double>(world_chunk.world_x)
+        + ((static_cast<double>(triangle_vertices[0].coordinate_x)
+                + static_cast<double>(triangle_vertices[1].coordinate_x)
+                + static_cast<double>(triangle_vertices[2].coordinate_x))
+            / 3.0);
+    center_y = (static_cast<double>(triangle_vertices[0].coordinate_y)
+            + static_cast<double>(triangle_vertices[1].coordinate_y)
+            + static_cast<double>(triangle_vertices[2].coordinate_y))
+        / 3.0;
+    center_z = static_cast<double>(world_chunk.world_z)
+        + ((static_cast<double>(triangle_vertices[0].coordinate_z)
+                + static_cast<double>(triangle_vertices[1].coordinate_z)
+                + static_cast<double>(triangle_vertices[2].coordinate_z))
+            / 3.0);
+    to_camera_x = camera.x - center_x;
+    to_camera_y = camera.y - center_y;
+    to_camera_z = camera.z - center_z;
+    if ((normal_x * to_camera_x) + (normal_y * to_camera_y)
+        + (normal_z * to_camera_z) <= 0.0)
+        return (FT_FALSE);
+    return (FT_TRUE);
+}
+
 static bool ft_vox_chunk_is_near_camera(const ft_vox_camera &camera,
-    const ft_vox_world_chunk &world_chunk)
+    const ft_vox_world_chunk &world_chunk, const ft_vox_render_cache &cache)
 {
     double center_x;
     double center_z;
@@ -285,8 +387,8 @@ static bool ft_vox_chunk_is_near_camera(const ft_vox_camera &camera,
     distance_squared = (delta_x * delta_x) + (delta_z * delta_z);
     if (distance_squared > 95.0 * 95.0)
         return (false);
-    forward_x = std::sin(camera.yaw);
-    forward_z = std::cos(camera.yaw);
+    forward_x = cache.yaw_sin;
+    forward_z = cache.yaw_cos;
     forward_dot = (delta_x * forward_x) + (delta_z * forward_z);
     if (forward_dot < -24.0)
         return (false);
@@ -295,6 +397,7 @@ static bool ft_vox_chunk_is_near_camera(const ft_vox_camera &camera,
 
 static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
     std::vector<double> &depth_buffer, const ft_vox_camera &camera,
+    const ft_vox_render_cache &render_cache,
     const ft_vox_world_chunk &world_chunk)
 {
     size_t index;
@@ -302,7 +405,8 @@ static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
     ft_vox_screen_vertex projected_vertices[3];
     uint32_t color;
 
-    if (ft_vox_chunk_is_near_camera(camera, world_chunk) == false)
+    if (ft_vox_chunk_is_near_camera(camera, world_chunk, render_cache)
+        == false)
         return ;
     index = 0U;
     while (index + 2U < world_chunk.mesh.indices.size())
@@ -313,15 +417,21 @@ static void ft_vox_draw_mesh(ft_render_framebuffer &framebuffer,
             world_chunk.mesh.indices[index + 1U]];
         source_vertices[2] = world_chunk.mesh.vertices[
             world_chunk.mesh.indices[index + 2U]];
+        if (ft_vox_triangle_faces_camera(camera, world_chunk,
+                source_vertices) == FT_FALSE)
+        {
+            index = index + 3U;
+            continue ;
+        }
         if (ft_vox_project_vertex(camera, source_vertices[0],
-                world_chunk.world_x, world_chunk.world_z, framebuffer.width,
-                framebuffer.height, &projected_vertices[0]) == true
+                world_chunk.world_x, world_chunk.world_z, render_cache,
+                &projected_vertices[0]) == true
             && ft_vox_project_vertex(camera, source_vertices[1],
-                world_chunk.world_x, world_chunk.world_z, framebuffer.width,
-                framebuffer.height, &projected_vertices[1]) == true
+                world_chunk.world_x, world_chunk.world_z, render_cache,
+                &projected_vertices[1]) == true
             && ft_vox_project_vertex(camera, source_vertices[2],
-                world_chunk.world_x, world_chunk.world_z, framebuffer.width,
-                framebuffer.height, &projected_vertices[2]) == true)
+                world_chunk.world_x, world_chunk.world_z, render_cache,
+                &projected_vertices[2]) == true)
         {
             color = ft_vox_block_color(source_vertices[0].block_id,
                 source_vertices[0].face);
@@ -390,6 +500,7 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     static std::vector<uint32_t> color_buffer;
     static std::vector<double> depth_buffer;
     ft_render_framebuffer render_target;
+    ft_vox_render_cache render_cache;
     size_t required_size;
     int32_t chunk_index;
 
@@ -409,11 +520,19 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     if (depth_buffer.size() != required_size)
         depth_buffer.resize(required_size);
     render_target.pixels = color_buffer.data();
+    render_cache.yaw_cos = std::cos(camera.yaw);
+    render_cache.yaw_sin = std::sin(camera.yaw);
+    render_cache.pitch_cos = std::cos(camera.pitch);
+    render_cache.pitch_sin = std::sin(camera.pitch);
+    render_cache.focal_length = (static_cast<double>(render_target.width) * 0.5)
+        / std::tan(40.0 * 0.017453292519943295);
+    render_cache.half_width = static_cast<double>(render_target.width) * 0.5;
+    render_cache.half_height = static_cast<double>(render_target.height) * 0.52;
     ft_vox_clear_frame(render_target, depth_buffer);
     chunk_index = 0;
     while (chunk_index < world.chunk_count)
     {
-        ft_vox_draw_mesh(render_target, depth_buffer, camera,
+        ft_vox_draw_mesh(render_target, depth_buffer, camera, render_cache,
             world.chunks[chunk_index]);
         chunk_index = chunk_index + 1;
     }
