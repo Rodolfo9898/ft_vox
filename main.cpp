@@ -49,7 +49,7 @@ static ft_vox_camera_input ft_vox_read_camera_input()
     input.turn_right = false;
     input.look_up = false;
     input.look_down = false;
-    input.speed_boost = (ft_dumb_control_is_down(FT_DUMB_CONTROL_CONFIRM)
+    input.speed_boost = (ft_dumb_control_is_down(FT_DUMB_CONTROL_BOOST)
         == FT_TRUE);
     input.mouse_delta_x = static_cast<double>(mouse_delta.x);
     input.mouse_delta_y = static_cast<double>(mouse_delta.y);
