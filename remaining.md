@@ -12,7 +12,10 @@ Last code audit: 2026-06-05.
 - `WASD` / arrow movement exists relative to camera yaw.
 - `Space` is wired as jump input.
 - `B` is wired as a toggle for x20 boost.
-- Normal camera speed is set to `1.0` cube/second.
+- `B` boost toggle, keyboard input without macOS system beep, and close-button
+  shutdown have been manually accepted on the current macOS/Linux checks.
+- Normal camera speed is set to `2.0` cubes/second for smoother collision
+  response with the current wider player body.
 - Boost movement is the normal camera speed multiplied by `20`.
 - `--validate-camera-speed` verifies the normal and boosted movement distances.
 - A basic generated chunk grid is rendered.
@@ -40,7 +43,12 @@ Last code audit: 2026-06-05.
 - Headless perf mode supports movement/chunk streaming stress with
   `--perf-move` and x20 movement with `--perf-boost`.
 - Default builds use optimized compiler flags; `DEBUG=1` keeps debug symbols.
-- Horizontal collision is intentionally not implemented right now.
+- Horizontal player collision rejects movement into solid blocks without
+  disabling movement on clear axes.
+- Spawn searches nearby terrain and drops the player onto a clear grounded
+  column before the main loop starts.
+- Jump speed is tuned high enough to climb a one-block ledge while collision
+  still rejects walking directly through the block.
 - Near-camera terrain projection is clamped to reduce see-through holes when
   the camera gets very close to blocks.
 
@@ -48,11 +56,9 @@ Last code audit: 2026-06-05.
 
 ### Application and Input
 
-- Manual verification still required after each input/platform change:
-  `B` boost toggle, keyboard input without macOS system beep, and close button
-  shutdown on macOS and Linux.
-- Code-level movement speed is covered by `--validate-camera-speed`.
-- Manual GUI feel still needs validation on macOS and Linux.
+- Revalidate `B` boost toggle, keyboard input, close-button shutdown, and GUI
+  feel only after future DUMB/platform/input changes.
+- Code-level movement speed remains covered by `--validate-camera-speed`.
 
 ### Camera and Player Movement
 
@@ -60,12 +66,27 @@ Last code audit: 2026-06-05.
 - Current rule: the camera follows terrain while grounded and supports free
   vertical movement during jump/fall.
 - Prevent jump/ground logic from producing camera jitter on uneven terrain.
-- Add a clear player-height rule so underground/cave movement is predictable.
-- Horizontal collision is skipped for now by project decision.
+- Player dimensions now match the normal Minecraft-style body: `1.80` tall,
+  `0.60` wide, with the view/eye height at `1.62`.
+- Horizontal collision is implemented for solid blocks, and one-block ledge
+  climbing is supported through jump plus the unified AABB resolver.
+- Collision resolves to the nearest clear point on each movement axis, so the
+  player is clamped to block faces instead of clipping through or falling
+  between columns.
+- Player collision now uses one Minecraft-style AABB resolver for X, Y, and Z
+  movement against the same stored voxel blocks used by editing and rendering.
+- Falling lands against any solid block under the player footprint instead of
+  only the center terrain column, preventing the player from falling between
+  neighboring block columns.
+- `--validate-collision` also covers a one-block-wide, two-block-high tunnel
+  and a one-block-wide vertical drop shaft.
 
 ### Rendering
 
 - Real texture sampling is wired through `assets/textures/voxel_atlas.bmp`.
+- Renderer triangles are clipped against the near plane before projection so
+  close terrain does not stretch across the screen or expose x-ray views of
+  blocks behind it.
 - Polish the current skybox into the final subject-ready skybox and verify junction/artifact behavior.
 - Frustum culling currently uses chunk/mesh bounds; keep tuning it against GUI
   movement and dense terrain.
@@ -74,6 +95,8 @@ Last code audit: 2026-06-05.
   current macOS validation machine.
 - Keep validating smooth rendering at the mandatory `160` cube visible distance under real GUI load.
 - Continue optimizing the software draw path as visible distance and terrain density increase.
+- GUI debug statistics are scaled up in the software renderer so FPS, frame
+  time, visible chunks, loaded chunks, render distance, and selected block are readable.
 
 ### World Integration
 
@@ -100,6 +123,11 @@ Last code audit: 2026-06-05.
 - Avoid freeze frames during movement, especially at x20 boost.
 - Repeatable headless movement/chunk-generation perf exists via
   `--perf-test-headless --perf-move` and `--perf-boost`.
+- `--validate-collision` verifies movement from spawn, wall rejection,
+  jump-to-ledge behavior, one-block-wide tunnel traversal, and a vertical
+  one-block drop shaft.
+- `--validate-block-edit` verifies that place/delete updates both block storage
+  and the touched chunk mesh immediately.
 - Validate macOS and Linux builds after each platform/input change.
 
 ## Bonus Work Still Missing

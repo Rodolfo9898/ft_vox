@@ -30,6 +30,8 @@ struct ft_vox_camera
 };
 
 void ft_vox_camera_init(ft_vox_camera *camera);
+void ft_vox_camera_update_orientation(ft_vox_camera *camera,
+    const ft_vox_camera_input &input, double delta_seconds);
 void ft_vox_camera_update(ft_vox_camera *camera,
     const ft_vox_camera_input &input, double delta_seconds);
 

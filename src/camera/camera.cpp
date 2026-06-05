@@ -19,9 +19,28 @@ void ft_vox_camera_init(ft_vox_camera *camera)
     camera->z = -8.0;
     camera->yaw = 0.0;
     camera->pitch = 0.0;
-    camera->speed = 1.0;
+    camera->speed = 2.0;
     camera->vertical_velocity = 0.0;
     camera->on_ground = false;
+    return ;
+}
+
+void ft_vox_camera_update_orientation(ft_vox_camera *camera,
+    const ft_vox_camera_input &input, double delta_seconds)
+{
+    if (camera == nullptr || delta_seconds <= 0.0)
+        return ;
+    camera->yaw = camera->yaw + (input.mouse_delta_x * 0.0025);
+    camera->pitch = camera->pitch - (input.mouse_delta_y * 0.0025);
+    if (input.turn_left == true)
+        camera->yaw = camera->yaw - (1.8 * delta_seconds);
+    if (input.turn_right == true)
+        camera->yaw = camera->yaw + (1.8 * delta_seconds);
+    if (input.look_up == true)
+        camera->pitch = camera->pitch + (1.2 * delta_seconds);
+    if (input.look_down == true)
+        camera->pitch = camera->pitch - (1.2 * delta_seconds);
+    camera->pitch = ft_vox_clamp(camera->pitch, -1.2, 1.2);
     return ;
 }
 
@@ -38,17 +57,7 @@ void ft_vox_camera_update(ft_vox_camera *camera,
 
     if (camera == nullptr || delta_seconds <= 0.0)
         return ;
-    camera->yaw = camera->yaw + (input.mouse_delta_x * 0.0025);
-    camera->pitch = camera->pitch - (input.mouse_delta_y * 0.0025);
-    if (input.turn_left == true)
-        camera->yaw = camera->yaw - (1.8 * delta_seconds);
-    if (input.turn_right == true)
-        camera->yaw = camera->yaw + (1.8 * delta_seconds);
-    if (input.look_up == true)
-        camera->pitch = camera->pitch + (1.2 * delta_seconds);
-    if (input.look_down == true)
-        camera->pitch = camera->pitch - (1.2 * delta_seconds);
-    camera->pitch = ft_vox_clamp(camera->pitch, -1.2, 1.2);
+    ft_vox_camera_update_orientation(camera, input, delta_seconds);
     local_x = 0.0;
     local_z = 0.0;
     if (input.move_forward == true)
