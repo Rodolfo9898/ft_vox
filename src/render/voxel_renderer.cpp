@@ -1165,7 +1165,7 @@ static void ft_vox_draw_debug_overlay(ft_render_framebuffer &framebuffer,
         static_cast<int32_t>(debug->fps + 0.5),
         static_cast<int32_t>(debug->frame_ms + 0.5),
         debug->visible_chunks, debug->loaded_chunks, debug->render_distance,
-        static_cast<unsigned int>(debug->selected_block_id % 100U));
+        debug->selected_block_id % 100U);
     ft_vox_draw_debug_text(framebuffer, 12, 12, text, scale);
 }
 

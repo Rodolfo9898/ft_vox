@@ -351,7 +351,7 @@ static size_t ft_vox_mesh_index_count_for_block(const ft_vox_world &world,
         if (world.chunks[index].initialized == true
             && world.chunks[index].chunk_x == chunk_x
             && world.chunks[index].chunk_z == chunk_z)
-            return (static_cast<size_t>(world.chunks[index].mesh.indices.size()));
+            return (world.chunks[index].mesh.indices.size());
         index = index + 1;
     }
     return (0U);
@@ -883,7 +883,7 @@ static bool ft_vox_move_player_axis(ft_vox_camera *camera,
     int32_t block_z;
     bool collided;
 
-    if (camera == nullptr || delta == 0.0)
+    if (camera == nullptr || std::fabs(delta) < 0.000001)
         return (false);
     next_x = camera->x;
     next_y = camera->y;
