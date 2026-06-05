@@ -90,6 +90,33 @@ static bool ft_vox_has_flag(int argc, char **argv, const char *flag)
     return (false);
 }
 
+static int ft_vox_validate_camera_speed()
+{
+    ft_vox_camera camera;
+    ft_vox_camera_input input;
+    double normal_start_z;
+    double normal_distance;
+    double boost_start_z;
+    double boost_distance;
+
+    ft_vox_camera_init(&camera);
+    input = ft_vox_empty_camera_input();
+    input.move_forward = true;
+    normal_start_z = camera.z;
+    ft_vox_camera_update(&camera, input, 1.0);
+    normal_distance = std::fabs(camera.z - normal_start_z);
+    input.speed_boost = true;
+    boost_start_z = camera.z;
+    ft_vox_camera_update(&camera, input, 1.0);
+    boost_distance = std::fabs(camera.z - boost_start_z);
+    std::printf("camera-speed: normal=%.3f boost=%.3f\n",
+        normal_distance, boost_distance);
+    if (normal_distance < 0.95 || normal_distance > 1.05
+        || boost_distance < 19.0 || boost_distance > 21.0)
+        return (1);
+    return (0);
+}
+
 static int ft_vox_parse_perf_seconds(int argc, char **argv,
     double *seconds_out)
 {
@@ -193,11 +220,70 @@ static int32_t ft_vox_try_delete_target_block(ft_vox_world *world,
         return (FT_ERR_INVALID_ARGUMENT);
     ft_vox_camera_forward(camera, &direction_x, &direction_y, &direction_z);
     error_code = ft_vox_world_raycast_solid(world, camera.x, camera.y,
-        camera.z, direction_x, direction_y, direction_z, 6.0, &block_x,
+        camera.z, direction_x, direction_y, direction_z, 10.0, &block_x,
         &block_y, &block_z);
     if (error_code != FT_ERR_SUCCESS)
         return (FT_ERR_SUCCESS);
     return (ft_vox_world_delete_block_at(world, block_x, block_y, block_z));
+}
+
+static int32_t ft_vox_try_pick_target_block(const ft_vox_world *world,
+    const ft_vox_camera &camera, uint32_t *selected_block_id)
+{
+    double direction_x;
+    double direction_y;
+    double direction_z;
+    int32_t hit_x;
+    int32_t hit_y;
+    int32_t hit_z;
+    int32_t place_x;
+    int32_t place_y;
+    int32_t place_z;
+    uint32_t hit_block_id;
+    int32_t error_code;
+
+    if (world == nullptr || selected_block_id == nullptr)
+        return (FT_ERR_INVALID_ARGUMENT);
+    ft_vox_camera_forward(camera, &direction_x, &direction_y, &direction_z);
+    error_code = ft_vox_world_raycast_edit_target(world, camera.x, camera.y,
+        camera.z, direction_x, direction_y, direction_z, 10.0, &hit_x, &hit_y,
+        &hit_z, &place_x, &place_y, &place_z, &hit_block_id);
+    if (error_code != FT_ERR_SUCCESS)
+        return (FT_ERR_SUCCESS);
+    if (hit_block_id != GAME_VOXEL_AIR_BLOCK
+        && terrain_block_is_known(hit_block_id) == FT_TRUE)
+        *selected_block_id = hit_block_id;
+    return (FT_ERR_SUCCESS);
+}
+
+static int32_t ft_vox_try_place_selected_block(ft_vox_world *world,
+    const ft_vox_camera &camera, uint32_t selected_block_id)
+{
+    double direction_x;
+    double direction_y;
+    double direction_z;
+    int32_t hit_x;
+    int32_t hit_y;
+    int32_t hit_z;
+    int32_t place_x;
+    int32_t place_y;
+    int32_t place_z;
+    uint32_t hit_block_id;
+    int32_t error_code;
+
+    if (world == nullptr || selected_block_id == GAME_VOXEL_AIR_BLOCK)
+        return (FT_ERR_INVALID_ARGUMENT);
+    ft_vox_camera_forward(camera, &direction_x, &direction_y, &direction_z);
+    error_code = ft_vox_world_raycast_edit_target(world, camera.x, camera.y,
+        camera.z, direction_x, direction_y, direction_z, 10.0, &hit_x, &hit_y,
+        &hit_z, &place_x, &place_y, &place_z, &hit_block_id);
+    if (error_code != FT_ERR_SUCCESS)
+        return (FT_ERR_SUCCESS);
+    error_code = ft_vox_world_place_block_at(world, place_x, place_y, place_z,
+        selected_block_id);
+    if (error_code == FT_ERR_ALREADY_EXISTS || error_code == FT_ERR_NOT_FOUND)
+        return (FT_ERR_SUCCESS);
+    return (error_code);
 }
 
 static int32_t ft_vox_update_render_distance(int32_t current_distance,
@@ -247,51 +333,6 @@ static void ft_vox_camera_follow_ground(ft_vox_camera *camera,
     }
 }
 
-static bool ft_vox_player_intersects_world(const ft_vox_world &world,
-    double x, double y, double z)
-{
-    const double player_radius = 0.28;
-    const double eye_height = 1.62;
-    const double player_height = 1.80;
-    int32_t min_x;
-    int32_t max_x;
-    int32_t min_y;
-    int32_t max_y;
-    int32_t min_z;
-    int32_t max_z;
-    int32_t block_x;
-    int32_t block_y;
-    int32_t block_z;
-    double feet_y;
-
-    feet_y = y - eye_height;
-    min_x = static_cast<int32_t>(std::floor(x - player_radius));
-    max_x = static_cast<int32_t>(std::floor(x + player_radius));
-    min_y = static_cast<int32_t>(std::floor(feet_y + 0.08));
-    max_y = static_cast<int32_t>(std::floor(feet_y + player_height - 0.08));
-    min_z = static_cast<int32_t>(std::floor(z - player_radius));
-    max_z = static_cast<int32_t>(std::floor(z + player_radius));
-    block_y = min_y;
-    while (block_y <= max_y)
-    {
-        block_z = min_z;
-        while (block_z <= max_z)
-        {
-            block_x = min_x;
-            while (block_x <= max_x)
-            {
-                if (ft_vox_world_solid_block_at(&world, block_x, block_y,
-                        block_z) == true)
-                    return (true);
-                block_x = block_x + 1;
-            }
-            block_z = block_z + 1;
-        }
-        block_y = block_y + 1;
-    }
-    return (false);
-}
-
 static void ft_vox_update_player_horizontal_motion(ft_vox_camera *camera,
     const ft_vox_camera_input &input, const ft_vox_world &world,
     double delta_seconds)
@@ -328,13 +369,6 @@ static void ft_vox_update_player_vertical_motion(ft_vox_camera *camera,
     if (camera->vertical_velocity < max_fall_speed)
         camera->vertical_velocity = max_fall_speed;
     new_y = camera->y + (camera->vertical_velocity * delta_seconds);
-    if (camera->vertical_velocity > 0.0
-        && ft_vox_player_intersects_world(world, camera->x, new_y,
-            camera->z) == true)
-    {
-        camera->vertical_velocity = 0.0;
-        return ;
-    }
     block_x = static_cast<int32_t>(std::floor(camera->x));
     block_z = static_cast<int32_t>(std::floor(camera->z));
     if (ft_vox_world_surface_top_at(&world, block_x, block_z,
@@ -382,8 +416,12 @@ int main(int argc, char **argv)
     int32_t                generation_budget;
     bool                   perf_test_mode;
     bool                   perf_headless_mode;
+    bool                   perf_move_mode;
+    bool                   perf_boost_mode;
+    bool                   validate_camera_speed_mode;
     bool                   validate_visible_distance_mode;
     bool                   boost_enabled;
+    uint32_t               selected_block_id;
     std::vector<uint32_t>  headless_pixels;
 
     if (ft_vox_enable_debug_crash_traces() != 0)
@@ -391,6 +429,10 @@ int main(int argc, char **argv)
     perf_headless_mode = ft_vox_has_flag(argc, argv, "--perf-test-headless");
     perf_test_mode = ft_vox_has_flag(argc, argv, "--perf-test")
         || perf_headless_mode;
+    perf_move_mode = ft_vox_has_flag(argc, argv, "--perf-move");
+    perf_boost_mode = ft_vox_has_flag(argc, argv, "--perf-boost");
+    validate_camera_speed_mode = ft_vox_has_flag(argc, argv,
+        "--validate-camera-speed");
     validate_visible_distance_mode = ft_vox_has_flag(argc, argv,
         "--validate-visible-distance");
     perf_seconds_limit = 10.0;
@@ -401,6 +443,8 @@ int main(int argc, char **argv)
             "ft_vox: invalid perf duration, use --perf-seconds=SECONDS\n");
         return (1);
     }
+    if (validate_camera_speed_mode == true)
+        return (ft_vox_validate_camera_speed());
     error_code = ft_vox_world_initialize(&world, "ft_vox-integration-seed");
     if (error_code != FT_ERR_SUCCESS)
         return (ft_vox_fail("voxel world initialization", error_code));
@@ -479,6 +523,7 @@ int main(int argc, char **argv)
     }
     ft_vox_camera_init(&camera);
     ft_vox_camera_follow_ground(&camera, world);
+    ft_vox_render_preload_assets();
     previous_time = std::chrono::steady_clock::now();
     perf_start_time = previous_time;
     frame_count = 0;
@@ -489,6 +534,7 @@ int main(int argc, char **argv)
     frame_ms = 0.0;
     active_render_distance = FT_VOX_WORLD_REQUIRED_VISIBLE_DISTANCE;
     boost_enabled = false;
+    selected_block_id = TERRAIN_GENERATOR_DIRT_BLOCK;
     perf_frame_hash = UINT64_C(0);
     while (perf_headless_mode == true || window.should_close() == FT_FALSE)
     {
@@ -529,17 +575,43 @@ int main(int argc, char **argv)
                 if (error_code != FT_ERR_SUCCESS)
                     break ;
             }
+            if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_MOUSE_TERTIARY)
+                == FT_TRUE)
+            {
+                error_code = ft_vox_try_pick_target_block(&world, camera,
+                    &selected_block_id);
+                if (error_code != FT_ERR_SUCCESS)
+                    break ;
+            }
+            if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_MOUSE_SECONDARY)
+                == FT_TRUE)
+            {
+                error_code = ft_vox_try_place_selected_block(&world, camera,
+                    selected_block_id);
+                if (error_code != FT_ERR_SUCCESS)
+                    break ;
+            }
             ft_vox_update_player_vertical_motion(&camera, camera_input, world,
                 delta_seconds);
         }
         else
         {
             camera_input = ft_vox_empty_camera_input();
+            if (perf_move_mode == true)
+            {
+                camera_input.move_forward = true;
+                camera_input.speed_boost = perf_boost_mode;
+            }
             ft_vox_update_player_horizontal_motion(&camera, camera_input,
                 world, delta_seconds);
             ft_vox_update_player_vertical_motion(&camera, camera_input, world,
                 delta_seconds);
-            error_code = FT_ERR_SUCCESS;
+            generation_budget = ft_vox_generation_budget_for_frame(frame_ms,
+                perf_boost_mode);
+            error_code = ft_vox_world_update_around(&world, camera.x,
+                camera.z, generation_budget, active_render_distance);
+            if (error_code != FT_ERR_SUCCESS)
+                break ;
         }
         frame_ms = delta_seconds * 1000.0;
         render_distance_accumulator = render_distance_accumulator
@@ -573,6 +645,7 @@ int main(int argc, char **argv)
             render_debug.visible_chunks = 0;
             render_debug.loaded_chunks = world.loaded_chunk_count;
             render_debug.render_distance = world.active_render_distance;
+            render_debug.selected_block_id = selected_block_id;
             ft_vox_render_world(headless_framebuffer, camera, world,
                 &render_debug);
         }

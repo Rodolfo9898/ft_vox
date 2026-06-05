@@ -391,6 +391,25 @@ static int32_t ft_vox_world_remesh_chunk(ft_vox_world *world,
     return (error_code);
 }
 
+static int32_t ft_vox_world_remesh_edited_chunk_border(ft_vox_world *world,
+    int32_t chunk_x, int32_t chunk_z, int32_t local_x, int32_t local_z)
+{
+    int32_t error_code;
+
+    error_code = ft_vox_world_remesh_chunk(world, chunk_x, chunk_z);
+    if (error_code != FT_ERR_SUCCESS)
+        return (error_code);
+    if (local_x == 0)
+        error_code = ft_vox_world_remesh_chunk(world, chunk_x - 1, chunk_z);
+    if (error_code == FT_ERR_SUCCESS && local_x == GAME_VOXEL_CHUNK_WIDTH - 1)
+        error_code = ft_vox_world_remesh_chunk(world, chunk_x + 1, chunk_z);
+    if (error_code == FT_ERR_SUCCESS && local_z == 0)
+        error_code = ft_vox_world_remesh_chunk(world, chunk_x, chunk_z - 1);
+    if (error_code == FT_ERR_SUCCESS && local_z == GAME_VOXEL_CHUNK_DEPTH - 1)
+        error_code = ft_vox_world_remesh_chunk(world, chunk_x, chunk_z + 1);
+    return (error_code);
+}
+
 bool ft_vox_world_surface_top_at(const ft_vox_world *world,
     int32_t world_x, int32_t world_z, double *surface_top)
 {
@@ -454,6 +473,29 @@ bool ft_vox_world_solid_block_at(const ft_vox_world *world,
         && terrain_block_is_solid(block_id) == FT_TRUE);
 }
 
+bool ft_vox_world_block_id_at(const ft_vox_world *world,
+    int32_t world_x, int32_t world_y, int32_t world_z, uint32_t *block_id)
+{
+    const ft_vox_world_chunk *world_chunk;
+    int32_t chunk_x;
+    int32_t chunk_z;
+    int32_t local_x;
+    int32_t local_z;
+
+    if (world == nullptr || block_id == nullptr || world_y < 0
+        || world_y >= GAME_VOXEL_CHUNK_HEIGHT)
+        return (false);
+    chunk_x = ft_vox_floor_divide(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    chunk_z = ft_vox_floor_divide(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    world_chunk = ft_vox_find_chunk(world, chunk_x, chunk_z);
+    if (world_chunk == nullptr)
+        return (false);
+    local_x = ft_vox_positive_modulo(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    local_z = ft_vox_positive_modulo(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    return (world_chunk->chunk.read_block(local_x, world_y, local_z,
+        block_id) == FT_ERR_SUCCESS);
+}
+
 int32_t ft_vox_world_delete_block_at(ft_vox_world *world,
     int32_t world_x, int32_t world_y, int32_t world_z)
 {
@@ -478,18 +520,45 @@ int32_t ft_vox_world_delete_block_at(ft_vox_world *world,
         GAME_VOXEL_AIR_BLOCK);
     if (error_code != FT_ERR_SUCCESS)
         return (error_code);
-    error_code = ft_vox_world_remesh_chunk(world, chunk_x, chunk_z);
+    return (ft_vox_world_remesh_edited_chunk_border(world, chunk_x, chunk_z,
+        local_x, local_z));
+}
+
+int32_t ft_vox_world_place_block_at(ft_vox_world *world,
+    int32_t world_x, int32_t world_y, int32_t world_z, uint32_t block_id)
+{
+    ft_vox_world_chunk *world_chunk;
+    int32_t chunk_x;
+    int32_t chunk_z;
+    int32_t local_x;
+    int32_t local_z;
+    int32_t error_code;
+    uint32_t current_block_id;
+
+    if (world == nullptr || world_y < 0
+        || world_y >= GAME_VOXEL_CHUNK_HEIGHT
+        || block_id == GAME_VOXEL_AIR_BLOCK
+        || terrain_block_is_known(block_id) != FT_TRUE)
+        return (FT_ERR_INVALID_ARGUMENT);
+    chunk_x = ft_vox_floor_divide(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    chunk_z = ft_vox_floor_divide(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    world_chunk = ft_vox_find_chunk_mutable(world, chunk_x, chunk_z);
+    if (world_chunk == nullptr)
+        return (FT_ERR_NOT_FOUND);
+    local_x = ft_vox_positive_modulo(world_x, GAME_VOXEL_CHUNK_WIDTH);
+    local_z = ft_vox_positive_modulo(world_z, GAME_VOXEL_CHUNK_DEPTH);
+    error_code = world_chunk->chunk.read_block(local_x, world_y, local_z,
+        &current_block_id);
     if (error_code != FT_ERR_SUCCESS)
         return (error_code);
-    if (local_x == 0)
-        error_code = ft_vox_world_remesh_chunk(world, chunk_x - 1, chunk_z);
-    if (error_code == FT_ERR_SUCCESS && local_x == GAME_VOXEL_CHUNK_WIDTH - 1)
-        error_code = ft_vox_world_remesh_chunk(world, chunk_x + 1, chunk_z);
-    if (error_code == FT_ERR_SUCCESS && local_z == 0)
-        error_code = ft_vox_world_remesh_chunk(world, chunk_x, chunk_z - 1);
-    if (error_code == FT_ERR_SUCCESS && local_z == GAME_VOXEL_CHUNK_DEPTH - 1)
-        error_code = ft_vox_world_remesh_chunk(world, chunk_x, chunk_z + 1);
-    return (error_code);
+    if (current_block_id != GAME_VOXEL_AIR_BLOCK)
+        return (FT_ERR_ALREADY_EXISTS);
+    error_code = world_chunk->chunk.write_block(local_x, world_y, local_z,
+        block_id);
+    if (error_code != FT_ERR_SUCCESS)
+        return (error_code);
+    return (ft_vox_world_remesh_edited_chunk_border(world, chunk_x, chunk_z,
+        local_x, local_z));
 }
 
 int32_t ft_vox_world_raycast_solid(const ft_vox_world *world,
@@ -498,7 +567,7 @@ int32_t ft_vox_world_raycast_solid(const ft_vox_world *world,
     double max_distance, int32_t *block_x, int32_t *block_y,
     int32_t *block_z)
 {
-    const double step_distance = 0.125;
+    const double step_distance = 0.0625;
     double distance;
     double sample_x;
     double sample_y;
@@ -506,11 +575,12 @@ int32_t ft_vox_world_raycast_solid(const ft_vox_world *world,
     int32_t test_x;
     int32_t test_y;
     int32_t test_z;
+    uint32_t block_id;
 
     if (world == nullptr || block_x == nullptr || block_y == nullptr
         || block_z == nullptr || max_distance <= 0.0)
         return (FT_ERR_INVALID_ARGUMENT);
-    distance = 0.0;
+    distance = step_distance;
     while (distance <= max_distance)
     {
         sample_x = origin_x + (direction_x * distance);
@@ -519,8 +589,8 @@ int32_t ft_vox_world_raycast_solid(const ft_vox_world *world,
         test_x = static_cast<int32_t>(std::floor(sample_x));
         test_y = static_cast<int32_t>(std::floor(sample_y));
         test_z = static_cast<int32_t>(std::floor(sample_z));
-        if (ft_vox_world_solid_block_at(world, test_x, test_y, test_z)
-            == true)
+        if (ft_vox_world_block_id_at(world, test_x, test_y, test_z, &block_id)
+            == true && block_id != GAME_VOXEL_AIR_BLOCK)
         {
             *block_x = test_x;
             *block_y = test_y;
@@ -530,4 +600,67 @@ int32_t ft_vox_world_raycast_solid(const ft_vox_world *world,
         distance = distance + step_distance;
     }
     return (FT_ERR_INVALID_ARGUMENT);
+}
+
+int32_t ft_vox_world_raycast_edit_target(const ft_vox_world *world,
+    double origin_x, double origin_y, double origin_z,
+    double direction_x, double direction_y, double direction_z,
+    double max_distance, int32_t *hit_block_x, int32_t *hit_block_y,
+    int32_t *hit_block_z, int32_t *place_block_x, int32_t *place_block_y,
+    int32_t *place_block_z, uint32_t *hit_block_id)
+{
+    const double step_distance = 0.0625;
+    double distance;
+    double sample_x;
+    double sample_y;
+    double sample_z;
+    int32_t test_x;
+    int32_t test_y;
+    int32_t test_z;
+    int32_t previous_x;
+    int32_t previous_y;
+    int32_t previous_z;
+    uint32_t block_id;
+
+    if (world == nullptr || hit_block_x == nullptr || hit_block_y == nullptr
+        || hit_block_z == nullptr || place_block_x == nullptr
+        || place_block_y == nullptr || place_block_z == nullptr
+        || hit_block_id == nullptr || max_distance <= 0.0)
+        return (FT_ERR_INVALID_ARGUMENT);
+    previous_x = static_cast<int32_t>(std::floor(origin_x));
+    previous_y = static_cast<int32_t>(std::floor(origin_y));
+    previous_z = static_cast<int32_t>(std::floor(origin_z));
+    distance = step_distance;
+    while (distance <= max_distance)
+    {
+        sample_x = origin_x + (direction_x * distance);
+        sample_y = origin_y + (direction_y * distance);
+        sample_z = origin_z + (direction_z * distance);
+        test_x = static_cast<int32_t>(std::floor(sample_x));
+        test_y = static_cast<int32_t>(std::floor(sample_y));
+        test_z = static_cast<int32_t>(std::floor(sample_z));
+        if (test_x == previous_x && test_y == previous_y
+            && test_z == previous_z)
+        {
+            distance = distance + step_distance;
+            continue ;
+        }
+        if (ft_vox_world_block_id_at(world, test_x, test_y, test_z, &block_id)
+            == true && block_id != GAME_VOXEL_AIR_BLOCK)
+        {
+            *hit_block_x = test_x;
+            *hit_block_y = test_y;
+            *hit_block_z = test_z;
+            *place_block_x = previous_x;
+            *place_block_y = previous_y;
+            *place_block_z = previous_z;
+            *hit_block_id = block_id;
+            return (FT_ERR_SUCCESS);
+        }
+        previous_x = test_x;
+        previous_y = test_y;
+        previous_z = test_z;
+        distance = distance + step_distance;
+    }
+    return (FT_ERR_NOT_FOUND);
 }

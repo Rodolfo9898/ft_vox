@@ -1,15 +1,15 @@
 CC = g++
 
-OPT_LEVEL ?= 0
+OPT_LEVEL ?= 2
 
 ifeq ($(OPT_LEVEL),0)
     OPT_FLAGS = -O0 -g
 else ifeq ($(OPT_LEVEL),1)
-    OPT_FLAGS = -O1 -flto -s -ffunction-sections -fdata-sections -Wl,--gc-sections
+    OPT_FLAGS = -O1
 else ifeq ($(OPT_LEVEL),2)
-    OPT_FLAGS = -O2 -flto -s -ffunction-sections -fdata-sections -Wl,--gc-sections
+    OPT_FLAGS = -O2
 else ifeq ($(OPT_LEVEL),3)
-    OPT_FLAGS = -O3 -flto -s -ffunction-sections -fdata-sections -Wl,--gc-sections
+    OPT_FLAGS = -O3
 else
     $(error Unsupported OPT_LEVEL=$(OPT_LEVEL))
 endif
@@ -21,6 +21,13 @@ COMPILE_FLAGS = -Wall -Werror -Wextra -std=c++17 -Wmissing-declarations \
 
 ifneq ($(shell uname -s 2>/dev/null),Darwin)
     COMPILE_FLAGS += -Wodr -Wuseless-cast -Wmaybe-uninitialized
+    ifneq ($(OPT_LEVEL),0)
+        COMPILE_FLAGS += -flto -ffunction-sections -fdata-sections
+    endif
+else
+    ifneq ($(OPT_LEVEL),0)
+        COMPILE_FLAGS += -flto
+    endif
 endif
 
 DEPFLAGS = -MMD -MP
@@ -75,6 +82,16 @@ else
         LDFLAGS = -lz -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore -framework AudioToolbox -lobjc -lpthread -lsqlite3
     else
         LDFLAGS = -lX11 -lXext -lGL
+    endif
+endif
+
+ifneq ($(OPT_LEVEL),0)
+    ifneq ($(OS),Windows_NT)
+        ifeq ($(UNAME_S),Darwin)
+            LDFLAGS += -flto
+        else
+            LDFLAGS += -flto -s -Wl,--gc-sections
+        endif
     endif
 endif
 

@@ -49,12 +49,22 @@ bool    ft_vox_world_surface_top_at(const ft_vox_world *world,
     int32_t world_x, int32_t world_z, double *surface_top);
 bool    ft_vox_world_solid_block_at(const ft_vox_world *world,
     int32_t world_x, int32_t world_y, int32_t world_z);
+bool    ft_vox_world_block_id_at(const ft_vox_world *world,
+    int32_t world_x, int32_t world_y, int32_t world_z, uint32_t *block_id);
 int32_t ft_vox_world_delete_block_at(ft_vox_world *world,
     int32_t world_x, int32_t world_y, int32_t world_z);
+int32_t ft_vox_world_place_block_at(ft_vox_world *world,
+    int32_t world_x, int32_t world_y, int32_t world_z, uint32_t block_id);
 int32_t ft_vox_world_raycast_solid(const ft_vox_world *world,
     double origin_x, double origin_y, double origin_z,
     double direction_x, double direction_y, double direction_z,
     double max_distance, int32_t *block_x, int32_t *block_y,
     int32_t *block_z);
+int32_t ft_vox_world_raycast_edit_target(const ft_vox_world *world,
+    double origin_x, double origin_y, double origin_z,
+    double direction_x, double direction_y, double direction_z,
+    double max_distance, int32_t *hit_block_x, int32_t *hit_block_y,
+    int32_t *hit_block_z, int32_t *place_block_x, int32_t *place_block_y,
+    int32_t *place_block_z, uint32_t *hit_block_id);
 
 #endif

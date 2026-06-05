@@ -30,11 +30,56 @@ struct ft_vox_render_cache
     double render_distance;
 };
 
+struct ft_vox_texture_atlas
+{
+    std::vector<uint32_t> pixels;
+    int32_t width;
+    int32_t height;
+    int32_t tile_width;
+    int32_t tile_height;
+    bool loaded;
+    bool attempted_load;
+};
+
+struct ft_vox_triangle_texture
+{
+    const ft_vox_texture_atlas *atlas;
+    uint32_t fallback_color;
+    int32_t base_x;
+    int32_t base_y;
+    int32_t sample_width;
+    int32_t sample_height;
+    double shade;
+    bool loaded;
+};
+
+static constexpr double FT_VOX_NEAR_PLANE = 0.08;
+static constexpr double FT_VOX_NEAR_CLIP_BACK_LIMIT = -0.45;
+
 static uint32_t ft_vox_rgba(uint8_t red, uint8_t green, uint8_t blue)
 {
     return ((static_cast<uint32_t>(red) << 16U)
         | (static_cast<uint32_t>(green) << 8U)
         | static_cast<uint32_t>(blue));
+}
+
+static uint16_t ft_vox_read_le_u16(const uint8_t *data)
+{
+    return (static_cast<uint16_t>(data[0])
+        | static_cast<uint16_t>(static_cast<uint16_t>(data[1]) << 8U));
+}
+
+static uint32_t ft_vox_read_le_u32(const uint8_t *data)
+{
+    return (static_cast<uint32_t>(data[0])
+        | (static_cast<uint32_t>(data[1]) << 8U)
+        | (static_cast<uint32_t>(data[2]) << 16U)
+        | (static_cast<uint32_t>(data[3]) << 24U));
+}
+
+static int32_t ft_vox_read_le_i32(const uint8_t *data)
+{
+    return (static_cast<int32_t>(ft_vox_read_le_u32(data)));
 }
 
 static uint8_t ft_vox_shade_channel(uint8_t channel, double shade)
@@ -122,29 +167,217 @@ static uint32_t ft_vox_shade_color(uint32_t color, double shade)
         ft_vox_shade_channel(static_cast<uint8_t>(color & 0xFFU), shade)));
 }
 
-static void ft_vox_texture_atlas_colors(uint32_t block_id, uint8_t face,
-    uint32_t colors[2])
+static bool ft_vox_load_bmp_texture_atlas(ft_vox_texture_atlas *atlas,
+    const char *path)
 {
-    uint32_t base_color;
-    double shade_a;
-    double shade_b;
+    FILE *file;
+    uint8_t header[54];
+    uint32_t data_offset;
+    int32_t width;
+    int32_t height_signed;
+    int32_t height;
+    uint16_t bits_per_pixel;
+    uint32_t compression;
+    size_t row_stride;
+    size_t y;
+    size_t source_y;
+    size_t x;
+    long row_offset;
+    uint8_t pixel[3];
 
-    base_color = ft_vox_block_color(block_id, face);
-    shade_a = 1.0;
-    shade_b = 0.88;
-    if (block_id == TERRAIN_GENERATOR_GRASS_BLOCK
-        && face == CHUNK_MESH_FACE_UP)
+    if (atlas == nullptr || path == nullptr)
+        return (false);
+    file = std::fopen(path, "rb");
+    if (file == nullptr)
+        return (false);
+    if (std::fread(header, 1U, sizeof(header), file) != sizeof(header))
     {
-        shade_a = 1.08;
-        shade_b = 0.90;
+        std::fclose(file);
+        return (false);
+    }
+    if (header[0] != 'B' || header[1] != 'M')
+    {
+        std::fclose(file);
+        return (false);
+    }
+    data_offset = ft_vox_read_le_u32(header + 10);
+    width = ft_vox_read_le_i32(header + 18);
+    height_signed = ft_vox_read_le_i32(header + 22);
+    bits_per_pixel = ft_vox_read_le_u16(header + 28);
+    compression = ft_vox_read_le_u32(header + 30);
+    if (width <= 0 || height_signed == 0 || bits_per_pixel != 24U
+        || compression != 0U)
+    {
+        std::fclose(file);
+        return (false);
+    }
+    height = height_signed < 0 ? -height_signed : height_signed;
+    atlas->pixels.assign(static_cast<size_t>(width) * static_cast<size_t>(height),
+        0U);
+    row_stride = ((static_cast<size_t>(width) * 3U) + 3U) & ~static_cast<size_t>(3U);
+    y = 0U;
+    while (y < static_cast<size_t>(height))
+    {
+        source_y = height_signed < 0 ? y : static_cast<size_t>(height - 1) - y;
+        row_offset = static_cast<long>(data_offset + (source_y * row_stride));
+        if (std::fseek(file, row_offset, SEEK_SET) != 0)
+        {
+            std::fclose(file);
+            return (false);
+        }
+        x = 0U;
+        while (x < static_cast<size_t>(width))
+        {
+            if (std::fread(pixel, 1U, sizeof(pixel), file) != sizeof(pixel))
+            {
+                std::fclose(file);
+                return (false);
+            }
+            atlas->pixels[(y * static_cast<size_t>(width)) + x]
+                = ft_vox_rgba(pixel[2], pixel[1], pixel[0]);
+            x = x + 1U;
+        }
+        y = y + 1U;
+    }
+    std::fclose(file);
+    atlas->width = width;
+    atlas->height = height;
+    atlas->tile_width = width / 4;
+    atlas->tile_height = height / 4;
+    atlas->loaded = atlas->tile_width > 0 && atlas->tile_height > 0;
+    return (atlas->loaded);
+}
+
+static const ft_vox_texture_atlas &ft_vox_get_texture_atlas()
+{
+    static ft_vox_texture_atlas atlas;
+
+    if (atlas.attempted_load == false)
+    {
+        atlas.width = 0;
+        atlas.height = 0;
+        atlas.tile_width = 0;
+        atlas.tile_height = 0;
+        atlas.loaded = false;
+        atlas.attempted_load = true;
+        (void)ft_vox_load_bmp_texture_atlas(&atlas,
+            "assets/textures/voxel_atlas.bmp");
+    }
+    return (atlas);
+}
+
+static void ft_vox_atlas_tile_for_block(uint32_t block_id, uint8_t face,
+    int32_t *tile_x, int32_t *tile_y)
+{
+    if (tile_x == nullptr || tile_y == nullptr)
+        return ;
+    *tile_x = 2;
+    *tile_y = 2;
+    if (block_id == TERRAIN_GENERATOR_GRASS_BLOCK)
+    {
+        *tile_x = (face == CHUNK_MESH_FACE_UP) ? 0 : 1;
+        *tile_y = 0;
+    }
+    else if (block_id == TERRAIN_GENERATOR_DIRT_BLOCK)
+    {
+        *tile_x = 2;
+        *tile_y = 0;
+    }
+    else if (block_id == TERRAIN_GENERATOR_STONE_BLOCK)
+    {
+        *tile_x = 3;
+        *tile_y = 0;
+    }
+    else if (block_id == TERRAIN_GENERATOR_SHRUB_BLOCK)
+    {
+        *tile_x = 1;
+        *tile_y = 2;
     }
     else if (block_id == TERRAIN_GENERATOR_OAK_LOG_BLOCK)
     {
-        shade_a = 1.12;
-        shade_b = 0.72;
+        *tile_x = 2;
+        *tile_y = 1;
     }
-    colors[0] = ft_vox_shade_color(base_color, shade_a);
-    colors[1] = ft_vox_shade_color(base_color, shade_b);
+    else if (block_id == TERRAIN_GENERATOR_OAK_LEAVES_BLOCK)
+    {
+        *tile_x = 3;
+        *tile_y = 1;
+    }
+    else if (block_id == TERRAIN_GENERATOR_CACTUS_BLOCK)
+    {
+        *tile_x = 0;
+        *tile_y = 2;
+    }
+}
+
+static double ft_vox_fraction(double value)
+{
+    return (value - std::floor(value));
+}
+
+static double ft_vox_face_shade(uint8_t face)
+{
+    if (face == CHUNK_MESH_FACE_UP)
+        return (1.0);
+    if (face == CHUNK_MESH_FACE_NORTH || face == CHUNK_MESH_FACE_WEST)
+        return (0.58);
+    if (face == CHUNK_MESH_FACE_EAST)
+        return (0.82);
+    return (0.72);
+}
+
+static ft_vox_triangle_texture ft_vox_prepare_triangle_texture(
+    uint32_t block_id, uint8_t face)
+{
+    const ft_vox_texture_atlas &atlas = ft_vox_get_texture_atlas();
+    ft_vox_triangle_texture texture;
+    int32_t tile_x;
+    int32_t tile_y;
+    int32_t margin_x;
+    int32_t margin_y;
+
+    texture.atlas = &atlas;
+    texture.fallback_color = ft_vox_block_color(block_id, face);
+    texture.base_x = 0;
+    texture.base_y = 0;
+    texture.sample_width = 1;
+    texture.sample_height = 1;
+    texture.shade = ft_vox_face_shade(face);
+    texture.loaded = false;
+    if (atlas.loaded == false)
+        return (texture);
+    ft_vox_atlas_tile_for_block(block_id, face, &tile_x, &tile_y);
+    margin_x = std::max(2, atlas.tile_width / 32);
+    margin_y = std::max(2, atlas.tile_height / 32);
+    texture.base_x = (tile_x * atlas.tile_width) + margin_x;
+    texture.base_y = (tile_y * atlas.tile_height) + margin_y;
+    texture.sample_width = std::max(1, atlas.tile_width - (margin_x * 2));
+    texture.sample_height = std::max(1, atlas.tile_height - (margin_y * 2));
+    texture.loaded = true;
+    return (texture);
+}
+
+static uint32_t ft_vox_sample_triangle_texture(
+    const ft_vox_triangle_texture &texture, double texture_u, double texture_v)
+{
+    int32_t pixel_x;
+    int32_t pixel_y;
+    double u;
+    double v;
+
+    if (texture.loaded == false || texture.atlas == nullptr)
+        return (texture.fallback_color);
+    u = ft_vox_fraction(texture_u);
+    v = ft_vox_fraction(texture_v);
+    pixel_x = texture.base_x
+        + static_cast<int32_t>(u * static_cast<double>(texture.sample_width));
+    pixel_y = texture.base_y
+        + static_cast<int32_t>(v * static_cast<double>(texture.sample_height));
+    pixel_x = std::max(0, std::min(pixel_x, texture.atlas->width - 1));
+    pixel_y = std::max(0, std::min(pixel_y, texture.atlas->height - 1));
+    return (texture.atlas->pixels[(static_cast<size_t>(pixel_y)
+        * static_cast<size_t>(texture.atlas->width))
+        + static_cast<size_t>(pixel_x)]);
 }
 
 static uint32_t ft_vox_skybox_row_color(int32_t y, int32_t height)
@@ -284,8 +517,10 @@ static bool ft_vox_project_vertex(const ft_vox_camera &camera,
     pitch_sin = render_cache.pitch_sin;
     pitched_y = (view_y * pitch_cos) - (view_z * pitch_sin);
     pitched_z = (view_y * pitch_sin) + (view_z * pitch_cos);
-    if (pitched_z <= 0.1)
+    if (pitched_z <= FT_VOX_NEAR_CLIP_BACK_LIMIT)
         return (false);
+    if (pitched_z < FT_VOX_NEAR_PLANE)
+        pitched_z = FT_VOX_NEAR_PLANE;
     focal_length = render_cache.focal_length;
     screen_vertex->x = render_cache.half_width
         + ((view_x / pitched_z) * focal_length);
@@ -355,8 +590,8 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
     double depth;
     double texture_u;
     double texture_v;
-    uint32_t texture_colors[2];
     size_t pixel_index;
+    ft_vox_triangle_texture texture;
 
     area = ft_vox_edge(vertices[0], vertices[1], vertices[2].x, vertices[2].y);
     if (std::fabs(area) < 0.000001)
@@ -419,7 +654,7 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
     texture_v_row = ((vertices[0].texture_v * edge0_row)
         + (vertices[1].texture_v * edge1_row)
         + (vertices[2].texture_v * edge2_row)) * inv_area;
-    ft_vox_texture_atlas_colors(block_id, face, texture_colors);
+    texture = ft_vox_prepare_triangle_texture(block_id, face);
     y = start_y;
     while (y <= end_y)
     {
@@ -439,9 +674,9 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
                 if (depth > 0.0 && depth < depth_buffer[pixel_index])
                 {
                     depth_buffer[pixel_index] = depth;
-                    framebuffer.pixels[pixel_index] = texture_colors[
-                        (static_cast<int32_t>(texture_u * 0.125)
-                            + static_cast<int32_t>(texture_v * 0.125)) & 1];
+                    framebuffer.pixels[pixel_index] =
+                        ft_vox_shade_color(ft_vox_sample_triangle_texture(
+                            texture, texture_u, texture_v), texture.shade);
                 }
             }
             edge0 += step_x0;
@@ -693,6 +928,7 @@ static const uint8_t *ft_vox_digit_bitmap(char character)
     static const uint8_t letter_l[5] = { 4U, 4U, 4U, 4U, 7U };
     static const uint8_t letter_r[5] = { 6U, 5U, 6U, 5U, 5U };
     static const uint8_t letter_d[5] = { 6U, 5U, 5U, 5U, 6U };
+    static const uint8_t letter_b[5] = { 6U, 5U, 6U, 5U, 6U };
 
     if (character >= '0' && character <= '9')
         return (digits[character - '0']);
@@ -712,6 +948,8 @@ static const uint8_t *ft_vox_digit_bitmap(char character)
         return (letter_r);
     if (character == 'D')
         return (letter_d);
+    if (character == 'B')
+        return (letter_b);
     return (nullptr);
 }
 
@@ -780,10 +1018,11 @@ static void ft_vox_draw_debug_overlay(ft_render_framebuffer &framebuffer,
 
     if (debug == nullptr)
         return ;
-    std::snprintf(text, sizeof(text), "FPS%03d MS%03d C%03d L%03d R%03d",
+    std::snprintf(text, sizeof(text), "FPS%03d MS%03d C%03d L%03d R%03d B%02u",
         static_cast<int32_t>(debug->fps + 0.5),
         static_cast<int32_t>(debug->frame_ms + 0.5),
-        debug->visible_chunks, debug->loaded_chunks, debug->render_distance);
+        debug->visible_chunks, debug->loaded_chunks, debug->render_distance,
+        static_cast<unsigned int>(debug->selected_block_id % 100U));
     ft_vox_draw_debug_text(framebuffer, 8, 8, text);
 }
 
@@ -828,6 +1067,7 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     debug.visible_chunks = 0;
     debug.loaded_chunks = world.loaded_chunk_count;
     debug.render_distance = world.active_render_distance;
+    debug.selected_block_id = 0U;
     ft_vox_render_world(framebuffer, camera, world, &debug);
 }
 
@@ -846,8 +1086,8 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     if (framebuffer.pixels == nullptr || framebuffer.width <= 0
         || framebuffer.height <= 0)
         return ;
-    render_target.width = framebuffer.width / 2;
-    render_target.height = framebuffer.height / 2;
+    render_target.width = framebuffer.width / 3;
+    render_target.height = framebuffer.height / 3;
     if (render_target.width < 320)
         render_target.width = framebuffer.width;
     if (render_target.height < 180)
@@ -877,6 +1117,7 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     local_debug.visible_chunks = 0;
     local_debug.loaded_chunks = world.loaded_chunk_count;
     local_debug.render_distance = world.active_render_distance;
+    local_debug.selected_block_id = 0U;
     if (debug != nullptr)
         local_debug = *debug;
     ft_vox_clear_frame(render_target, depth_buffer, camera);
@@ -892,4 +1133,9 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     if (debug != nullptr)
         ft_vox_draw_debug_overlay(framebuffer, &local_debug);
     ft_vox_draw_crosshair(framebuffer);
+}
+
+void ft_vox_render_preload_assets(void)
+{
+    (void)ft_vox_get_texture_atlas();
 }

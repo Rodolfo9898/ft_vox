@@ -12,6 +12,7 @@ struct ft_vox_render_debug
     int32_t visible_chunks;
     int32_t loaded_chunks;
     int32_t render_distance;
+    uint32_t selected_block_id;
 };
 
 void ft_vox_render_world(ft_render_framebuffer &framebuffer,
@@ -20,5 +21,6 @@ void ft_vox_render_world(ft_render_framebuffer &framebuffer,
 void ft_vox_render_world(ft_render_framebuffer &framebuffer,
     const ft_vox_camera &camera, const ft_vox_world &world,
     const ft_vox_render_debug *debug);
+void ft_vox_render_preload_assets(void);
 
 #endif
