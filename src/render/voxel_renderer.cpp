@@ -578,16 +578,22 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
     double step_x2;
     double step_y2;
     double inv_area;
-    double depth_row;
-    double texture_u_row;
-    double texture_v_row;
-    double depth_step_x;
-    double depth_step_y;
-    double texture_u_step_x;
-    double texture_u_step_y;
-    double texture_v_step_x;
-    double texture_v_step_y;
+    double inv_depth_values[3];
+    double texture_u_over_depth_values[3];
+    double texture_v_over_depth_values[3];
+    double inv_depth_row;
+    double texture_u_over_depth_row;
+    double texture_v_over_depth_row;
+    double inv_depth_step_x;
+    double inv_depth_step_y;
+    double texture_u_over_depth_step_x;
+    double texture_u_over_depth_step_y;
+    double texture_v_over_depth_step_x;
+    double texture_v_over_depth_step_y;
     double depth;
+    double inv_depth;
+    double texture_u_over_depth;
+    double texture_v_over_depth;
     double texture_u;
     double texture_v;
     size_t pixel_index;
@@ -627,33 +633,48 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
         static_cast<double>(start_x) + 0.5, static_cast<double>(start_y) + 0.5);
     edge2_row = ft_vox_edge(vertices[0], vertices[1],
         static_cast<double>(start_x) + 0.5, static_cast<double>(start_y) + 0.5);
-    depth_step_x = ((vertices[0].depth * step_x0)
-        + (vertices[1].depth * step_x1)
-        + (vertices[2].depth * step_x2)) * inv_area;
-    depth_step_y = ((vertices[0].depth * step_y0)
-        + (vertices[1].depth * step_y1)
-        + (vertices[2].depth * step_y2)) * inv_area;
-    texture_u_step_x = ((vertices[0].texture_u * step_x0)
-        + (vertices[1].texture_u * step_x1)
-        + (vertices[2].texture_u * step_x2)) * inv_area;
-    texture_u_step_y = ((vertices[0].texture_u * step_y0)
-        + (vertices[1].texture_u * step_y1)
-        + (vertices[2].texture_u * step_y2)) * inv_area;
-    texture_v_step_x = ((vertices[0].texture_v * step_x0)
-        + (vertices[1].texture_v * step_x1)
-        + (vertices[2].texture_v * step_x2)) * inv_area;
-    texture_v_step_y = ((vertices[0].texture_v * step_y0)
-        + (vertices[1].texture_v * step_y1)
-        + (vertices[2].texture_v * step_y2)) * inv_area;
-    depth_row = ((vertices[0].depth * edge0_row)
-        + (vertices[1].depth * edge1_row)
-        + (vertices[2].depth * edge2_row)) * inv_area;
-    texture_u_row = ((vertices[0].texture_u * edge0_row)
-        + (vertices[1].texture_u * edge1_row)
-        + (vertices[2].texture_u * edge2_row)) * inv_area;
-    texture_v_row = ((vertices[0].texture_v * edge0_row)
-        + (vertices[1].texture_v * edge1_row)
-        + (vertices[2].texture_v * edge2_row)) * inv_area;
+    inv_depth_values[0] = 1.0 / vertices[0].depth;
+    inv_depth_values[1] = 1.0 / vertices[1].depth;
+    inv_depth_values[2] = 1.0 / vertices[2].depth;
+    texture_u_over_depth_values[0] = vertices[0].texture_u
+        * inv_depth_values[0];
+    texture_u_over_depth_values[1] = vertices[1].texture_u
+        * inv_depth_values[1];
+    texture_u_over_depth_values[2] = vertices[2].texture_u
+        * inv_depth_values[2];
+    texture_v_over_depth_values[0] = vertices[0].texture_v
+        * inv_depth_values[0];
+    texture_v_over_depth_values[1] = vertices[1].texture_v
+        * inv_depth_values[1];
+    texture_v_over_depth_values[2] = vertices[2].texture_v
+        * inv_depth_values[2];
+    inv_depth_step_x = ((inv_depth_values[0] * step_x0)
+        + (inv_depth_values[1] * step_x1)
+        + (inv_depth_values[2] * step_x2)) * inv_area;
+    inv_depth_step_y = ((inv_depth_values[0] * step_y0)
+        + (inv_depth_values[1] * step_y1)
+        + (inv_depth_values[2] * step_y2)) * inv_area;
+    texture_u_over_depth_step_x = ((texture_u_over_depth_values[0] * step_x0)
+        + (texture_u_over_depth_values[1] * step_x1)
+        + (texture_u_over_depth_values[2] * step_x2)) * inv_area;
+    texture_u_over_depth_step_y = ((texture_u_over_depth_values[0] * step_y0)
+        + (texture_u_over_depth_values[1] * step_y1)
+        + (texture_u_over_depth_values[2] * step_y2)) * inv_area;
+    texture_v_over_depth_step_x = ((texture_v_over_depth_values[0] * step_x0)
+        + (texture_v_over_depth_values[1] * step_x1)
+        + (texture_v_over_depth_values[2] * step_x2)) * inv_area;
+    texture_v_over_depth_step_y = ((texture_v_over_depth_values[0] * step_y0)
+        + (texture_v_over_depth_values[1] * step_y1)
+        + (texture_v_over_depth_values[2] * step_y2)) * inv_area;
+    inv_depth_row = ((inv_depth_values[0] * edge0_row)
+        + (inv_depth_values[1] * edge1_row)
+        + (inv_depth_values[2] * edge2_row)) * inv_area;
+    texture_u_over_depth_row = ((texture_u_over_depth_values[0] * edge0_row)
+        + (texture_u_over_depth_values[1] * edge1_row)
+        + (texture_u_over_depth_values[2] * edge2_row)) * inv_area;
+    texture_v_over_depth_row = ((texture_v_over_depth_values[0] * edge0_row)
+        + (texture_v_over_depth_values[1] * edge1_row)
+        + (texture_v_over_depth_values[2] * edge2_row)) * inv_area;
     texture = ft_vox_prepare_triangle_texture(block_id, face);
     y = start_y;
     while (y <= end_y)
@@ -661,9 +682,9 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
         edge0 = edge0_row;
         edge1 = edge1_row;
         edge2 = edge2_row;
-        depth = depth_row;
-        texture_u = texture_u_row;
-        texture_v = texture_v_row;
+        inv_depth = inv_depth_row;
+        texture_u_over_depth = texture_u_over_depth_row;
+        texture_v_over_depth = texture_v_over_depth_row;
         x = start_x;
         while (x <= end_x)
         {
@@ -671,28 +692,34 @@ static void ft_vox_draw_triangle(ft_render_framebuffer &framebuffer,
                 || (edge0 <= 0.0 && edge1 <= 0.0 && edge2 <= 0.0))
             {
                 pixel_index = static_cast<size_t>((y * framebuffer.width) + x);
-                if (depth > 0.0 && depth < depth_buffer[pixel_index])
+                if (inv_depth > 0.0)
                 {
-                    depth_buffer[pixel_index] = depth;
-                    framebuffer.pixels[pixel_index] =
-                        ft_vox_shade_color(ft_vox_sample_triangle_texture(
-                            texture, texture_u, texture_v), texture.shade);
+                    depth = 1.0 / inv_depth;
+                    if (depth > 0.0 && depth < depth_buffer[pixel_index])
+                    {
+                        texture_u = texture_u_over_depth / inv_depth;
+                        texture_v = texture_v_over_depth / inv_depth;
+                        depth_buffer[pixel_index] = depth;
+                        framebuffer.pixels[pixel_index] =
+                            ft_vox_shade_color(ft_vox_sample_triangle_texture(
+                                texture, texture_u, texture_v), texture.shade);
+                    }
                 }
             }
             edge0 += step_x0;
             edge1 += step_x1;
             edge2 += step_x2;
-            depth += depth_step_x;
-            texture_u += texture_u_step_x;
-            texture_v += texture_v_step_x;
+            inv_depth += inv_depth_step_x;
+            texture_u_over_depth += texture_u_over_depth_step_x;
+            texture_v_over_depth += texture_v_over_depth_step_x;
             x = x + 1;
         }
         edge0_row += step_y0;
         edge1_row += step_y1;
         edge2_row += step_y2;
-        depth_row += depth_step_y;
-        texture_u_row += texture_u_step_y;
-        texture_v_row += texture_v_step_y;
+        inv_depth_row += inv_depth_step_y;
+        texture_u_over_depth_row += texture_u_over_depth_step_y;
+        texture_v_over_depth_row += texture_v_over_depth_step_y;
         y = y + 1;
     }
 }
