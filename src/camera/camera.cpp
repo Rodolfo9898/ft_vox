@@ -1,5 +1,6 @@
 #include "camera.hpp"
 #include <cmath>
+#include <cstdio>
 
 static double ft_vox_clamp(double value, double minimum, double maximum)
 {
@@ -30,6 +31,15 @@ void ft_vox_camera_update_orientation(ft_vox_camera *camera,
 {
     if (camera == nullptr || delta_seconds <= 0.0)
         return ;
+#ifdef DEBUG
+        std::fprintf(stderr,
+            "[camera-debug] before yaw=%.4f pitch=%.4f mouse=%.2f,%.2f dt=%.4f "
+            "turn=%d,%d look=%d,%d\n",
+            camera->yaw, camera->pitch, input.mouse_delta_x,
+            input.mouse_delta_y, delta_seconds, input.turn_left ? 1 : 0,
+            input.turn_right ? 1 : 0, input.look_up ? 1 : 0,
+            input.look_down ? 1 : 0);
+#endif
     camera->yaw = camera->yaw + (input.mouse_delta_x * 0.0025);
     camera->pitch = camera->pitch - (input.mouse_delta_y * 0.0025);
     if (input.turn_left == true)
@@ -41,6 +51,11 @@ void ft_vox_camera_update_orientation(ft_vox_camera *camera,
     if (input.look_down == true)
         camera->pitch = camera->pitch - (1.2 * delta_seconds);
     camera->pitch = ft_vox_clamp(camera->pitch, -1.2, 1.2);
+#ifdef DEBUG
+        std::fprintf(stderr,
+            "[camera-debug] after  yaw=%.4f pitch=%.4f\n",
+            camera->yaw, camera->pitch);
+#endif
     return ;
 }
 
