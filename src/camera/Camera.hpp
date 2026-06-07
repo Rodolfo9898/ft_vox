@@ -3,6 +3,7 @@
 
 #include "../../src/camera/CameraInput.hpp"
 #include <cmath>
+#include <cstdio>
 
 class Camera
 {

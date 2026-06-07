@@ -49,7 +49,7 @@ void DebugOverlayRenderer::draw_crosshair(ft_render_framebuffer &framebuffer)
 
 const uint8_t *DebugOverlayRenderer::digit_bitmap(char character)
 {
-    static const uint8_t digits[10][5] = {
+    static const uint8_t glyphs[36][5] = {
         { 7U, 5U, 5U, 5U, 7U },
         { 2U, 6U, 2U, 2U, 7U },
         { 7U, 1U, 7U, 4U, 7U },
@@ -59,38 +59,39 @@ const uint8_t *DebugOverlayRenderer::digit_bitmap(char character)
         { 7U, 4U, 7U, 5U, 7U },
         { 7U, 1U, 1U, 1U, 1U },
         { 7U, 5U, 7U, 5U, 7U },
-        { 7U, 5U, 7U, 1U, 7U }
+        { 7U, 5U, 7U, 1U, 7U },
+        { 7U, 5U, 7U, 5U, 5U },
+        { 6U, 5U, 6U, 5U, 6U },
+        { 7U, 4U, 4U, 4U, 7U },
+        { 6U, 5U, 5U, 5U, 6U },
+        { 7U, 4U, 6U, 4U, 7U },
+        { 7U, 4U, 6U, 4U, 4U },
+        { 7U, 4U, 5U, 5U, 7U },
+        { 5U, 5U, 7U, 5U, 5U },
+        { 7U, 2U, 2U, 2U, 7U },
+        { 1U, 1U, 1U, 5U, 7U },
+        { 5U, 5U, 6U, 5U, 5U },
+        { 4U, 4U, 4U, 4U, 7U },
+        { 5U, 7U, 7U, 5U, 5U },
+        { 5U, 7U, 7U, 7U, 5U },
+        { 7U, 5U, 5U, 5U, 7U },
+        { 6U, 5U, 6U, 4U, 4U },
+        { 7U, 5U, 5U, 7U, 1U },
+        { 6U, 5U, 6U, 5U, 5U },
+        { 7U, 4U, 7U, 1U, 7U },
+        { 7U, 2U, 2U, 2U, 2U },
+        { 5U, 5U, 5U, 5U, 7U },
+        { 5U, 5U, 5U, 5U, 2U },
+        { 5U, 5U, 7U, 7U, 5U },
+        { 5U, 5U, 2U, 5U, 5U },
+        { 5U, 5U, 2U, 2U, 2U },
+        { 7U, 1U, 2U, 4U, 7U }
     };
-    static const uint8_t letter_f[5] = { 7U, 4U, 6U, 4U, 4U };
-    static const uint8_t letter_p[5] = { 6U, 5U, 6U, 4U, 4U };
-    static const uint8_t letter_s[5] = { 7U, 4U, 7U, 1U, 7U };
-    static const uint8_t letter_m[5] = { 5U, 7U, 7U, 5U, 5U };
-    static const uint8_t letter_c[5] = { 7U, 4U, 4U, 4U, 7U };
-    static const uint8_t letter_l[5] = { 4U, 4U, 4U, 4U, 7U };
-    static const uint8_t letter_r[5] = { 6U, 5U, 6U, 5U, 5U };
-    static const uint8_t letter_d[5] = { 6U, 5U, 5U, 5U, 6U };
-    static const uint8_t letter_b[5] = { 6U, 5U, 6U, 5U, 6U };
 
     if (character >= '0' && character <= '9')
-        return (digits[character - '0']);
-    if (character == 'F')
-        return (letter_f);
-    if (character == 'P')
-        return (letter_p);
-    if (character == 'S')
-        return (letter_s);
-    if (character == 'M')
-        return (letter_m);
-    if (character == 'C')
-        return (letter_c);
-    if (character == 'L')
-        return (letter_l);
-    if (character == 'R')
-        return (letter_r);
-    if (character == 'D')
-        return (letter_d);
-    if (character == 'B')
-        return (letter_b);
+        return (glyphs[character - '0']);
+    if (character >= 'A' && character <= 'Z')
+        return (glyphs[10 + (character - 'A')]);
     return (nullptr);
 }
 
@@ -170,16 +171,39 @@ void DebugOverlayRenderer::draw_debug_overlay(ft_render_framebuffer &framebuffer
 {
     char text[64];
     int32_t scale;
+    int32_t origin_x;
+    int32_t origin_y;
+    int32_t line_height;
 
     if (debug == nullptr)
         return ;
     scale = 3;
     if (framebuffer.width < 900 || framebuffer.height < 520)
         scale = 2;
-    std::snprintf(text, sizeof(text), "FPS%03d MS%03d C%03d L%03d R%03d B%02u",
-        static_cast<int32_t>(debug->fps + 0.5),
-        static_cast<int32_t>(debug->frame_ms + 0.5),
-        debug->visible_chunks, debug->loaded_chunks, debug->render_distance,
-        debug->selected_block_id % 100U);
-    draw_debug_text(framebuffer, 12, 12, text, scale);
+    origin_x = 12;
+    origin_y = 12;
+    line_height = 8 * scale;
+    std::snprintf(text, sizeof(text), "FPS  %d",
+        static_cast<int32_t>(debug->fps + 0.5));
+    draw_debug_text(framebuffer, origin_x, origin_y, text, scale);
+    std::snprintf(text, sizeof(text), "FRAME MS  %d",
+        static_cast<int32_t>(debug->frame_ms + 0.5));
+    draw_debug_text(framebuffer, origin_x, origin_y + line_height, text,
+        scale);
+    std::snprintf(text, sizeof(text), "VISIBLE CHUNKS  %d",
+        debug->visible_chunks);
+    draw_debug_text(framebuffer, origin_x, origin_y + (line_height * 2), text,
+        scale);
+    std::snprintf(text, sizeof(text), "LOADED CHUNKS  %d",
+        debug->loaded_chunks);
+    draw_debug_text(framebuffer, origin_x, origin_y + (line_height * 3), text,
+        scale);
+    std::snprintf(text, sizeof(text), "RENDER DISTANCE  %d",
+        debug->render_distance);
+    draw_debug_text(framebuffer, origin_x, origin_y + (line_height * 4), text,
+        scale);
+    std::snprintf(text, sizeof(text), "SELECTED BLOCK  %u",
+        debug->selected_block_id);
+    draw_debug_text(framebuffer, origin_x, origin_y + (line_height * 5), text,
+        scale);
 }

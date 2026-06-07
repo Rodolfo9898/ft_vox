@@ -55,6 +55,15 @@ void Camera::update_orientation(const CameraInput &input, double delta_seconds)
 {
     if (delta_seconds <= 0.0)
         return ;
+#ifdef DEBUG
+    std::fprintf(stderr,
+        "[camera-debug] before yaw=%.4f pitch=%.4f mouse=%.2f,%.2f dt=%.4f "
+        "turn=%d,%d look=%d,%d\n",
+        this->yaw, this->pitch, input.mouse_delta_x,
+        input.mouse_delta_y, delta_seconds, input.turn_left ? 1 : 0,
+        input.turn_right ? 1 : 0, input.look_up ? 1 : 0,
+        input.look_down ? 1 : 0);
+#endif
     this->yaw = this->yaw + (input.mouse_delta_x * 0.0025);
     this->pitch = this->pitch - (input.mouse_delta_y * 0.0025);
     if (input.turn_left == true)
@@ -66,6 +75,11 @@ void Camera::update_orientation(const CameraInput &input, double delta_seconds)
     if (input.look_down == true)
         this->pitch = this->pitch - (1.2 * delta_seconds);
     this->pitch = Camera::clamp(this->pitch, -1.2, 1.2);
+#ifdef DEBUG
+    std::fprintf(stderr,
+        "[camera-debug] after  yaw=%.4f pitch=%.4f\n",
+        this->yaw, this->pitch);
+#endif
 }
 
 void Camera::update(const CameraInput &input, double delta_seconds)

@@ -45,50 +45,50 @@ uint32_t RendererColor::block_color(uint32_t block_id, uint8_t face)
     uint8_t blue;
     double  shade;
 
-    red = 126U;
-    green = 112U;
-    blue = 88U;
+    red = 82U;
+    green = 72U;
+    blue = 105U;
     if (block_id == TERRAIN_GENERATOR_GRASS_BLOCK)
     {
-        red = 82U;
-        green = 151U;
-        blue = 72U;
+        red = 91U;
+        green = 184U;
+        blue = 141U;
     }
     else if (block_id == TERRAIN_GENERATOR_DIRT_BLOCK)
     {
-        red = 132U;
+        red = 169U;
         green = 91U;
-        blue = 54U;
+        blue = 96U;
     }
     else if (block_id == TERRAIN_GENERATOR_STONE_BLOCK)
     {
-        red = 118U;
-        green = 122U;
-        blue = 128U;
+        red = 72U;
+        green = 91U;
+        blue = 122U;
     }
     else if (block_id == TERRAIN_GENERATOR_SHRUB_BLOCK)
     {
-        red = 61U;
-        green = 138U;
-        blue = 66U;
+        red = 190U;
+        green = 151U;
+        blue = 74U;
     }
     else if (block_id == TERRAIN_GENERATOR_OAK_LOG_BLOCK)
     {
-        red = 120U;
-        green = 78U;
-        blue = 42U;
+        red = 151U;
+        green = 86U;
+        blue = 98U;
     }
     else if (block_id == TERRAIN_GENERATOR_OAK_LEAVES_BLOCK)
     {
-        red = 46U;
-        green = 116U;
-        blue = 57U;
+        red = 66U;
+        green = 151U;
+        blue = 132U;
     }
     else if (block_id == TERRAIN_GENERATOR_CACTUS_BLOCK)
     {
-        red = 43U;
-        green = 126U;
-        blue = 82U;
+        red = 67U;
+        green = 151U;
+        blue = 135U;
     }
     shade = 0.72;
     if (face == CHUNK_MESH_FACE_UP)
