@@ -1,0 +1,30 @@
+#ifndef WORLD_BLOCK_QUERY_HPP
+# define WORLD_BLOCK_QUERY_HPP
+
+#include "../../src/world/World.hpp"
+
+#include "../../src/chunks/WorldChunkStore.hpp"
+#include "../../src/coordinates/WorldCoordinates.hpp"
+#include "../../Libft/Modules/Voxel/voxel.hpp"
+#include <cmath>
+#include <cstdint>
+
+class World;
+
+class WorldBlockQuery
+{
+    public:
+        WorldBlockQuery();
+        WorldBlockQuery(const WorldBlockQuery &other);
+        ~WorldBlockQuery();
+        WorldBlockQuery &operator=(const WorldBlockQuery &other);
+
+        static bool surface_top_at(const World &world, int32_t world_x,
+            int32_t world_z, double *surface_top);
+        static bool solid_block_at(const World &world, int32_t world_x,
+            int32_t world_y, int32_t world_z);
+        static bool block_id_at(const World &world, int32_t world_x,
+            int32_t world_y, int32_t world_z, uint32_t *block_id);
+};
+
+#endif

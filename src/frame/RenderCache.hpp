@@ -1,0 +1,31 @@
+#ifndef RENDER_CACHE_HPP
+# define RENDER_CACHE_HPP
+
+#include "../../src/camera/Camera.hpp"
+#include <cmath>
+#include <cstdint>
+
+class RenderCache
+{
+    public:
+        double yaw_cos;
+        double yaw_sin;
+        double pitch_cos;
+        double pitch_sin;
+        double fov_tangent;
+        double aspect_ratio;
+        double focal_length;
+        double half_width;
+        double half_height;
+        double render_distance;
+
+        RenderCache();
+        RenderCache(const RenderCache &other);
+        ~RenderCache();
+        RenderCache &operator=(const RenderCache &other);
+
+        void configure(const Camera &camera, int32_t width, int32_t height,
+            int32_t active_render_distance);
+};
+
+#endif

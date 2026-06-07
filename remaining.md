@@ -110,6 +110,7 @@ bvangene:
 
 ## Immediate Order
 
+0. migrate src to real classes not floating cpp func2ions
 1. Fix Linux FPS mouse capture and verify the camera feels like a true FPS
    camera.
 2. Replace the software framebuffer renderer with a direct approved graphics API
