@@ -34,7 +34,7 @@ bool WorldBlockQuery::surface_top_at(const World &world, int32_t world_x,
         return (false);
     chunk_x = WorldCoordinates::floor_divide(world_x, GAME_VOXEL_CHUNK_WIDTH);
     chunk_z = WorldCoordinates::floor_divide(world_z, GAME_VOXEL_CHUNK_DEPTH);
-    world_chunk = WorldChunkStore::find_chunk(world.chunks, world.chunk_count, chunk_x, chunk_z);
+    world_chunk = world.find_chunk(chunk_x, chunk_z);
     if (world_chunk == nullptr)
         return (false);
     local_x = WorldCoordinates::positive_modulo(world_x, GAME_VOXEL_CHUNK_WIDTH);
@@ -69,7 +69,7 @@ bool WorldBlockQuery::solid_block_at(const World &world, int32_t world_x,
         return (false);
     chunk_x = WorldCoordinates::floor_divide(world_x, GAME_VOXEL_CHUNK_WIDTH);
     chunk_z = WorldCoordinates::floor_divide(world_z, GAME_VOXEL_CHUNK_DEPTH);
-    world_chunk = WorldChunkStore::find_chunk(world.chunks, world.chunk_count, chunk_x, chunk_z);
+    world_chunk = world.find_chunk(chunk_x, chunk_z);
     if (world_chunk == nullptr)
         return (false);
     local_x = WorldCoordinates::positive_modulo(world_x, GAME_VOXEL_CHUNK_WIDTH);
@@ -94,7 +94,7 @@ bool WorldBlockQuery::block_id_at(const World &world, int32_t world_x,
         return (false);
     chunk_x = WorldCoordinates::floor_divide(world_x, GAME_VOXEL_CHUNK_WIDTH);
     chunk_z = WorldCoordinates::floor_divide(world_z, GAME_VOXEL_CHUNK_DEPTH);
-    world_chunk = WorldChunkStore::find_chunk(world.chunks, world.chunk_count, chunk_x, chunk_z);
+    world_chunk = world.find_chunk(chunk_x, chunk_z);
     if (world_chunk == nullptr)
         return (false);
     local_x = WorldCoordinates::positive_modulo(world_x, GAME_VOXEL_CHUNK_WIDTH);

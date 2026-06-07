@@ -53,7 +53,6 @@ void PerspectiveTriangleRasterizer::draw_triangle(
     int32_t end_x;
     int32_t start_y;
     int32_t end_y;
-    int32_t x;
     int32_t y;
     double edge0_row;
     double edge1_row;
@@ -86,7 +85,12 @@ void PerspectiveTriangleRasterizer::draw_triangle(
     double texture_v_over_depth;
     double texture_u;
     double texture_v;
+    size_t row_start_index;
+    size_t row_end_index;
     size_t pixel_index;
+    size_t framebuffer_width;
+    uint32_t *framebuffer_row;
+    double *depth_row;
     TriangleTexture texture;
 
     area = edge(vertices[0], vertices[1], vertices[2].x, vertices[2].y);
@@ -169,6 +173,9 @@ void PerspectiveTriangleRasterizer::draw_triangle(
         + (texture_v_over_depth_values[1] * edge1_row)
         + (texture_v_over_depth_values[2] * edge2_row)) * inv_area;
     texture = TextureAtlas::prepare_triangle_texture(block_id, face);
+    framebuffer_width = static_cast<size_t>(framebuffer.width);
+    row_start_index = static_cast<size_t>(start_y) * framebuffer_width
+        + static_cast<size_t>(start_x);
     y = start_y;
     while (y <= end_y)
     {
@@ -178,22 +185,25 @@ void PerspectiveTriangleRasterizer::draw_triangle(
         inv_depth = inv_depth_row;
         texture_u_over_depth = texture_u_over_depth_row;
         texture_v_over_depth = texture_v_over_depth_row;
-        x = start_x;
-        while (x <= end_x)
+        pixel_index = row_start_index;
+        framebuffer_row = framebuffer.pixels + row_start_index;
+        depth_row = depth_buffer.data() + row_start_index;
+        row_end_index = row_start_index
+            + static_cast<size_t>(end_x - start_x);
+        while (pixel_index <= row_end_index)
         {
             if ((edge0 >= 0.0 && edge1 >= 0.0 && edge2 >= 0.0)
                 || (edge0 <= 0.0 && edge1 <= 0.0 && edge2 <= 0.0))
             {
-                pixel_index = static_cast<size_t>((y * framebuffer.width) + x);
                 if (inv_depth > 0.0)
                 {
                     depth = 1.0 / inv_depth;
-                    if (depth > 0.0 && depth < depth_buffer[pixel_index])
+                    if (depth > 0.0 && depth < *depth_row)
                     {
                         texture_u = texture_u_over_depth / inv_depth;
                         texture_v = texture_v_over_depth / inv_depth;
-                        depth_buffer[pixel_index] = depth;
-                        framebuffer.pixels[pixel_index] =
+                        *depth_row = depth;
+                        *framebuffer_row =
                             RendererColor::shade_color(
                                 TextureAtlas::sample_triangle_texture(texture,
                                     texture_u, texture_v), texture.shade);
@@ -206,7 +216,9 @@ void PerspectiveTriangleRasterizer::draw_triangle(
             inv_depth += inv_depth_step_x;
             texture_u_over_depth += texture_u_over_depth_step_x;
             texture_v_over_depth += texture_v_over_depth_step_x;
-            x = x + 1;
+            framebuffer_row += 1;
+            depth_row += 1;
+            pixel_index = pixel_index + 1U;
         }
         edge0_row += step_y0;
         edge1_row += step_y1;
@@ -214,6 +226,7 @@ void PerspectiveTriangleRasterizer::draw_triangle(
         inv_depth_row += inv_depth_step_y;
         texture_u_over_depth_row += texture_u_over_depth_step_y;
         texture_v_over_depth_row += texture_v_over_depth_step_y;
+        row_start_index += framebuffer_width;
         y = y + 1;
     }
 }

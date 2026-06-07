@@ -26,7 +26,6 @@ const RenderDistanceStrategy &RenderStrategyFactory::select(bool headless_mode)
     static AdaptiveRenderStrategy adaptive_strategy;
     static FixedRenderStrategy fixed_strategy;
 
-    if (headless_mode == true)
-        return (fixed_strategy);
+    (void)headless_mode;
     return (adaptive_strategy);
 }

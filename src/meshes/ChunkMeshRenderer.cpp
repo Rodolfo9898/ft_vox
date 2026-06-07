@@ -44,35 +44,46 @@ bool ChunkMeshRenderer::draw_triangle_pair(ft_render_framebuffer &framebuffer,
     const chunk_mesh_vertex source_vertices[3],
     const ClipVertex clipped_vertices[4], size_t clipped_count) const
 {
-    ScreenVertex projected_vertices[3];
+    ScreenVertex projected_vertices[4];
     bool drew_triangle;
 
     drew_triangle = false;
-    if (clipped_count >= 3U
-        && MeshProjector::project_vertex(render_cache, clipped_vertices[0],
-            &projected_vertices[0]) == true
-        && MeshProjector::project_vertex(render_cache, clipped_vertices[1],
-            &projected_vertices[1]) == true
-        && MeshProjector::project_vertex(render_cache, clipped_vertices[2],
-            &projected_vertices[2]) == true)
+    if (clipped_count == 3U)
     {
-        this->rasterizer->draw_triangle(framebuffer, depth_buffer,
-            projected_vertices, source_vertices[0].block_id,
-            source_vertices[0].face);
-        drew_triangle = true;
+        if (MeshProjector::project_vertex(render_cache, clipped_vertices[0],
+                &projected_vertices[0]) == true
+            && MeshProjector::project_vertex(render_cache, clipped_vertices[1],
+                &projected_vertices[1]) == true
+            && MeshProjector::project_vertex(render_cache, clipped_vertices[2],
+                &projected_vertices[2]) == true)
+        {
+            this->rasterizer->draw_triangle(framebuffer, depth_buffer,
+                projected_vertices, source_vertices[0].block_id,
+                source_vertices[0].face);
+            drew_triangle = true;
+        }
     }
-    if (clipped_count == 4U
-        && MeshProjector::project_vertex(render_cache, clipped_vertices[0],
-            &projected_vertices[0]) == true
-        && MeshProjector::project_vertex(render_cache, clipped_vertices[2],
-            &projected_vertices[1]) == true
-        && MeshProjector::project_vertex(render_cache, clipped_vertices[3],
-            &projected_vertices[2]) == true)
+    else if (clipped_count == 4U)
     {
-        this->rasterizer->draw_triangle(framebuffer, depth_buffer,
-            projected_vertices, source_vertices[0].block_id,
-            source_vertices[0].face);
-        drew_triangle = true;
+        if (MeshProjector::project_vertex(render_cache, clipped_vertices[0],
+                &projected_vertices[0]) == true
+            && MeshProjector::project_vertex(render_cache, clipped_vertices[1],
+                &projected_vertices[1]) == true
+            && MeshProjector::project_vertex(render_cache, clipped_vertices[2],
+                &projected_vertices[2]) == true
+            && MeshProjector::project_vertex(render_cache, clipped_vertices[3],
+                &projected_vertices[3]) == true)
+        {
+            this->rasterizer->draw_triangle(framebuffer, depth_buffer,
+                projected_vertices, source_vertices[0].block_id,
+                source_vertices[0].face);
+            projected_vertices[1] = projected_vertices[2];
+            projected_vertices[2] = projected_vertices[3];
+            this->rasterizer->draw_triangle(framebuffer, depth_buffer,
+                projected_vertices, source_vertices[0].block_id,
+                source_vertices[0].face);
+            drew_triangle = true;
+        }
     }
     return (drew_triangle);
 }
@@ -84,6 +95,7 @@ bool ChunkMeshRenderer::draw_mesh(ft_render_framebuffer &framebuffer,
     size_t index;
     size_t clipped_count;
     chunk_mesh_vertex source_vertices[3];
+    ScreenVertex projected_vertices[3];
     ClipVertex transformed_vertices[3];
     ClipVertex clipped_vertices[4];
 
@@ -106,11 +118,30 @@ bool ChunkMeshRenderer::draw_mesh(ft_render_framebuffer &framebuffer,
             && this->transform_triangle(camera, render_cache, world_chunk,
                 source_vertices, transformed_vertices) == true)
         {
-            clipped_count = MeshClipper::clip_near(transformed_vertices,
-                clipped_vertices);
-            (void)this->draw_triangle_pair(framebuffer, depth_buffer,
-                render_cache, source_vertices, clipped_vertices,
-                clipped_count);
+            if (transformed_vertices[0].view_z >= NEAR_PLANE
+                && transformed_vertices[1].view_z >= NEAR_PLANE
+                && transformed_vertices[2].view_z >= NEAR_PLANE)
+            {
+                if (MeshProjector::project_vertex(render_cache,
+                        transformed_vertices[0], &projected_vertices[0]) == true
+                    && MeshProjector::project_vertex(render_cache,
+                        transformed_vertices[1], &projected_vertices[1]) == true
+                    && MeshProjector::project_vertex(render_cache,
+                        transformed_vertices[2], &projected_vertices[2]) == true)
+                {
+                    this->rasterizer->draw_triangle(framebuffer, depth_buffer,
+                        projected_vertices, source_vertices[0].block_id,
+                        source_vertices[0].face);
+                }
+            }
+            else
+            {
+                clipped_count = MeshClipper::clip_near(transformed_vertices,
+                    clipped_vertices);
+                (void)this->draw_triangle_pair(framebuffer, depth_buffer,
+                    render_cache, source_vertices, clipped_vertices,
+                    clipped_count);
+            }
         }
         index = index + 3U;
     }

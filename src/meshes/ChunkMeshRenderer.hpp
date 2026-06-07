@@ -42,6 +42,7 @@ class ChunkMeshRenderer
             const RenderCache &render_cache, const WorldChunk &world_chunk,
             const chunk_mesh_vertex source_vertices[3],
             ClipVertex transformed_vertices[3]) const;
+        static constexpr double NEAR_PLANE = 0.08;
 };
 
 #endif

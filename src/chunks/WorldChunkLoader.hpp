@@ -16,11 +16,16 @@ class WorldChunkLoader
 
         static int32_t initialize_chunk(WorldChunk *world_chunk,
             int32_t chunk_x, int32_t chunk_z, const char *seed);
+        static int32_t initialize_chunk(WorldChunk *world_chunk,
+            int32_t chunk_x, int32_t chunk_z, const char *seed,
+            WorldChunk *chunks, int32_t chunk_count);
         static int32_t generate_missing_chunk(WorldChunk *chunks,
             int32_t chunk_count, int32_t *loaded_chunk_count,
             int32_t chunk_x, int32_t chunk_z, const char *seed);
         static int32_t remesh_chunk(WorldChunk *chunks, int32_t chunk_count,
             int32_t chunk_x, int32_t chunk_z);
+        static int32_t remesh_chunk(WorldChunk *chunks, int32_t chunk_count,
+            int32_t chunk_x, int32_t chunk_z, bool use_neighbors);
         static int32_t remesh_edited_chunk_border(WorldChunk *chunks,
             int32_t chunk_count, int32_t chunk_x, int32_t chunk_z,
             int32_t local_x, int32_t local_z);

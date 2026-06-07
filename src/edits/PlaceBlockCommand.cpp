@@ -58,8 +58,7 @@ int32_t PlaceBlockCommand::execute(World &world) const
         GAME_VOXEL_CHUNK_WIDTH);
     chunk_z = WorldCoordinates::floor_divide(this->world_z,
         GAME_VOXEL_CHUNK_DEPTH);
-    world_chunk = WorldChunkStore::find_chunk_mutable(world.chunks,
-        world.chunk_count, chunk_x, chunk_z);
+    world_chunk = world.find_chunk_mutable(chunk_x, chunk_z);
     if (world_chunk == nullptr)
         return (FT_ERR_NOT_FOUND);
     local_x = WorldCoordinates::positive_modulo(this->world_x,

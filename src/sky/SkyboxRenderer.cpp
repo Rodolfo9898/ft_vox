@@ -41,6 +41,50 @@ uint32_t SkyboxRenderer::skybox_row_color(int32_t y, int32_t height)
     return (RendererColor::rgba(red, green, blue));
 }
 
+static const std::vector<uint32_t> &skybox_cached_row_colors(int32_t height)
+{
+    static std::vector<uint32_t> cached_row_colors;
+    static int32_t cached_height = 0;
+
+    if (cached_height != height)
+    {
+        int32_t row;
+
+        cached_row_colors.resize(height > 0 ? static_cast<size_t>(height) : 0U);
+        row = 0;
+        while (row < height)
+        {
+            double factor;
+            uint8_t red;
+            uint8_t green;
+            uint8_t blue;
+
+            if (height <= 1)
+                cached_row_colors[static_cast<size_t>(row)] =
+                    RendererColor::rgba(94U, 164U, 225U);
+            else
+            {
+                factor = static_cast<double>(row)
+                    / static_cast<double>(height - 1);
+                red = static_cast<uint8_t>(82.0 + (62.0 * factor));
+                green = static_cast<uint8_t>(154.0 + (44.0 * factor));
+                blue = static_cast<uint8_t>(224.0 + (22.0 * factor));
+                if (row > (height / 2))
+                {
+                    red = static_cast<uint8_t>(66.0 + (32.0 * factor));
+                    green = static_cast<uint8_t>(132.0 + (38.0 * factor));
+                    blue = static_cast<uint8_t>(202.0 + (26.0 * factor));
+                }
+                cached_row_colors[static_cast<size_t>(row)] =
+                    RendererColor::rgba(red, green, blue);
+            }
+            row = row + 1;
+        }
+        cached_height = height;
+    }
+    return (cached_row_colors);
+}
+
 void SkyboxRenderer::draw_skybox_sun(ft_render_framebuffer &framebuffer,
     const Camera &camera)
 {
@@ -101,17 +145,17 @@ void SkyboxRenderer::clear_frame(ft_render_framebuffer &framebuffer,
     std::vector<double> &depth_buffer, const Camera &camera)
 {
     int32_t y;
-    uint32_t sky_color;
     size_t row_index;
 
+    const std::vector<uint32_t> &row_colors =
+        skybox_cached_row_colors(framebuffer.height);
+    std::fill(depth_buffer.begin(), depth_buffer.end(), 1.0e30);
     y = 0;
     while (y < framebuffer.height)
     {
         row_index = static_cast<size_t>(y * framebuffer.width);
-        sky_color = skybox_row_color(y, framebuffer.height);
         std::fill_n(framebuffer.pixels + row_index, framebuffer.width,
-            sky_color);
-        std::fill_n(depth_buffer.data() + row_index, framebuffer.width, 1.0e30);
+            row_colors[static_cast<size_t>(y)]);
         y = y + 1;
     }
     draw_skybox_sun(framebuffer, camera);

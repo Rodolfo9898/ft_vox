@@ -49,7 +49,7 @@ void DebugOverlayRenderer::draw_crosshair(ft_render_framebuffer &framebuffer)
 
 const uint8_t *DebugOverlayRenderer::digit_bitmap(char character)
 {
-    static const uint8_t glyphs[36][5] = {
+    static const uint8_t glyphs[37][5] = {
         { 7U, 5U, 5U, 5U, 7U },
         { 2U, 6U, 2U, 2U, 7U },
         { 7U, 1U, 7U, 4U, 7U },
@@ -85,13 +85,16 @@ const uint8_t *DebugOverlayRenderer::digit_bitmap(char character)
         { 5U, 5U, 7U, 7U, 5U },
         { 5U, 5U, 2U, 5U, 5U },
         { 5U, 5U, 2U, 2U, 2U },
-        { 7U, 1U, 2U, 4U, 7U }
+        { 7U, 1U, 2U, 4U, 7U },
+        { 0U, 0U, 0U, 0U, 2U }
     };
 
     if (character >= '0' && character <= '9')
         return (glyphs[character - '0']);
     if (character >= 'A' && character <= 'Z')
         return (glyphs[10 + (character - 'A')]);
+    if (character == '.')
+        return (glyphs[36]);
     return (nullptr);
 }
 
@@ -183,11 +186,9 @@ void DebugOverlayRenderer::draw_debug_overlay(ft_render_framebuffer &framebuffer
     origin_x = 12;
     origin_y = 12;
     line_height = 8 * scale;
-    std::snprintf(text, sizeof(text), "FPS  %d",
-        static_cast<int32_t>(debug->fps + 0.5));
+    std::snprintf(text, sizeof(text), "FPS  %.1f", debug->fps);
     draw_debug_text(framebuffer, origin_x, origin_y, text, scale);
-    std::snprintf(text, sizeof(text), "FRAME MS  %d",
-        static_cast<int32_t>(debug->frame_ms + 0.5));
+    std::snprintf(text, sizeof(text), "FRAME MS  %.1f", debug->frame_ms);
     draw_debug_text(framebuffer, origin_x, origin_y + line_height, text,
         scale);
     std::snprintf(text, sizeof(text), "VISIBLE CHUNKS  %d",

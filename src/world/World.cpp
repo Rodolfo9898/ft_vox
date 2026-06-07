@@ -2,10 +2,21 @@
 
 World::World()
 {
+    int32_t index;
+
+    index = 0;
+    while (index < WORLD_CHUNK_COUNT)
+    {
+        this->chunk_index[index] = nullptr;
+        index = index + 1;
+    }
     this->chunk_count = WORLD_CHUNK_COUNT;
     this->loaded_chunk_count = 0;
     this->center_chunk_x = 0;
     this->center_chunk_z = 0;
+    this->chunk_index_center_x = 0;
+    this->chunk_index_center_z = 0;
+    this->chunk_index_valid = false;
     this->active_render_distance = WORLD_REQUIRED_VISIBLE_DISTANCE;
     this->seed[0] = '\0';
 }
@@ -23,6 +34,89 @@ void World::copy_seed(const char *seed_value)
     this->seed[sizeof(this->seed) - 1U] = '\0';
 }
 
+void World::clear_chunk_index()
+{
+    int32_t index;
+
+    index = 0;
+    while (index < WORLD_CHUNK_COUNT)
+    {
+        this->chunk_index[index] = nullptr;
+        index = index + 1;
+    }
+    this->chunk_index_valid = false;
+}
+
+void World::rebuild_chunk_index()
+{
+    int32_t index;
+    int32_t slot_x;
+    int32_t slot_z;
+    int32_t grid_x;
+    int32_t grid_z;
+    int32_t grid_width;
+
+    this->clear_chunk_index();
+    grid_width = WORLD_CACHE_CHUNK_RADIUS * 2 + 1;
+    index = 0;
+    while (index < this->chunk_count)
+    {
+        if (this->chunks[index].initialized == true)
+        {
+            slot_x = this->chunks[index].chunk_x - this->center_chunk_x;
+            slot_z = this->chunks[index].chunk_z - this->center_chunk_z;
+            if (slot_x >= -WORLD_CACHE_CHUNK_RADIUS
+                && slot_x <= WORLD_CACHE_CHUNK_RADIUS
+                && slot_z >= -WORLD_CACHE_CHUNK_RADIUS
+                && slot_z <= WORLD_CACHE_CHUNK_RADIUS)
+            {
+                grid_x = slot_x + WORLD_CACHE_CHUNK_RADIUS;
+                grid_z = slot_z + WORLD_CACHE_CHUNK_RADIUS;
+                this->chunk_index[(grid_z * grid_width) + grid_x]
+                    = &this->chunks[index];
+            }
+        }
+        index = index + 1;
+    }
+    this->chunk_index_center_x = this->center_chunk_x;
+    this->chunk_index_center_z = this->center_chunk_z;
+    this->chunk_index_valid = true;
+}
+
+void World::register_chunk_index(const WorldChunk &chunk)
+{
+    int32_t slot_x;
+    int32_t slot_z;
+    int32_t grid_x;
+    int32_t grid_z;
+    int32_t grid_width;
+
+    if (this->chunk_index_valid == false)
+        return ;
+    slot_x = chunk.chunk_x - this->chunk_index_center_x;
+    slot_z = chunk.chunk_z - this->chunk_index_center_z;
+    if (slot_x < -WORLD_CACHE_CHUNK_RADIUS || slot_x > WORLD_CACHE_CHUNK_RADIUS
+        || slot_z < -WORLD_CACHE_CHUNK_RADIUS
+        || slot_z > WORLD_CACHE_CHUNK_RADIUS)
+        return ;
+    grid_width = WORLD_CACHE_CHUNK_RADIUS * 2 + 1;
+    grid_x = slot_x + WORLD_CACHE_CHUNK_RADIUS;
+    grid_z = slot_z + WORLD_CACHE_CHUNK_RADIUS;
+    this->chunk_index[(grid_z * grid_width) + grid_x]
+        = const_cast<WorldChunk *>(&chunk);
+}
+
+static void world_remesh_loaded_neighbor(World *world, int32_t chunk_x,
+    int32_t chunk_z)
+{
+    if (world == nullptr)
+        return ;
+    if (world->find_chunk(chunk_x, chunk_z) == nullptr)
+        return ;
+    (void)WorldChunkLoader::remesh_chunk(world->chunks, world->chunk_count,
+        chunk_x, chunk_z, true);
+}
+
 int32_t World::initialize(const char *seed_value)
 {
     int32_t index;
@@ -34,6 +128,7 @@ int32_t World::initialize(const char *seed_value)
     this->center_chunk_x = 0;
     this->center_chunk_z = 0;
     this->active_render_distance = WORLD_REQUIRED_VISIBLE_DISTANCE;
+    this->clear_chunk_index();
     this->copy_seed(seed_value);
     index = 0;
     while (index < this->chunk_count)
@@ -60,6 +155,7 @@ void World::destroy()
         index = index + 1;
     }
     this->loaded_chunk_count = 0;
+    this->clear_chunk_index();
 }
 
 int32_t World::update_around(double camera_x, double camera_z,
@@ -86,10 +182,17 @@ int32_t World::update_around(double camera_x, double camera_z,
     this->active_render_distance = WorldCoordinates::clamp_int(render_distance,
         WORLD_MIN_RENDER_DISTANCE,
         WORLD_CACHE_CHUNK_RADIUS * GAME_VOXEL_CHUNK_WIDTH);
+    if (this->chunk_index_valid == false
+        || this->chunk_index_center_x != this->center_chunk_x
+        || this->chunk_index_center_z != this->center_chunk_z)
+    {
+        WorldChunkStore::evict_far_chunks(this->chunks, this->chunk_count,
+            &this->loaded_chunk_count, this->center_chunk_x,
+            this->center_chunk_z);
+        this->rebuild_chunk_index();
+    }
     stream_chunk_radius = WorldCoordinates::render_distance_to_chunk_radius(
         this->active_render_distance);
-    WorldChunkStore::evict_far_chunks(this->chunks, this->chunk_count,
-        &this->loaded_chunk_count, this->center_chunk_x, this->center_chunk_z);
     generated_count = 0;
     radius = 0;
     while (radius <= stream_chunk_radius)
@@ -108,16 +211,35 @@ int32_t World::update_around(double camera_x, double camera_z,
                         this->center_chunk_x, this->center_chunk_z)
                         <= stream_chunk_radius * stream_chunk_radius)
                 {
-                    if (WorldChunkStore::find_chunk(this->chunks, this->chunk_count, this->center_chunk_x + offset_x,
+                    if (this->find_chunk(this->center_chunk_x + offset_x,
                             this->center_chunk_z + offset_z) == nullptr)
                     {
-                        error_code = WorldChunkLoader::generate_missing_chunk(
-                            this->chunks, this->chunk_count,
-                            &this->loaded_chunk_count,
-                            this->center_chunk_x + offset_x,
-                            this->center_chunk_z + offset_z, this->seed);
+                        WorldChunk *slot;
+
+                        slot = WorldChunkStore::find_free_chunk_slot(
+                            this->chunks, this->chunk_count);
+                        if (slot == nullptr)
+                            return (FT_ERR_NO_MEMORY);
+                        error_code = WorldChunkLoader::initialize_chunk(
+                            slot, this->center_chunk_x + offset_x,
+                            this->center_chunk_z + offset_z, this->seed,
+                            this->chunks, this->chunk_count);
                         if (error_code != FT_ERR_SUCCESS)
                             return (error_code);
+                        this->loaded_chunk_count = this->loaded_chunk_count + 1;
+                        this->register_chunk_index(*slot);
+                        world_remesh_loaded_neighbor(this,
+                            this->center_chunk_x + offset_x - 1,
+                            this->center_chunk_z + offset_z);
+                        world_remesh_loaded_neighbor(this,
+                            this->center_chunk_x + offset_x + 1,
+                            this->center_chunk_z + offset_z);
+                        world_remesh_loaded_neighbor(this,
+                            this->center_chunk_x + offset_x,
+                            this->center_chunk_z + offset_z - 1);
+                        world_remesh_loaded_neighbor(this,
+                            this->center_chunk_x + offset_x,
+                            this->center_chunk_z + offset_z + 1);
                         generated_count = generated_count + 1;
                         if (generation_budget > 0
                             && generated_count >= generation_budget)
@@ -131,6 +253,29 @@ int32_t World::update_around(double camera_x, double camera_z,
         radius = radius + 1;
     }
     return (FT_ERR_SUCCESS);
+}
+
+const WorldChunk *World::find_chunk(int32_t chunk_x, int32_t chunk_z) const
+{
+    int32_t slot_x;
+    int32_t slot_z;
+    int32_t grid_width;
+
+    slot_x = chunk_x - this->center_chunk_x;
+    slot_z = chunk_z - this->center_chunk_z;
+    if (slot_x < -WORLD_CACHE_CHUNK_RADIUS || slot_x > WORLD_CACHE_CHUNK_RADIUS
+        || slot_z < -WORLD_CACHE_CHUNK_RADIUS
+        || slot_z > WORLD_CACHE_CHUNK_RADIUS)
+        return (nullptr);
+    grid_width = WORLD_CACHE_CHUNK_RADIUS * 2 + 1;
+    return (this->chunk_index[((slot_z + WORLD_CACHE_CHUNK_RADIUS)
+        * grid_width) + (slot_x + WORLD_CACHE_CHUNK_RADIUS)]);
+}
+
+WorldChunk *World::find_chunk_mutable(int32_t chunk_x, int32_t chunk_z)
+{
+    return (const_cast<WorldChunk *>(static_cast<const World *>(this)
+        ->find_chunk(chunk_x, chunk_z)));
 }
 
 bool World::validate_visible_distance(double camera_x, double camera_z,

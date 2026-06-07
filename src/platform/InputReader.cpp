@@ -24,7 +24,6 @@ CameraInput InputReader::read_camera_input(bool boost_enabled)
     CameraInput input;
     ft_dumb_mouse_delta mouse_delta;
 
-    mouse_delta = ft_dumb_controls_mouse_delta();
     input.move_forward = (ft_dumb_control_is_down(FT_DUMB_CONTROL_UP)
         == FT_TRUE);
     input.move_backward = (ft_dumb_control_is_down(FT_DUMB_CONTROL_DOWN)
@@ -40,6 +39,7 @@ CameraInput InputReader::read_camera_input(bool boost_enabled)
     input.speed_boost = boost_enabled;
     input.jump_pressed = (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_JUMP)
         == FT_TRUE);
+    mouse_delta = ft_dumb_controls_mouse_delta();
     input.mouse_delta_x = static_cast<double>(mouse_delta.x);
     input.mouse_delta_y = static_cast<double>(mouse_delta.y);
     return (input);

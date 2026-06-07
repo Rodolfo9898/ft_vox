@@ -65,14 +65,15 @@ bool MeshProjector::transform_vertex(const Camera &camera,
 bool MeshProjector::project_vertex(const RenderCache &render_cache,
     const ClipVertex &clip_vertex, ScreenVertex *screen_vertex)
 {
+    double inv_view_z;
+
     if (screen_vertex == nullptr || clip_vertex.view_z < NEAR_PLANE)
         return (false);
+    inv_view_z = 1.0 / clip_vertex.view_z;
     screen_vertex->x = render_cache.half_width
-        + ((clip_vertex.view_x / clip_vertex.view_z)
-            * render_cache.focal_length);
+        + ((clip_vertex.view_x * inv_view_z) * render_cache.focal_length);
     screen_vertex->y = render_cache.half_height
-        - ((clip_vertex.view_y / clip_vertex.view_z)
-            * render_cache.focal_length);
+        - ((clip_vertex.view_y * inv_view_z) * render_cache.focal_length);
     screen_vertex->depth = clip_vertex.view_z;
     screen_vertex->texture_u = clip_vertex.texture_u;
     screen_vertex->texture_v = clip_vertex.texture_v;

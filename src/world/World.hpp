@@ -15,6 +15,10 @@ class World
 {
     public:
         WorldChunk chunks[WORLD_CHUNK_COUNT];
+        WorldChunk *chunk_index[WORLD_CHUNK_COUNT];
+        int32_t    chunk_index_center_x;
+        int32_t    chunk_index_center_z;
+        bool       chunk_index_valid;
         int32_t    chunk_count;
         int32_t    loaded_chunk_count;
         int32_t    center_chunk_x;
@@ -55,9 +59,14 @@ class World
             int32_t *hit_block_y, int32_t *hit_block_z,
             int32_t *place_block_x, int32_t *place_block_y,
             int32_t *place_block_z, uint32_t *hit_block_id) const;
+        const WorldChunk *find_chunk(int32_t chunk_x, int32_t chunk_z) const;
+        WorldChunk *find_chunk_mutable(int32_t chunk_x, int32_t chunk_z);
 
     private:
         void copy_seed(const char *seed_value);
+        void clear_chunk_index();
+        void rebuild_chunk_index();
+        void register_chunk_index(const WorldChunk &chunk);
 };
 
 #include "../../src/queries/WorldBlockQuery.hpp"

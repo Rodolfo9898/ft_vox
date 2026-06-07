@@ -210,7 +210,11 @@ TriangleTexture TextureAtlas::prepare_triangle_texture(
     int32_t tile_y;
     int32_t margin_x;
     int32_t margin_y;
+    static TriangleTexture cached_textures[16][6];
+    static bool cached_texture_ready[16][6];
 
+    if (block_id < 16U && face < 6U && cached_texture_ready[block_id][face] == true)
+        return (cached_textures[block_id][face]);
     texture.atlas = &atlas;
     texture.fallback_color = RendererColor::block_color(block_id, face);
     texture.base_x = 0;
@@ -229,6 +233,11 @@ TriangleTexture TextureAtlas::prepare_triangle_texture(
     texture.sample_width = std::max(1, atlas.get_tile_width() - (margin_x * 2));
     texture.sample_height = std::max(1, atlas.get_tile_height() - (margin_y * 2));
     texture.loaded = true;
+    if (block_id < 16U && face < 6U)
+    {
+        cached_textures[block_id][face] = texture;
+        cached_texture_ready[block_id][face] = true;
+    }
     return (texture);
 }
 
@@ -239,17 +248,42 @@ uint32_t TextureAtlas::sample_triangle_texture(
     int32_t pixel_y;
     double u;
     double v;
+    int32_t atlas_width;
+    int32_t atlas_height;
 
     if (texture.loaded == false || texture.atlas == nullptr)
         return (texture.fallback_color);
-    u = fraction(texture_u);
-    v = fraction(texture_v);
+    if (texture_u >= 0.0 && texture_u < 1.0 && texture_v >= 0.0
+        && texture_v < 1.0)
+    {
+        pixel_x = texture.base_x
+            + static_cast<int32_t>(texture_u
+                * static_cast<double>(texture.sample_width));
+        pixel_y = texture.base_y
+            + static_cast<int32_t>(texture_v
+                * static_cast<double>(texture.sample_height));
+        return (texture.atlas->pixel_at(pixel_x, pixel_y));
+    }
+    u = texture_u - static_cast<double>(static_cast<int64_t>(texture_u));
+    v = texture_v - static_cast<double>(static_cast<int64_t>(texture_v));
+    if (u < 0.0)
+        u += 1.0;
+    if (v < 0.0)
+        v += 1.0;
     pixel_x = texture.base_x
         + static_cast<int32_t>(u * static_cast<double>(texture.sample_width));
     pixel_y = texture.base_y
         + static_cast<int32_t>(v * static_cast<double>(texture.sample_height));
-    pixel_x = std::max(0, std::min(pixel_x, texture.atlas->get_width() - 1));
-    pixel_y = std::max(0, std::min(pixel_y, texture.atlas->get_height() - 1));
+    atlas_width = texture.atlas->get_width();
+    atlas_height = texture.atlas->get_height();
+    if (pixel_x < 0)
+        pixel_x = 0;
+    else if (pixel_x >= atlas_width)
+        pixel_x = atlas_width - 1;
+    if (pixel_y < 0)
+        pixel_y = 0;
+    else if (pixel_y >= atlas_height)
+        pixel_y = atlas_height - 1;
     return (texture.atlas->pixel_at(pixel_x, pixel_y));
 }
 
