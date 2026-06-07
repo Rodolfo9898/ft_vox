@@ -19,13 +19,10 @@ remaining blockers are:
 
 - move rendering from the current CPU software framebuffer path to an approved
   direct graphics API path such as OpenGL, Vulkan, Metal, WebGPU, or OpenCL;
-- render at the real fullscreen framebuffer size, without the current reduced
-  internal render target;
 - verify smooth 160-cube visibility in a real fullscreen run;
 - fix and verify Linux FPS mouse capture so the cursor cannot freely leave the
   centered look area;
-- validate deterministic terrain, world scale, caves, and long-running memory
-  stability;
+- validate long-running memory stability and real GUI x20 movement;
 - keep the bonus features working only after the mandatory part is solid.
 
 ## Build

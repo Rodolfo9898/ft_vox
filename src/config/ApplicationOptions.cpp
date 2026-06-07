@@ -10,6 +10,9 @@ ApplicationOptions::ApplicationOptions()
     this->validate_collision_mode = false;
     this->validate_block_edit_mode = false;
     this->validate_visible_distance_mode = false;
+    this->validate_terrain_determinism_mode = false;
+    this->validate_world_scale_mode = false;
+    this->validate_caves_mode = false;
     this->perf_seconds_limit = 10.0;
 }
 
@@ -34,6 +37,10 @@ ApplicationOptions &ApplicationOptions::operator=(const ApplicationOptions &othe
         this->validate_collision_mode = other.validate_collision_mode;
         this->validate_block_edit_mode = other.validate_block_edit_mode;
         this->validate_visible_distance_mode = other.validate_visible_distance_mode;
+        this->validate_terrain_determinism_mode
+            = other.validate_terrain_determinism_mode;
+        this->validate_world_scale_mode = other.validate_world_scale_mode;
+        this->validate_caves_mode = other.validate_caves_mode;
         this->perf_seconds_limit = other.perf_seconds_limit;
     }
     return (*this);
@@ -57,6 +64,12 @@ int ApplicationOptions::parse(int argc, char **argv)
         "--validate-block-edit");
     this->validate_visible_distance_mode = CommandLine::has_flag(argc, argv,
         "--validate-visible-distance");
+    this->validate_terrain_determinism_mode = CommandLine::has_flag(argc, argv,
+        "--validate-terrain-determinism");
+    this->validate_world_scale_mode = CommandLine::has_flag(argc, argv,
+        "--validate-world-scale");
+    this->validate_caves_mode = CommandLine::has_flag(argc, argv,
+        "--validate-caves");
     result = CommandLine::parse_perf_seconds(argc, argv,
         &this->perf_seconds_limit);
     if (result < 0)

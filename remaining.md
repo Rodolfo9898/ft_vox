@@ -1,34 +1,33 @@
 # ft_vox Remaining Work
 
-Last audit: 2026-06-05
+Last audit: 2026-06-07
 
 Scope checked: the subject requirements, `main.cpp`, `src/`, and the relevant
 Libft modules under `Libft/Modules/DUMB`, `Libft/Modules/Game`, and
 `Libft/Modules/Voxel`.
 
-This file only lists work that still needs attention. Completed prototype work,
-such as the DUMB window loop, chunk storage, terrain height generation, texture
-atlas loading, visible-face mesh generation, debug overlay/FPS counter, block
-editing hooks, dynamic render distance, and biome block data, has been removed
-from the active checklist.
+This file only lists work that still needs attention. Completed work, such as
+the DUMB window loop, chunk storage, terrain height generation, cave carving,
+terrain determinism validation, required-scale validation, texture atlas loading,
+visible-face mesh generation, debug overlay/FPS counter, block editing hooks,
+dynamic render distance, real-size software render target, and biome block data,
+has been removed from the active checklist.
 
 ## Mandatory Blockers
 
 ### Renderer/API Compliance
 
 - The current renderer is a CPU software framebuffer renderer in
-  `src/render/voxel_renderer.cpp`. The subject requires working directly with
+  `src/render/VoxelRenderer.cpp`. The subject requires working directly with
   an approved graphics API: OpenGL, OpenCL, Vulkan, Metal, or WebGPU. DUMB can
   remain as window/input/platform glue, but final cube rendering needs a direct
   API path.
-- The current renderer draws into `framebuffer.width / 3` by
-  `framebuffer.height / 3` and scales the result back up. The subject forbids
-  reducing the default framebuffer, so the final renderer must draw at real
-  fullscreen resolution.
 - Chunk meshes and the texture atlas need to be uploaded/drawn through the GPU
   renderer with depth testing and stable frame pacing.
 - The CPU/GPU workload still needs to be balanced and measured once the GPU path
   exists.
+- The current software fallback now renders at real framebuffer size, which is
+  subject-compliant for resolution but too slow to be the final rendering path.
 
 ### Rendering Quality
 
@@ -53,19 +52,13 @@ from the active checklist.
 
 ### World/Terrain
 
-- Verify the required world scale of `16384 * 256 * 16384` blocks. The current
-  streaming cache can move through chunks, but the final defense needs proof
-  that coordinate handling and regeneration remain valid across the required
-  range.
-- Add or verify caves. The current Libft terrain generator produces deterministic
-  heightmapped columns with biomes, shrubs, and trees, but the audited generator
-  did not show cave carving.
 - Decide whether lakes/water are part of the final mandatory interpretation and
   implement them if needed for the natural-topography expectation.
-- Add determinism tests proving the same seed regenerates the same chunk data
-  after eviction/reload.
 - Check ground-level readability so the player is not visually lost when looking
   across terrain.
+- Keep the terrain proof hooks green during future renderer/input work:
+  `--validate-terrain-determinism`, `--validate-world-scale`, and
+  `--validate-caves`.
 
 ### Stability/Performance
 
@@ -97,24 +90,21 @@ Some bonus hooks already exist, but they still need final validation:
 rperez-t:
 
 - implement the direct graphics API renderer;
-- remove the reduced-resolution software render path from the final build;
 - fix Linux FPS mouse capture;
 - verify fullscreen frame pacing, skybox, textures, and 160-cube visibility.
 
 bvangene:
 
-- extend or validate terrain generation for caves and optional lakes;
-- add determinism and required-scale tests;
+- decide whether optional lakes/water are needed and implement them if yes;
 - keep chunk eviction/reload and visible-face mesh generation correct;
 - support remeshing after block edits for the final renderer.
 
 ## Immediate Order
 
-0. migrate src to real classes not floating cpp func2ions
 1. Fix Linux FPS mouse capture and verify the camera feels like a true FPS
    camera.
 2. Replace the software framebuffer renderer with a direct approved graphics API
    renderer.
-3. Remove the one-third-size render target from the final render path.
+3. Upload chunk meshes and the texture atlas through the GPU renderer.
 4. Validate 160-cube fullscreen visibility and smooth frame pacing.
-5. Add terrain determinism, cave, scale, and long-duration stability tests.
+5. Run long-duration memory/stability tests and real GUI x20 movement tests.

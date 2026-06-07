@@ -22,6 +22,9 @@ SRC = \
     src/validators/CollisionValidator.cpp \
     src/validators/BlockEditValidator.cpp \
     src/validators/WorldVisibilityValidator.cpp \
+    src/validators/TerrainDeterminismValidator.cpp \
+    src/validators/TerrainCaveValidator.cpp \
+    src/validators/WorldScaleValidator.cpp \
     src/policy/RenderDistanceStrategy.cpp \
     src/policy/AdaptiveRenderStrategy.cpp \
     src/policy/FixedRenderStrategy.cpp \

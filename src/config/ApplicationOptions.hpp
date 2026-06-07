@@ -15,6 +15,9 @@ class ApplicationOptions
         bool validate_collision_mode;
         bool validate_block_edit_mode;
         bool validate_visible_distance_mode;
+        bool validate_terrain_determinism_mode;
+        bool validate_world_scale_mode;
+        bool validate_caves_mode;
         double perf_seconds_limit;
 
         ApplicationOptions();

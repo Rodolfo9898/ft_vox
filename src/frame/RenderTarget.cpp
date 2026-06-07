@@ -35,12 +35,8 @@ ft_render_framebuffer &RenderTarget::prepare(const ft_render_framebuffer &output
 {
     size_t required_size;
 
-    this->target_framebuffer.width = output.width / 3;
-    this->target_framebuffer.height = output.height / 3;
-    if (this->target_framebuffer.width < 320)
-        this->target_framebuffer.width = output.width;
-    if (this->target_framebuffer.height < 180)
-        this->target_framebuffer.height = output.height;
+    this->target_framebuffer.width = output.width;
+    this->target_framebuffer.height = output.height;
     required_size = static_cast<size_t>(this->target_framebuffer.width)
         * static_cast<size_t>(this->target_framebuffer.height);
     if (this->color_buffer.size() != required_size)
@@ -62,9 +58,24 @@ void RenderTarget::blit_to(ft_render_framebuffer &destination) const
     int32_t y;
     int32_t source_x;
     int32_t source_y;
+    size_t index;
+    size_t pixel_count;
 
     if (destination.pixels == nullptr || this->target_framebuffer.pixels == nullptr)
         return ;
+    if (destination.width == this->target_framebuffer.width
+        && destination.height == this->target_framebuffer.height)
+    {
+        pixel_count = static_cast<size_t>(destination.width)
+            * static_cast<size_t>(destination.height);
+        index = 0;
+        while (index < pixel_count)
+        {
+            destination.pixels[index] = this->target_framebuffer.pixels[index];
+            index = index + 1;
+        }
+        return ;
+    }
     y = 0;
     while (y < destination.height)
     {
