@@ -81,7 +81,7 @@ else
     ifeq ($(UNAME_S),Darwin)
         LDFLAGS = -lz -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore -framework AudioToolbox -lobjc -lpthread -lsqlite3
     else
-        LDFLAGS = -lX11 -lXext -lGL
+        LDFLAGS = -lX11 -lXext -lXi -lGL
     endif
 endif
 
