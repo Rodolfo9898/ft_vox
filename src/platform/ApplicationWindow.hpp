@@ -3,17 +3,19 @@
 
 #include "../../src/diagnostics/ApplicationError.hpp"
 #include "../../Libft/Modules/DUMB/render_window.hpp"
+#include "../../src/gpur/GpuWindow.hpp"
 #include <cstdint>
 #include <vector>
 
 class ApplicationWindow
 {
     private:
-        ft_render_window window;
+        ft_render_window      sw_window;
+        GpuWindow            *gpu_window;
         ft_render_framebuffer active_framebuffer;
         std::vector<uint32_t> headless_pixels;
-        bool headless;
-        bool opened;
+        bool                  headless;
+        bool                  opened;
 
     public:
         ApplicationWindow();
@@ -27,6 +29,8 @@ class ApplicationWindow
         int destroy();
         bool should_close() const;
         bool is_headless() const;
+        bool is_gpu_mode() const;
+        GpuWindow *get_gpu_window() const;
         ft_render_framebuffer &framebuffer();
 };
 

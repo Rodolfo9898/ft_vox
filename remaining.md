@@ -1,6 +1,6 @@
 # ft_vox Remaining Work
 
-Last audit: 2026-06-07
+Last audit: 2026-06-08
 
 Scope checked: the subject requirements, `main.cpp`, `src/`, and the relevant
 Libft modules under `Libft/Modules/DUMB`, `Libft/Modules/Game`, and
@@ -9,35 +9,28 @@ Libft modules under `Libft/Modules/DUMB`, `Libft/Modules/Game`, and
 This file only lists work that still needs attention. Completed work, such as
 the DUMB window loop, chunk storage, terrain height generation, cave carving,
 terrain determinism validation, required-scale validation, texture atlas loading,
-visible-face mesh generation, debug overlay/FPS counter, block editing hooks,
-dynamic render distance, real-size software render target, and biome block data,
+visible-face mesh generation, frustum culling, skybox rendering, block texture
+presentation, debug overlay/FPS counter, block editing hooks, dynamic render
+distance, real-size software render target, biome block data, GPU/OpenGL
+renderer path, chunk mesh GPU upload, texture atlas GPU upload, depth testing,
+macOS key-event beep suppression, and 160-cube fullscreen visibility,
 has been removed from the active checklist.
 
 ## Mandatory Blockers
 
-### Renderer/API Compliance
+### Stability/Performance
 
-- The current renderer is a CPU software framebuffer renderer in
-  `src/render/VoxelRenderer.cpp`. The subject requires working directly with
-  an approved graphics API: OpenGL, OpenCL, Vulkan, Metal, or WebGPU. DUMB can
-  remain as window/input/platform glue, but final cube rendering needs a direct
-  API path.
-- Chunk meshes and the texture atlas need to be uploaded/drawn through the GPU
-  renderer with depth testing and stable frame pacing.
-- The CPU/GPU workload still needs to be balanced and measured once the GPU path
-  exists.
-- The current software fallback now renders at real framebuffer size, which is
-  subject-compliant for resolution but too slow to be the final rendering path.
-
-### Rendering Quality
-
-- Prove that open areas render at least 160 cubes in the player field of vision
-  during an actual fullscreen run, not only through the current validation hook.
-- Keep frustum culling and visible-face meshing, then add stronger visibility or
-  draw-distance control if the GPU path still drops frames.
-- Polish the skybox so it has no visible junction artifacts.
-- Improve texture/color presentation so the world reads as distinct block types
-  instead of a mostly single-color debug look.
+- Current GPU path renders at ~20 fps on macOS; target is a stable 60 fps
+  minimum. Profile and optimise the render loop, chunk mesh generation, and
+  draw-call overhead.
+- Run long-duration fullscreen tests and track memory growth. The program must
+  run for hours without consuming unbounded RAM or slowing down.
+- Re-test after performance work on Linux and macOS: no segfaults, aborts,
+  uncaught exceptions, freezes, or frame spikes.
+- Measure high-speed x20 movement in real GUI mode with terrain streaming
+  enabled.
+- Confirm `make`, `make -j4`, clean, and rebuild paths still work after renderer
+  and input changes.
 
 ### Camera/Input
 
@@ -60,27 +53,15 @@ has been removed from the active checklist.
   `--validate-terrain-determinism`, `--validate-world-scale`, and
   `--validate-caves`.
 
-### Stability/Performance
-
-- Run long-duration fullscreen tests and track memory growth. The program must
-  run for hours without consuming unbounded RAM or slowing down.
-- Re-test after GPU work on Linux and macOS: no segfaults, aborts, uncaught
-  exceptions, freezes, or frame spikes.
-- Measure high-speed x20 movement in real GUI mode with terrain streaming
-  enabled.
-- Confirm `make`, `make -j4`, clean, and rebuild paths still work after renderer
-  and input changes.
-
 ## Bonus Work
 
 Bonus work is only useful once the mandatory part is clean enough for evaluation.
 Some bonus hooks already exist, but they still need final validation:
 
 - Dynamic render distance must stay smooth and must never drop below 14 cubes.
-- The FPS/debug overlay should remain readable after the GPU renderer replaces
-  the software path.
-- Block deletion/placement should be kept stable after mesh upload/remesh logic
-  moves to the GPU renderer.
+- The FPS/debug overlay should remain readable after performance tuning.
+- Block deletion/placement should be kept stable after any further mesh/remesh
+  changes.
 - Multiple biomes exist in Libft data; verify they are visually distinct enough
   in the final renderer.
 - x20 movement needs to stay smooth during real terrain generation and rendering.
@@ -89,22 +70,19 @@ Some bonus hooks already exist, but they still need final validation:
 
 rperez-t:
 
-- implement the direct graphics API renderer;
+- profile and optimise to reach 60 fps on macOS;
 - fix Linux FPS mouse capture;
-- verify fullscreen frame pacing, skybox, textures, and 160-cube visibility.
+- verify fullscreen frame pacing under sustained load.
 
 bvangene:
 
-- decide whether optional lakes/water are needed and implement them if yes;
-- keep chunk eviction/reload and visible-face mesh generation correct;
-- support remeshing after block edits for the final renderer.
+- decide whether optional lakes/water are needed and implement them if yes.
 
 ## Immediate Order
 
-1. Fix Linux FPS mouse capture and verify the camera feels like a true FPS
+1. Profile the GPU render loop and identify the main bottleneck (draw calls,
+   mesh generation, CPU-GPU sync, shader cost).
+2. Optimise to reach stable 60 fps minimum.
+3. Fix Linux FPS mouse capture and verify the camera feels like a true FPS
    camera.
-2. Replace the software framebuffer renderer with a direct approved graphics API
-   renderer.
-3. Upload chunk meshes and the texture atlas through the GPU renderer.
-4. Validate 160-cube fullscreen visibility and smooth frame pacing.
-5. Run long-duration memory/stability tests and real GUI x20 movement tests.
+4. Run long-duration memory/stability tests and real GUI x20 movement tests.

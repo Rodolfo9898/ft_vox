@@ -77,6 +77,9 @@ int Application::run(int argc, char **argv)
     }
     camera.initialize();
     PlayerController::spawn_player_on_ground(&camera, world);
+    if (window.is_gpu_mode())
+        renderer.initialize_gpu(window.get_gpu_window()->get_width(),
+            window.get_gpu_window()->get_height());
     renderer.preload_assets();
     previous_time = std::chrono::steady_clock::now();
     perf_start_time = previous_time;

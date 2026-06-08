@@ -58,6 +58,19 @@ SRC = \
     src/edits/WorldEditCommand.cpp \
     src/edits/DeleteBlockCommand.cpp \
     src/edits/PlaceBlockCommand.cpp \
-    src/edits/WorldBlockEditor.cpp
+    src/edits/WorldBlockEditor.cpp \
+    src/gpur/gl_funcs.cpp \
+    src/gpur/GpuShader.cpp \
+    src/gpur/GpuChunkMesh.cpp \
+    src/gpur/GpuTextureAtlas.cpp \
+    src/gpur/GpuRenderer.cpp \
+    src/gpur/GpuWindow_linux.cpp
+
+UNAME_S_SRC := $(shell uname -s)
+ifeq ($(UNAME_S_SRC),Darwin)
+MM_SRC = src/gpur/GpuWindow_macos.mm
+else
+MM_SRC =
+endif
 
 TEST_SRC = main.cpp

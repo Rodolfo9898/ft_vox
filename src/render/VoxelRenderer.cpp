@@ -1,7 +1,13 @@
 #include "../../src/render/VoxelRenderer.hpp"
+#include <algorithm>
+#include <cstring>
 
 VoxelRenderer::VoxelRenderer()
 {
+    _overlay_fb.width  = OVERLAY_W;
+    _overlay_fb.height = OVERLAY_H;
+    _overlay_fb.pixels = _overlay_buf;
+    _overlay_frame     = 0U;
 }
 
 VoxelRenderer::VoxelRenderer(const VoxelRenderer &other)
@@ -45,6 +51,23 @@ void VoxelRenderer::render_world(ft_render_framebuffer &framebuffer,
     const Camera &camera, const World &world,
     const RenderDebug *debug)
 {
+    if (this->gpu.is_ready())
+    {
+        this->gpu.render(camera, world);
+        if (debug != nullptr)
+        {
+            _overlay_frame += 1U;
+            if (_overlay_frame % 15U == 1U)
+            {
+                std::fill_n(_overlay_buf, OVERLAY_W * OVERLAY_H, 0U);
+                DebugOverlayRenderer::draw_debug_overlay(_overlay_fb, debug);
+                this->gpu.upload_overlay(_overlay_buf, OVERLAY_W, OVERLAY_H);
+            }
+            this->gpu.draw_overlay();
+        }
+        return ;
+    }
+
     ft_render_framebuffer render_target;
     RenderCache render_cache;
     RenderDebug local_debug;
@@ -83,4 +106,9 @@ void VoxelRenderer::render_world(ft_render_framebuffer &framebuffer,
 void VoxelRenderer::preload_assets()
 {
     (void)TextureAtlas::instance();
+}
+
+void VoxelRenderer::initialize_gpu(int width, int height)
+{
+    (void)this->gpu.initialize(width, height);
 }

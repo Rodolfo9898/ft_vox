@@ -1,0 +1,434 @@
+#include "../../src/gpur/GpuRenderer.hpp"
+#include "../../src/assets/TextureAtlas.hpp"
+#include "../../src/frame/RenderCache.hpp"
+#include "../../src/meshes/MeshCuller.hpp"
+#include <cmath>
+#include <cstring>
+
+static const char *WORLD_VERT = R"GLSL(
+#version 330 core
+layout(location = 0) in uvec3 a_position;
+layout(location = 1) in uvec2 a_texcoord;
+layout(location = 2) in uint  a_block_id;
+layout(location = 3) in uint  a_face;
+
+uniform mat4 u_mvp;
+uniform vec3 u_chunk_origin;
+
+out vec2 v_uv_tile;
+out float v_shade;
+flat out uint v_block_id;
+flat out uint v_face;
+
+const float SHADE[6] = float[6](0.72, 0.82, 0.72, 1.0, 0.58, 0.72);
+
+void main()
+{
+    vec3 pos = vec3(a_position) + u_chunk_origin;
+    gl_Position = u_mvp * vec4(pos, 1.0);
+    v_uv_tile   = vec2(a_texcoord) / 16.0;
+    v_shade     = a_face < 6u ? SHADE[a_face] : 0.72;
+    v_block_id  = a_block_id;
+    v_face      = a_face;
+}
+)GLSL";
+
+static const char *WORLD_FRAG = R"GLSL(
+#version 330 core
+in vec2 v_uv_tile;
+in float v_shade;
+flat in uint v_block_id;
+flat in uint v_face;
+
+uniform sampler2D u_atlas;
+uniform int u_atlas_loaded;
+uniform vec4 u_tile_uvs[96];
+uniform vec3 u_fallback_colors[16];
+
+out vec4 frag_color;
+
+void main()
+{
+    uint bid = min(v_block_id, 15u);
+    uint fid = min(v_face,     5u);
+    if (u_atlas_loaded == 1)
+    {
+        vec4  region = u_tile_uvs[bid * 6u + fid];
+        vec2  uv     = region.xy + fract(v_uv_tile) * region.zw;
+        vec3  color  = texture(u_atlas, uv).rgb;
+        frag_color   = vec4(color * v_shade, 1.0);
+    }
+    else
+    {
+        vec3 base  = u_fallback_colors[bid];
+        frag_color = vec4(base * v_shade, 1.0);
+    }
+}
+)GLSL";
+
+static const char *SKY_VERT = R"GLSL(
+#version 330 core
+void main()
+{
+    const vec2 QUAD[4] = vec2[4](
+        vec2(-1.0, -1.0), vec2(1.0, -1.0),
+        vec2(-1.0,  1.0), vec2(1.0,  1.0));
+    gl_Position = vec4(QUAD[gl_VertexID], 0.9999, 1.0);
+}
+)GLSL";
+
+static const char *SKY_FRAG = R"GLSL(
+#version 330 core
+uniform vec2 u_sky_size;
+out vec4 frag_color;
+void main()
+{
+    float t   = gl_FragCoord.y / u_sky_size.y;
+    vec3  bot = vec3(0.322, 0.604, 0.878);
+    vec3  top = vec3(0.384, 0.776, 0.965);
+    frag_color = vec4(mix(bot, top, t), 1.0);
+}
+)GLSL";
+
+static const char *OVERLAY_VERT = R"GLSL(
+#version 330 core
+layout(location = 0) in vec2 a_pos;
+void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+)GLSL";
+
+static const char *OVERLAY_FRAG = R"GLSL(
+#version 330 core
+uniform vec4 u_overlay_color;
+out vec4 frag_color;
+void main() { frag_color = u_overlay_color; }
+)GLSL";
+
+static const char *OVERLAY_TEX_VERT = R"GLSL(
+#version 330 core
+uniform vec2 u_overlay_ndc_br;
+out vec2 v_uv;
+void main()
+{
+    bool is_right = (gl_VertexID == 1 || gl_VertexID == 3);
+    bool is_top   = (gl_VertexID == 2 || gl_VertexID == 3);
+    gl_Position = vec4(
+        is_right ? u_overlay_ndc_br.x : -1.0,
+        is_top   ? 1.0 : u_overlay_ndc_br.y,
+        0.0, 1.0);
+    v_uv = vec2(is_right ? 1.0 : 0.0, is_top ? 0.0 : 1.0);
+}
+)GLSL";
+
+static const char *OVERLAY_TEX_FRAG = R"GLSL(
+#version 330 core
+in vec2 v_uv;
+uniform sampler2D u_overlay_sampler;
+out vec4 frag_color;
+void main()
+{
+    frag_color = texture(u_overlay_sampler, v_uv);
+}
+)GLSL";
+
+GpuRenderer::GpuRenderer() noexcept
+    : _sky_vao(0), _crosshair_vbo(0), _crosshair_vao(0),
+      _overlay_tex(0), _overlay_w(0), _overlay_h(0),
+      _ready(false), _width(0), _height(0),
+      _u_mvp(-1), _u_chunk_origin(-1), _u_atlas(-1), _u_atlas_loaded(-1),
+      _u_tile_uvs(-1), _u_fallback(-1), _u_sky_size(-1), _u_overlay_color(-1),
+      _u_overlay_sampler(-1), _u_overlay_ndc_br(-1)
+{
+    std::memset(_tile_uvs,       0, sizeof(_tile_uvs));
+    std::memset(_fallback_colors, 0, sizeof(_fallback_colors));
+}
+
+bool GpuRenderer::initialize(int width, int height) noexcept
+{
+    destroy();
+
+    if (!_world_shader.compile(WORLD_VERT, WORLD_FRAG))                    return (false);
+    if (!_sky_shader.compile(SKY_VERT, SKY_FRAG))                          return (false);
+    if (!_overlay_shader.compile(OVERLAY_VERT, OVERLAY_FRAG))              return (false);
+    if (!_overlay_tex_shader.compile(OVERLAY_TEX_VERT, OVERLAY_TEX_FRAG)) return (false);
+
+    _u_mvp            = _world_shader.uniform("u_mvp");
+    _u_chunk_origin   = _world_shader.uniform("u_chunk_origin");
+    _u_atlas          = _world_shader.uniform("u_atlas");
+    _u_atlas_loaded   = _world_shader.uniform("u_atlas_loaded");
+    _u_tile_uvs       = _world_shader.uniform("u_tile_uvs");
+    _u_fallback       = _world_shader.uniform("u_fallback_colors");
+    _u_sky_size       = _sky_shader.uniform("u_sky_size");
+    _u_overlay_color  = _overlay_shader.uniform("u_overlay_color");
+    _u_overlay_sampler = _overlay_tex_shader.uniform("u_overlay_sampler");
+    _u_overlay_ndc_br  = _overlay_tex_shader.uniform("u_overlay_ndc_br");
+
+    glGenVertexArrays(1, &_sky_vao);
+
+    glGenVertexArrays(1, &_crosshair_vao);
+    glGenBuffers(1, &_crosshair_vbo);
+
+    const TextureAtlas &cpu_atlas = TextureAtlas::instance();
+    _atlas.upload(cpu_atlas);
+    _atlas.fill_tile_uvs(cpu_atlas, _tile_uvs);
+    _atlas.fill_fallback_colors(_fallback_colors);
+
+    _world_shader.use();
+    glUniform1i(_u_atlas, 0);
+    glUniform1i(_u_atlas_loaded, _atlas.is_loaded() ? 1 : 0);
+    glUniform4fv(_u_tile_uvs, 96, _tile_uvs);
+    glUniform3fv(_u_fallback, 16, _fallback_colors);
+
+    _width  = width;
+    _height = height;
+    _ready  = true;
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
+    return (true);
+}
+
+void GpuRenderer::destroy() noexcept
+{
+    _ready = false;
+    _atlas.destroy();
+    for (int i = 0; i < WORLD_CHUNK_COUNT; ++i)
+        _meshes[i].destroy();
+    if (_overlay_tex != 0)   { glDeleteTextures(1, &_overlay_tex);        _overlay_tex = 0;      }
+    if (_sky_vao != 0)       { glDeleteVertexArrays(1, &_sky_vao);        _sky_vao = 0;          }
+    if (_crosshair_vao != 0) { glDeleteVertexArrays(1, &_crosshair_vao);  _crosshair_vao = 0;    }
+    if (_crosshair_vbo != 0) { glDeleteBuffers(1, &_crosshair_vbo);       _crosshair_vbo = 0;    }
+    _world_shader.destroy();
+    _sky_shader.destroy();
+    _overlay_shader.destroy();
+    _overlay_tex_shader.destroy();
+    _overlay_rgba.clear();
+}
+
+void GpuRenderer::resize(int width, int height) noexcept
+{
+    _width  = width;
+    _height = height;
+    glViewport(0, 0, width, height);
+}
+
+void GpuRenderer::build_mvp(float out[16], const Camera &camera,
+    int width, int height, float near_z, float far_z) const noexcept
+{
+    double cy = std::cos(camera.yaw);
+    double sy = std::sin(camera.yaw);
+    double cp = std::cos(camera.pitch);
+    double sp = std::sin(camera.pitch);
+
+    double tx = -camera.x;
+    double ty = -camera.y;
+    double tz = -camera.z;
+
+    double vx =  tx * cy - tz * sy;
+    double vy =  ty;
+    double vz =  tx * sy + tz * cy;
+
+    double vy2 = vy * cp - vz * sp;
+    double vz2 = vy * sp + vz * cp;
+
+    float r00 = static_cast<float>(cy);
+    float r02 = static_cast<float>(-sy);
+    float r10 = static_cast<float>(-sy * sp);
+    float r11 = static_cast<float>(cp);
+    float r12 = static_cast<float>(-cy * sp);
+    float r20 = static_cast<float>(sy * cp);
+    float r21 = static_cast<float>(sp);
+    float r22 = static_cast<float>(cy * cp);
+
+    float view[16];
+    std::memset(view, 0, sizeof(view));
+    view[0]  = r00;  view[4]  = 0.0f; view[8]  = r02; view[12] = static_cast<float>(vx);
+    view[1]  = r10;  view[5]  = r11;  view[9]  = r12; view[13] = static_cast<float>(vy2);
+    view[2]  = r20;  view[6]  = r21;  view[10] = r22; view[14] = static_cast<float>(vz2);
+    view[3]  = 0.0f; view[7]  = 0.0f; view[11] = 0.0f; view[15] = 1.0f;
+
+    static const float fov_x = 0.83909963118f;
+    float fx     = 1.0f / fov_x;
+    float fy     = fx * (static_cast<float>(width) * 0.5f)
+                       / (static_cast<float>(height) * 0.52f);
+    float fn     = far_z  + near_z;
+    float fd     = far_z  - near_z;
+    float A      = fn  / fd;
+    float B      = -2.0f * near_z * far_z / fd;
+
+    float proj[16];
+    std::memset(proj, 0, sizeof(proj));
+    proj[0] = fx;   proj[5] = fy;
+    proj[10] = A;   proj[11] = 1.0f;
+    proj[14] = B;
+
+    for (int col = 0; col < 4; ++col)
+    {
+        for (int row = 0; row < 4; ++row)
+        {
+            float s = 0.0f;
+            for (int k = 0; k < 4; ++k)
+                s += proj[k * 4 + row] * view[col * 4 + k];
+            out[col * 4 + row] = s;
+        }
+    }
+}
+
+void GpuRenderer::draw_sky() const noexcept
+{
+    _sky_shader.use();
+    glUniform2f(_u_sky_size,
+        static_cast<float>(_width), static_cast<float>(_height));
+    glBindVertexArray(_sky_vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
+void GpuRenderer::draw_crosshair() const noexcept
+{
+    float sx = 8.0f / static_cast<float>(_width);
+    float sy = 8.0f / static_cast<float>(_height);
+
+    float verts[] = {
+        -sx,   0.0f,
+         sx,   0.0f,
+         0.0f, -sy,
+         0.0f,  sy
+    };
+
+    glBindVertexArray(_crosshair_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, _crosshair_vbo);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(sizeof(verts)),
+        verts, GL_STREAM_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE,
+        static_cast<GLsizei>(2 * sizeof(float)), nullptr);
+    glEnableVertexAttribArray(0);
+
+    _overlay_shader.use();
+    const float crosshair_color[4] = { 0.96f, 0.96f, 0.92f, 1.0f };
+    glUniform4fv(_u_overlay_color, 1, crosshair_color);
+    glDisable(GL_DEPTH_TEST);
+    glDrawArrays(GL_LINES, 0, 4);
+    glEnable(GL_DEPTH_TEST);
+    glBindVertexArray(0);
+}
+
+void GpuRenderer::render(const Camera &camera, const World &world) noexcept
+{
+    if (!_ready)
+        return ;
+
+    glViewport(0, 0, _width, _height);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    draw_sky();
+
+    float far_z = static_cast<float>(world.active_render_distance) + 64.0f;
+    float mvp[16];
+    build_mvp(mvp, camera, _width, _height, 0.08f, far_z);
+
+    _world_shader.use();
+    glUniformMatrix4fv(_u_mvp, 1, GL_FALSE, mvp);
+    _atlas.bind(0);
+
+    RenderCache cache;
+    cache.configure(camera, _width, _height, world.active_render_distance);
+
+    for (int i = 0; i < world.chunk_count; ++i)
+    {
+        const WorldChunk &wc = world.chunks[i];
+        if (wc.initialized == false)
+            continue ;
+        _meshes[i].sync(wc.mesh);
+        if (!_meshes[i].has_geometry())
+            continue ;
+        if (!MeshCuller::chunk_is_visible(camera, wc, cache))
+            continue ;
+        const float origin[3] = {
+            static_cast<float>(wc.world_x),
+            0.0f,
+            static_cast<float>(wc.world_z)
+        };
+        glUniform3fv(_u_chunk_origin, 1, origin);
+        _meshes[i].draw();
+    }
+    glBindVertexArray(0);
+
+    draw_crosshair();
+}
+
+void GpuRenderer::upload_overlay(const uint32_t *pixels, int w, int h) noexcept
+{
+    if (pixels == nullptr || w <= 0 || h <= 0)
+        return ;
+
+    const size_t count = static_cast<size_t>(w) * static_cast<size_t>(h);
+    if (_overlay_rgba.size() != count * 4U)
+        _overlay_rgba.resize(count * 4U);
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        uint32_t p = pixels[i];
+        uint8_t  r = static_cast<uint8_t>((p >> 16) & 0xFFU);
+        uint8_t  g = static_cast<uint8_t>((p >>  8) & 0xFFU);
+        uint8_t  b = static_cast<uint8_t>( p        & 0xFFU);
+        uint8_t  a = r > g ? r : g;
+        a          = a > b ? a : b;
+        _overlay_rgba[i * 4U + 0U] = r;
+        _overlay_rgba[i * 4U + 1U] = g;
+        _overlay_rgba[i * 4U + 2U] = b;
+        _overlay_rgba[i * 4U + 3U] = a;
+    }
+
+    bool needs_alloc = (_overlay_tex == 0 || w != _overlay_w || h != _overlay_h);
+    if (_overlay_tex == 0)
+        glGenTextures(1, &_overlay_tex);
+    glBindTexture(GL_TEXTURE_2D, _overlay_tex);
+    if (needs_alloc)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+            static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, _overlay_rgba.data());
+        _overlay_w = w;
+        _overlay_h = h;
+    }
+    else
+    {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+            static_cast<GLsizei>(w), static_cast<GLsizei>(h),
+            GL_RGBA, GL_UNSIGNED_BYTE, _overlay_rgba.data());
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void GpuRenderer::draw_overlay() noexcept
+{
+    if (_overlay_tex == 0 || _overlay_w <= 0 || _overlay_h <= 0)
+        return ;
+    float ndc_br_x = static_cast<float>(_overlay_w) * 2.0f
+        / static_cast<float>(_width) - 1.0f;
+    float ndc_br_y = 1.0f - static_cast<float>(_overlay_h) * 2.0f
+        / static_cast<float>(_height);
+    _overlay_tex_shader.use();
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, _overlay_tex);
+    glUniform1i(_u_overlay_sampler, 1);
+    glUniform2f(_u_overlay_ndc_br, ndc_br_x, ndc_br_y);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(_sky_vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
+}

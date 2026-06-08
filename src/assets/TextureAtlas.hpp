@@ -27,8 +27,6 @@ class TextureAtlas
         static int32_t read_le_i32(const uint8_t *data);
         static bool load_bmp_texture_atlas(TextureAtlas *atlas,
             const char *path);
-        static void atlas_tile_for_block(uint32_t block_id,
-            uint8_t face, int32_t *tile_x, int32_t *tile_y);
         static double fraction(double value);
 
     public:
@@ -38,6 +36,8 @@ class TextureAtlas
         TextureAtlas &operator=(const TextureAtlas &other);
 
         static const TextureAtlas &instance();
+        static void atlas_tile_for_block(uint32_t block_id,
+            uint8_t face, int32_t *tile_x, int32_t *tile_y);
         static TriangleTexture prepare_triangle_texture(uint32_t block_id,
             uint8_t face);
         static uint32_t sample_triangle_texture(

@@ -94,6 +94,12 @@ $(OBJ_DIR)/%.o: %.cpp
 		printf '\033[1;36m[FT_VOX PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_OBJS); \
 	fi
 
+$(OBJ_DIR)/%.o: %.mm
+	@$(MKDIR) $(dir $@)
+	@$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
+	@built=$$(find $(OBJ_DIR) -type f -name '*.o' 2>/dev/null | wc -l); \
+	printf '\033[1;36m[FT_VOX PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_OBJS)
+
 $(OBJ_DIR_TEST)/%.o: %.cpp
 	@if [ "$(FT_VOX_BATCH_OUTPUT)" = "1" ]; then \
 		log_file=".ft_vox_build_$$(printf '%s' "$@" | tr '/.' '__')_$$$$.log"; \
