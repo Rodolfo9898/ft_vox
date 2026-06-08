@@ -24,7 +24,7 @@ const float SHADE[6] = float[6](0.72, 0.82, 0.72, 1.0, 0.58, 0.72);
 void main()
 {
     gl_Position = u_mvp * vec4(a_position, 1.0);
-    v_uv_tile   = vec2(a_texcoord) / 16.0;
+    v_uv_tile   = vec2(a_texcoord);
     v_shade     = a_face < 6u ? SHADE[a_face] : 0.72;
     v_block_id  = a_block_id;
     v_face      = a_face;
@@ -49,6 +49,11 @@ void main()
 {
     uint bid = min(v_block_id, 15u);
     uint fid = min(v_face,     5u);
+    if (bid == 8u)
+    {
+        frag_color = vec4(vec3(0.1, 0.45, 0.85) * v_shade, 0.6);
+        return;
+    }
     if (u_atlas_loaded == 1)
     {
         vec4  region = u_tile_uvs[bid * 6u + fid];
@@ -131,6 +136,7 @@ void main()
 GpuRenderer::GpuRenderer() noexcept
     : _mega_vao(0), _mega_vbo(0), _mega_ebo(0),
       _mega_vbo_cap(0), _mega_ebo_cap(0),
+      _water_vao(0), _water_ebo(0), _water_ebo_cap(0),
       _sky_vao(0), _crosshair_vbo(0), _crosshair_vao(0),
       _overlay_tex(0), _overlay_w(0), _overlay_h(0),
       _ready(false), _width(0), _height(0),
@@ -182,6 +188,25 @@ bool GpuRenderer::initialize(int width, int height) noexcept
     glEnableVertexAttribArray(3);
     glBindVertexArray(0);
 
+    glGenVertexArrays(1, &_water_vao);
+    glGenBuffers(1, &_water_ebo);
+    glBindVertexArray(_water_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, _mega_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _water_ebo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, S,
+        reinterpret_cast<const void *>(static_cast<uintptr_t>(0)));
+    glEnableVertexAttribArray(0);
+    glVertexAttribIPointer(1, 2, GL_UNSIGNED_SHORT, S,
+        reinterpret_cast<const void *>(static_cast<uintptr_t>(12)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, S,
+        reinterpret_cast<const void *>(static_cast<uintptr_t>(16)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, S,
+        reinterpret_cast<const void *>(static_cast<uintptr_t>(20)));
+    glEnableVertexAttribArray(3);
+    glBindVertexArray(0);
+
     glGenVertexArrays(1, &_sky_vao);
     glGenVertexArrays(1, &_crosshair_vao);
     glGenBuffers(1, &_crosshair_vbo);
@@ -216,10 +241,11 @@ void GpuRenderer::destroy() noexcept
     if (_mega_vao != 0) { glDeleteVertexArrays(1, &_mega_vao); _mega_vao = 0; }
     if (_mega_vbo != 0) { glDeleteBuffers(1, &_mega_vbo);      _mega_vbo = 0; }
     if (_mega_ebo != 0) { glDeleteBuffers(1, &_mega_ebo);      _mega_ebo = 0; }
-    _mega_vbo_cap = 0;
-    _mega_ebo_cap = 0;
-    _mega_verts.clear();
-    _mega_idxs.clear();
+    _mega_vbo_cap = 0; _mega_ebo_cap = 0;
+    _mega_verts.clear(); _mega_idxs.clear();
+    if (_water_vao != 0) { glDeleteVertexArrays(1, &_water_vao); _water_vao = 0; }
+    if (_water_ebo != 0) { glDeleteBuffers(1, &_water_ebo);      _water_ebo = 0; }
+    _water_ebo_cap = 0; _water_idxs.clear();
     if (_overlay_tex != 0)   { glDeleteTextures(1, &_overlay_tex);        _overlay_tex = 0;   }
     if (_sky_vao != 0)       { glDeleteVertexArrays(1, &_sky_vao);        _sky_vao = 0;       }
     if (_crosshair_vao != 0) { glDeleteVertexArrays(1, &_crosshair_vao);  _crosshair_vao = 0; }
@@ -350,6 +376,7 @@ void GpuRenderer::render(const Camera &camera, const World &world) noexcept
 
     _mega_verts.clear();
     _mega_idxs.clear();
+    _water_idxs.clear();
 
     for (int i = 0; i < world.chunk_count; ++i)
     {
@@ -378,7 +405,13 @@ void GpuRenderer::render(const Camera &camera, const World &world) noexcept
         }
         const size_t icount = wc.mesh.indices.size();
         for (size_t j = 0; j < icount; ++j)
-            _mega_idxs.push_back(base + wc.mesh.indices[j]);
+        {
+            const uint32_t raw = wc.mesh.indices[j];
+            if (wc.mesh.vertices[raw].block_id == TERRAIN_GENERATOR_WATER_BLOCK)
+                _water_idxs.push_back(base + raw);
+            else
+                _mega_idxs.push_back(base + raw);
+        }
     }
 
     if (!_mega_verts.empty())
@@ -414,6 +447,36 @@ void GpuRenderer::render(const Camera &camera, const World &world) noexcept
             static_cast<GLsizei>(_mega_idxs.size()),
             GL_UNSIGNED_INT, nullptr);
         glBindVertexArray(0);
+    }
+
+    if (!_water_idxs.empty())
+    {
+        const GLsizeiptr ibytes =
+            static_cast<GLsizeiptr>(_water_idxs.size() * sizeof(uint32_t));
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _water_ebo);
+        if (static_cast<size_t>(ibytes) > _water_ebo_cap)
+        {
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, ibytes, nullptr,
+                GL_DYNAMIC_DRAW);
+            _water_ebo_cap = static_cast<size_t>(ibytes);
+        }
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, ibytes, _water_idxs.data());
+
+        _world_shader.use();
+        glUniformMatrix4fv(_u_mvp, 1, GL_FALSE, mvp);
+        _atlas.bind(0);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+        glBindVertexArray(_water_vao);
+        glDrawElements(GL_TRIANGLES,
+            static_cast<GLsizei>(_water_idxs.size()),
+            GL_UNSIGNED_INT, nullptr);
+        glBindVertexArray(0);
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
     }
 
     draw_crosshair();

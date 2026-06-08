@@ -70,7 +70,8 @@ void GpuTextureAtlas::fill_tile_uvs(const TextureAtlas &atlas,
         TERRAIN_GENERATOR_SHRUB_BLOCK,
         TERRAIN_GENERATOR_OAK_LOG_BLOCK,
         TERRAIN_GENERATOR_OAK_LEAVES_BLOCK,
-        TERRAIN_GENERATOR_CACTUS_BLOCK
+        TERRAIN_GENERATOR_CACTUS_BLOCK,
+        TERRAIN_GENERATOR_WATER_BLOCK
     };
     static const int block_count = static_cast<int>(
         sizeof(block_ids) / sizeof(block_ids[0]));

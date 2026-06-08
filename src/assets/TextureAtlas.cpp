@@ -194,6 +194,11 @@ void TextureAtlas::atlas_tile_for_block(uint32_t block_id, uint8_t face,
         *tile_x = 0;
         *tile_y = 2;
     }
+    else if (block_id == TERRAIN_GENERATOR_WATER_BLOCK)
+    {
+        *tile_x = 0;
+        *tile_y = 1;
+    }
 }
 
 double TextureAtlas::fraction(double value)

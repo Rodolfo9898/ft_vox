@@ -9,8 +9,9 @@ class PlayerMovement
 {
     private:
         static void camera_horizontal_delta(const Camera &camera,
-            const CameraInput &input, double delta_seconds, double *delta_x,
-            double *delta_z);
+            const CameraInput &input, double delta_seconds,
+            double speed_scale, double *delta_x, double *delta_z);
+        static bool player_in_water(const Camera &camera, const World &world);
 
     public:
         PlayerMovement();

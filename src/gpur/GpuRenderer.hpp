@@ -34,6 +34,11 @@ class GpuRenderer
     std::vector<MegaVertex> _mega_verts;
     std::vector<uint32_t>   _mega_idxs;
 
+    GLuint _water_vao;
+    GLuint _water_ebo;
+    size_t _water_ebo_cap;
+    std::vector<uint32_t>   _water_idxs;
+
     GLuint _sky_vao;
     GLuint _crosshair_vbo;
     GLuint _crosshair_vao;

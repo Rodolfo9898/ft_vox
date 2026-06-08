@@ -90,6 +90,12 @@ uint32_t RendererColor::block_color(uint32_t block_id, uint8_t face)
         green = 151U;
         blue = 135U;
     }
+    else if (block_id == TERRAIN_GENERATOR_WATER_BLOCK)
+    {
+        red = 30U;
+        green = 100U;
+        blue = 200U;
+    }
     shade = 0.72;
     if (face == CHUNK_MESH_FACE_UP)
         shade = 1.0;

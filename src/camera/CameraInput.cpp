@@ -28,6 +28,7 @@ CameraInput &CameraInput::operator=(const CameraInput &other)
         this->look_down = other.look_down;
         this->speed_boost = other.speed_boost;
         this->jump_pressed = other.jump_pressed;
+        this->jump_held = other.jump_held;
         this->mouse_delta_x = other.mouse_delta_x;
         this->mouse_delta_y = other.mouse_delta_y;
     }
@@ -46,6 +47,7 @@ void CameraInput::clear()
     this->look_down = false;
     this->speed_boost = false;
     this->jump_pressed = false;
+    this->jump_held = false;
     this->mouse_delta_x = 0.0;
     this->mouse_delta_y = 0.0;
 }

@@ -14,6 +14,7 @@ class CameraInput
         bool look_down;
         bool speed_boost;
         bool jump_pressed;
+        bool jump_held;
         double mouse_delta_x;
         double mouse_delta_y;
 
