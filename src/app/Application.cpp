@@ -1,5 +1,31 @@
 #include "../../src/app/Application.hpp"
 
+#if defined(_WIN32)
+# include <windows.h>
+#endif
+
+namespace
+{
+    static void wait_for_escape_release_after_launch_menu()
+    {
+#if defined(_WIN32)
+        while ((GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0)
+            Sleep(16);
+#endif
+    }
+
+    static void clear_pending_quit_messages_after_launch_menu()
+    {
+#if defined(_WIN32)
+        MSG msg;
+
+        while (PeekMessageA(&msg, nullptr, WM_QUIT, WM_QUIT, PM_REMOVE) != 0)
+        {
+        }
+#endif
+    }
+}
+
 Application::Application()
 {
 }
@@ -22,6 +48,7 @@ Application &Application::operator=(const Application &other)
 int Application::run(int argc, char **argv)
 {
     ApplicationOptions options;
+    LaunchSettings   launch_settings;
     ApplicationWindow  window;
     Camera          camera;
     World           world;
@@ -47,6 +74,8 @@ int Application::run(int argc, char **argv)
     const RenderDistanceStrategy *render_strategy;
     bool                   boost_enabled;
     uint32_t               selected_block_id;
+    const char            *launch_settings_path;
+    bool                   use_launch_settings_menu;
 
     if (DebugCrashHandler::enable() != 0)
         return (1);
@@ -66,11 +95,34 @@ int Application::run(int argc, char **argv)
         return (ApplicationValidator::validate_world_scale());
     if (options.validate_caves_mode == true)
         return (ApplicationValidator::validate_caves());
+    launch_settings_path = "ft_vox_config.json";
+    use_launch_settings_menu = (options.perf_test_mode == false
+        && options.perf_headless_mode == false);
+    if (use_launch_settings_menu == true)
+    {
+        if (launch_settings.load(launch_settings_path) != 0)
+        {
+            if (LaunchSettingsMenu::run(launch_settings) != 0)
+                return (1);
+            if (launch_settings.save(launch_settings_path) != 0)
+            {
+                std::fprintf(stderr,
+                    "Application: unable to save launch settings to %s\n",
+                    launch_settings_path);
+            }
+            wait_for_escape_release_after_launch_menu();
+            clear_pending_quit_messages_after_launch_menu();
+        }
+    }
+    ft_dumb_controls_set_keyboard_layout(launch_settings.keyboard_layout);
     error_code = world.initialize("integration-seed");
     if (error_code != FT_ERR_SUCCESS)
         return (ApplicationError::fail("voxel world initialization", error_code));
     render_strategy = &RenderStrategyFactory::select(options.perf_headless_mode);
-    if (window.initialize(options.perf_headless_mode) != 0)
+    if (window.initialize(options.perf_headless_mode,
+            launch_settings.resolution_width(),
+            launch_settings.resolution_height(),
+            launch_settings.fullscreen, true) != 0)
     {
         world.destroy();
         return (1);
@@ -111,9 +163,6 @@ int Application::run(int argc, char **argv)
             if (window.should_close() == true)
                 break ;
             ft_dumb_controls_poll();
-            if (options.perf_test_mode == false
-                && ft_dumb_control_is_down(FT_DUMB_CONTROL_BACK) == FT_TRUE)
-                break ;
             if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_BOOST) == FT_TRUE)
                 boost_enabled = !boost_enabled;
             camera_input = InputReader::read_camera_input(boost_enabled);

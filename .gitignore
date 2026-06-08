@@ -5,3 +5,4 @@ objs/
 objs_debug/
 objs_tests/
 build_logs/
+ft_vox_config.json

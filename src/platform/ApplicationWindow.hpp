@@ -23,7 +23,8 @@ class ApplicationWindow
         ~ApplicationWindow();
         ApplicationWindow &operator=(const ApplicationWindow &other);
 
-        int initialize(bool headless_mode);
+        int initialize(bool headless_mode, int width, int height,
+            bool fullscreen, bool allow_gpu = true);
         int poll_events();
         int present();
         int destroy();

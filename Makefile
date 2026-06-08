@@ -1,4 +1,10 @@
+ifeq ($(OS),Windows_NT)
+SHELL := C:/Progra~1/Git/bin/bash.exe
+.SHELLFLAGS := -lc
+export SHELL
+else
 SHELL := /bin/bash
+endif
 
 include mk/project.mk
 include mk/tools.mk
@@ -10,6 +16,12 @@ include mk/compiler.mk
 include mk/objects.mk
 
 .SILENT:
+
+ifeq ($(OS),Windows_NT)
+SUBMODULE_UPDATE_CMD = tools\update_libft.cmd
+else
+SUBMODULE_UPDATE_CMD = sh tools/update_libft.sh
+endif
 
 all: dirs $(TARGET)
 
@@ -35,23 +47,10 @@ tests_with_cobc: install_cobc
 	$(MAKE) test
 
 submodule_init:
-	git submodule update --init --recursive
-	git submodule update --remote --recursive
+	@$(SUBMODULE_UPDATE_CMD)
 
 submodule_update:
-	@branch="$$(git config -f .gitmodules --get submodule.Libft.branch || printf main)"; \
-	printf '\033[1;36m[FT_VOX SUBMODULE] Fetching Libft origin/%s\033[0m\n' "$$branch"; \
-	git -C Libft fetch origin "$$branch"; \
-	printf 'Current Libft commit: %s\n' "$$(git -C Libft rev-parse --short HEAD)"; \
-	printf 'Latest origin/%s:   %s\n' "$$branch" "$$(git -C Libft rev-parse --short origin/$$branch)"; \
-	printf 'Type yes to update Libft to origin/%s: ' "$$branch"; \
-	read answer; \
-	if [ "$$answer" = "yes" ]; then \
-		git -C Libft checkout "origin/$$branch"; \
-		printf '\033[1;36m[FT_VOX SUBMODULE] Libft updated to %s\033[0m\n' "$$(git -C Libft rev-parse --short HEAD)"; \
-	else \
-		printf 'Cancelled. Libft was not updated.\n'; \
-	fi
+	@$(SUBMODULE_UPDATE_CMD)
 
 debug:
 	$(MAKE) all DEBUG=1

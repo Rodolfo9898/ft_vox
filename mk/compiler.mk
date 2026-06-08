@@ -19,14 +19,22 @@ COMPILE_FLAGS = -Wall -Werror -Wextra -std=c++17 -Wmissing-declarations \
                 -Wfloat-equal -Wconversion -Wzero-as-null-pointer-constant \
                 -I. -DLIBFT_INTERNAL_HEADERS -DGAME_USE_VOXEL_REGION_BACKEND $(OPT_FLAGS)
 
-ifneq ($(shell uname -s 2>/dev/null),Darwin)
+ifeq ($(OS),Windows_NT)
     COMPILE_FLAGS += -Wodr -Wuseless-cast -Wmaybe-uninitialized
     ifneq ($(OPT_LEVEL),0)
         COMPILE_FLAGS += -flto -ffunction-sections -fdata-sections
     endif
 else
-    ifneq ($(OPT_LEVEL),0)
-        COMPILE_FLAGS += -flto
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Darwin)
+        ifneq ($(OPT_LEVEL),0)
+            COMPILE_FLAGS += -flto
+        endif
+    else
+        COMPILE_FLAGS += -Wodr -Wuseless-cast -Wmaybe-uninitialized
+        ifneq ($(OPT_LEVEL),0)
+            COMPILE_FLAGS += -flto -ffunction-sections -fdata-sections
+        endif
     endif
 endif
 
@@ -75,7 +83,7 @@ endif
 export COMPILE_FLAGS
 
 ifeq ($(OS),Windows_NT)
-    LDFLAGS =
+    LDFLAGS = -lopengl32 -lgdi32 -lws2_32 -ldbghelp
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)

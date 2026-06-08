@@ -3,6 +3,8 @@
 
 #include "../../src/diagnostics/ApplicationError.hpp"
 #include "../../src/config/ApplicationOptions.hpp"
+#include "../../src/config/LaunchSettings.hpp"
+#include "../../src/config/LaunchSettingsMenu.hpp"
 #include "../../src/platform/ApplicationWindow.hpp"
 #include "../../src/validators/ApplicationValidator.hpp"
 #include "../../src/interaction/BlockInteractor.hpp"

@@ -109,7 +109,7 @@ void PlayerMovement::update_player_vertical_motion(Camera *camera,
     const CameraInput &input, const World &world,
     double delta_seconds)
 {
-    const double jump_speed    = 9.0;
+    const double jump_speed    = 9.9;
     const double gravity       = 32.0;
     const double max_fall      = -60.0;
     const double water_gravity = 3.0;

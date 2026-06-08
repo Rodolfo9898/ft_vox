@@ -4,9 +4,9 @@ COVERAGE_SCRIPT  = scripts/coverage_report.py
 GOINFRE_LOCAL_PREFIX ?= /goinfre/$(USER)/local
 
 ifeq ($(OS),Windows_NT)
-    MKDIR   = mkdir
-    RMDIR   = rmdir /S /Q
-    RM      = del /F /Q
+    MKDIR   = mkdir -p
+    RMDIR   = rm -rf
+    RM      = rm -f
 else
     MKDIR   = mkdir -p
     RMDIR   = rm -rf
