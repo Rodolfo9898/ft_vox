@@ -32,8 +32,7 @@ void GpuChunkMesh::sync(const chunk_mesh &mesh) noexcept
 
     constexpr GLsizei stride = static_cast<GLsizei>(sizeof(chunk_mesh_vertex));
 
-    glVertexAttribIPointer(0, 3, GL_UNSIGNED_SHORT, stride,
-        reinterpret_cast<const void *>(static_cast<uintptr_t>(0)));
+    glVertexAttribIPointer(0, 3, GL_UNSIGNED_SHORT, stride, nullptr);
     glEnableVertexAttribArray(0);
 
     glVertexAttribIPointer(1, 2, GL_UNSIGNED_SHORT, stride,

@@ -1,6 +1,9 @@
 #include "../../src/gpur/GpuTextureAtlas.hpp"
 #include "../../src/frame/RendererColor.hpp"
 #include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
+#ifndef GAME_USE_VOXEL_REGION_BACKEND
+# define GAME_USE_VOXEL_REGION_BACKEND
+#endif
 #include "../../Libft/Modules/Voxel/voxel.hpp"
 #include <algorithm>
 #include <cstring>

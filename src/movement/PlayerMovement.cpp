@@ -1,4 +1,7 @@
 #include "../../src/movement/PlayerMovement.hpp"
+#ifndef GAME_USE_VOXEL_REGION_BACKEND
+# define GAME_USE_VOXEL_REGION_BACKEND
+#endif
 #include "../../Libft/Modules/Voxel/voxel.hpp"
 #include <cmath>
 

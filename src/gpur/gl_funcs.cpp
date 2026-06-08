@@ -2,37 +2,36 @@
 
 #ifndef __APPLE__
 
-PFNGLGENVERTEXARRAYSPROC         glGenVertexArrays         = nullptr;
-PFNGLBINDVERTEXARRAYPROC         glBindVertexArray         = nullptr;
-PFNGLDELETEVERTEXARRAYSPROC      glDeleteVertexArrays      = nullptr;
-PFNGLGENBUFFERSPROC              glGenBuffers              = nullptr;
-PFNGLBINDBUFFERPROC              glBindBuffer              = nullptr;
-PFNGLBUFFERDATAPROC              glBufferData              = nullptr;
-PFNGLDELETEBUFFERSPROC           glDeleteBuffers           = nullptr;
-PFNGLVERTEXATTRIBIPOINTERPROC    glVertexAttribIPointer    = nullptr;
-PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = nullptr;
-PFNGLCREATESHADERPROC            glCreateShader            = nullptr;
-PFNGLSHADERSOURCEPROC            glShaderSource            = nullptr;
-PFNGLCOMPILESHADERPROC           glCompileShader           = nullptr;
-PFNGLGETSHADERIVPROC             glGetShaderiv             = nullptr;
-PFNGLGETSHADERINFOLOGPROC        glGetShaderInfoLog        = nullptr;
-PFNGLDELETESHADERPROC            glDeleteShader            = nullptr;
-PFNGLCREATEPROGRAMPROC           glCreateProgram           = nullptr;
-PFNGLATTACHSHADERPROC            glAttachShader            = nullptr;
-PFNGLLINKPROGRAMPROC             glLinkProgram             = nullptr;
-PFNGLGETPROGRAMIVPROC            glGetProgramiv            = nullptr;
-PFNGLGETPROGRAMINFOLOGPROC       glGetProgramInfoLog       = nullptr;
-PFNGLUSEPROGRAMPROC              glUseProgram              = nullptr;
-PFNGLDELETEPROGRAMPROC           glDeleteProgram           = nullptr;
-PFNGLGETUNIFORMLOCATIONPROC      glGetUniformLocation      = nullptr;
-PFNGLUNIFORMMATRIX4FVPROC        glUniformMatrix4fv        = nullptr;
-PFNGLUNIFORM1IPROC               glUniform1i               = nullptr;
-PFNGLUNIFORM3FVPROC              glUniform3fv              = nullptr;
-PFNGLUNIFORM4FVPROC              glUniform4fv              = nullptr;
-PFNGLUNIFORM2FPROC               glUniform2f               = nullptr;
-PFNGLUNIFORM1FPROC               glUniform1f               = nullptr;
-PFNGLACTIVETEXTUREPROC           glActiveTexture           = nullptr;
-PFNGLGENERATEMIPMAPPROC          glGenerateMipmap          = nullptr;
+PFNGLGENVERTEXARRAYSPROC         glGenVertexArrays_ptr         = nullptr;
+PFNGLBINDVERTEXARRAYPROC         glBindVertexArray_ptr         = nullptr;
+PFNGLDELETEVERTEXARRAYSPROC      glDeleteVertexArrays_ptr      = nullptr;
+PFNGLGENBUFFERSPROC              glGenBuffers_ptr              = nullptr;
+PFNGLBINDBUFFERPROC              glBindBuffer_ptr              = nullptr;
+PFNGLBUFFERDATAPROC              glBufferData_ptr              = nullptr;
+PFNGLDELETEBUFFERSPROC           glDeleteBuffers_ptr           = nullptr;
+PFNGLVERTEXATTRIBIPOINTERPROC    glVertexAttribIPointer_ptr    = nullptr;
+PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray_ptr = nullptr;
+PFNGLCREATESHADERPROC            glCreateShader_ptr            = nullptr;
+PFNGLSHADERSOURCEPROC            glShaderSource_ptr            = nullptr;
+PFNGLCOMPILESHADERPROC           glCompileShader_ptr           = nullptr;
+PFNGLGETSHADERIVPROC             glGetShaderiv_ptr             = nullptr;
+PFNGLGETSHADERINFOLOGPROC        glGetShaderInfoLog_ptr        = nullptr;
+PFNGLDELETESHADERPROC            glDeleteShader_ptr            = nullptr;
+PFNGLCREATEPROGRAMPROC           glCreateProgram_ptr           = nullptr;
+PFNGLATTACHSHADERPROC            glAttachShader_ptr            = nullptr;
+PFNGLLINKPROGRAMPROC             glLinkProgram_ptr             = nullptr;
+PFNGLGETPROGRAMIVPROC            glGetProgramiv_ptr            = nullptr;
+PFNGLGETPROGRAMINFOLOGPROC       glGetProgramInfoLog_ptr       = nullptr;
+PFNGLUSEPROGRAMPROC              glUseProgram_ptr              = nullptr;
+PFNGLDELETEPROGRAMPROC           glDeleteProgram_ptr           = nullptr;
+PFNGLGETUNIFORMLOCATIONPROC      glGetUniformLocation_ptr      = nullptr;
+PFNGLUNIFORMMATRIX4FVPROC        glUniformMatrix4fv_ptr        = nullptr;
+PFNGLUNIFORM1IPROC               glUniform1i_ptr               = nullptr;
+PFNGLUNIFORM3FVPROC              glUniform3fv_ptr              = nullptr;
+PFNGLUNIFORM4FVPROC              glUniform4fv_ptr              = nullptr;
+PFNGLUNIFORM2FPROC               glUniform2f_ptr               = nullptr;
+PFNGLUNIFORM1FPROC               glUniform1f_ptr               = nullptr;
+PFNGLGENERATEMIPMAPPROC          glGenerateMipmap_ptr          = nullptr;
 
 #define GPUR_LOAD(name) \
     name = reinterpret_cast<decltype(name)>(glXGetProcAddressARB( \
@@ -70,7 +69,6 @@ bool gpur_load_gl_functions() noexcept
     GPUR_LOAD(glUniform4fv);
     GPUR_LOAD(glUniform2f);
     GPUR_LOAD(glUniform1f);
-    GPUR_LOAD(glActiveTexture);
     GPUR_LOAD(glGenerateMipmap);
     return true;
 }

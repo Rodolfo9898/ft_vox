@@ -2,6 +2,10 @@
 #include "../../src/assets/TextureAtlas.hpp"
 #include "../../src/frame/RenderCache.hpp"
 #include "../../src/meshes/MeshCuller.hpp"
+#ifndef GAME_USE_VOXEL_REGION_BACKEND
+# define GAME_USE_VOXEL_REGION_BACKEND
+#endif
+#include "../../Libft/Modules/Voxel/voxel.hpp"
 #include <cmath>
 #include <cstring>
 
@@ -174,8 +178,7 @@ bool GpuRenderer::initialize(int width, int height) noexcept
     glBindVertexArray(_mega_vao);
     glBindBuffer(GL_ARRAY_BUFFER, _mega_vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mega_ebo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, S,
-        reinterpret_cast<const void *>(static_cast<uintptr_t>(0)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, S, nullptr);
     glEnableVertexAttribArray(0);
     glVertexAttribIPointer(1, 2, GL_UNSIGNED_SHORT, S,
         reinterpret_cast<const void *>(static_cast<uintptr_t>(12)));
@@ -193,8 +196,7 @@ bool GpuRenderer::initialize(int width, int height) noexcept
     glBindVertexArray(_water_vao);
     glBindBuffer(GL_ARRAY_BUFFER, _mega_vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _water_ebo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, S,
-        reinterpret_cast<const void *>(static_cast<uintptr_t>(0)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, S, nullptr);
     glEnableVertexAttribArray(0);
     glVertexAttribIPointer(1, 2, GL_UNSIGNED_SHORT, S,
         reinterpret_cast<const void *>(static_cast<uintptr_t>(12)));
