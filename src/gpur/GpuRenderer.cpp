@@ -7,13 +7,12 @@
 
 static const char *WORLD_VERT = R"GLSL(
 #version 330 core
-layout(location = 0) in uvec3 a_position;
+layout(location = 0) in vec3  a_position;
 layout(location = 1) in uvec2 a_texcoord;
 layout(location = 2) in uint  a_block_id;
 layout(location = 3) in uint  a_face;
 
 uniform mat4 u_mvp;
-uniform vec3 u_chunk_origin;
 
 out vec2 v_uv_tile;
 out float v_shade;
@@ -24,8 +23,7 @@ const float SHADE[6] = float[6](0.72, 0.82, 0.72, 1.0, 0.58, 0.72);
 
 void main()
 {
-    vec3 pos = vec3(a_position) + u_chunk_origin;
-    gl_Position = u_mvp * vec4(pos, 1.0);
+    gl_Position = u_mvp * vec4(a_position, 1.0);
     v_uv_tile   = vec2(a_texcoord) / 16.0;
     v_shade     = a_face < 6u ? SHADE[a_face] : 0.72;
     v_block_id  = a_block_id;
@@ -131,10 +129,12 @@ void main()
 )GLSL";
 
 GpuRenderer::GpuRenderer() noexcept
-    : _sky_vao(0), _crosshair_vbo(0), _crosshair_vao(0),
+    : _mega_vao(0), _mega_vbo(0), _mega_ebo(0),
+      _mega_vbo_cap(0), _mega_ebo_cap(0),
+      _sky_vao(0), _crosshair_vbo(0), _crosshair_vao(0),
       _overlay_tex(0), _overlay_w(0), _overlay_h(0),
       _ready(false), _width(0), _height(0),
-      _u_mvp(-1), _u_chunk_origin(-1), _u_atlas(-1), _u_atlas_loaded(-1),
+      _u_mvp(-1), _u_atlas(-1), _u_atlas_loaded(-1),
       _u_tile_uvs(-1), _u_fallback(-1), _u_sky_size(-1), _u_overlay_color(-1),
       _u_overlay_sampler(-1), _u_overlay_ndc_br(-1)
 {
@@ -151,19 +151,38 @@ bool GpuRenderer::initialize(int width, int height) noexcept
     if (!_overlay_shader.compile(OVERLAY_VERT, OVERLAY_FRAG))              return (false);
     if (!_overlay_tex_shader.compile(OVERLAY_TEX_VERT, OVERLAY_TEX_FRAG)) return (false);
 
-    _u_mvp            = _world_shader.uniform("u_mvp");
-    _u_chunk_origin   = _world_shader.uniform("u_chunk_origin");
-    _u_atlas          = _world_shader.uniform("u_atlas");
-    _u_atlas_loaded   = _world_shader.uniform("u_atlas_loaded");
-    _u_tile_uvs       = _world_shader.uniform("u_tile_uvs");
-    _u_fallback       = _world_shader.uniform("u_fallback_colors");
-    _u_sky_size       = _sky_shader.uniform("u_sky_size");
-    _u_overlay_color  = _overlay_shader.uniform("u_overlay_color");
+    _u_mvp             = _world_shader.uniform("u_mvp");
+    _u_atlas           = _world_shader.uniform("u_atlas");
+    _u_atlas_loaded    = _world_shader.uniform("u_atlas_loaded");
+    _u_tile_uvs        = _world_shader.uniform("u_tile_uvs");
+    _u_fallback        = _world_shader.uniform("u_fallback_colors");
+    _u_sky_size        = _sky_shader.uniform("u_sky_size");
+    _u_overlay_color   = _overlay_shader.uniform("u_overlay_color");
     _u_overlay_sampler = _overlay_tex_shader.uniform("u_overlay_sampler");
     _u_overlay_ndc_br  = _overlay_tex_shader.uniform("u_overlay_ndc_br");
 
-    glGenVertexArrays(1, &_sky_vao);
+    constexpr GLsizei S = static_cast<GLsizei>(sizeof(MegaVertex));
+    glGenVertexArrays(1, &_mega_vao);
+    glGenBuffers(1, &_mega_vbo);
+    glGenBuffers(1, &_mega_ebo);
+    glBindVertexArray(_mega_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, _mega_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mega_ebo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, S,
+        reinterpret_cast<const void *>(static_cast<uintptr_t>(0)));
+    glEnableVertexAttribArray(0);
+    glVertexAttribIPointer(1, 2, GL_UNSIGNED_SHORT, S,
+        reinterpret_cast<const void *>(static_cast<uintptr_t>(12)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, S,
+        reinterpret_cast<const void *>(static_cast<uintptr_t>(16)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, S,
+        reinterpret_cast<const void *>(static_cast<uintptr_t>(20)));
+    glEnableVertexAttribArray(3);
+    glBindVertexArray(0);
 
+    glGenVertexArrays(1, &_sky_vao);
     glGenVertexArrays(1, &_crosshair_vao);
     glGenBuffers(1, &_crosshair_vbo);
 
@@ -194,12 +213,17 @@ void GpuRenderer::destroy() noexcept
 {
     _ready = false;
     _atlas.destroy();
-    for (int i = 0; i < WORLD_CHUNK_COUNT; ++i)
-        _meshes[i].destroy();
-    if (_overlay_tex != 0)   { glDeleteTextures(1, &_overlay_tex);        _overlay_tex = 0;      }
-    if (_sky_vao != 0)       { glDeleteVertexArrays(1, &_sky_vao);        _sky_vao = 0;          }
-    if (_crosshair_vao != 0) { glDeleteVertexArrays(1, &_crosshair_vao);  _crosshair_vao = 0;    }
-    if (_crosshair_vbo != 0) { glDeleteBuffers(1, &_crosshair_vbo);       _crosshair_vbo = 0;    }
+    if (_mega_vao != 0) { glDeleteVertexArrays(1, &_mega_vao); _mega_vao = 0; }
+    if (_mega_vbo != 0) { glDeleteBuffers(1, &_mega_vbo);      _mega_vbo = 0; }
+    if (_mega_ebo != 0) { glDeleteBuffers(1, &_mega_ebo);      _mega_ebo = 0; }
+    _mega_vbo_cap = 0;
+    _mega_ebo_cap = 0;
+    _mega_verts.clear();
+    _mega_idxs.clear();
+    if (_overlay_tex != 0)   { glDeleteTextures(1, &_overlay_tex);        _overlay_tex = 0;   }
+    if (_sky_vao != 0)       { glDeleteVertexArrays(1, &_sky_vao);        _sky_vao = 0;       }
+    if (_crosshair_vao != 0) { glDeleteVertexArrays(1, &_crosshair_vao);  _crosshair_vao = 0; }
+    if (_crosshair_vbo != 0) { glDeleteBuffers(1, &_crosshair_vbo);       _crosshair_vbo = 0; }
     _world_shader.destroy();
     _sky_shader.destroy();
     _overlay_shader.destroy();
@@ -250,22 +274,21 @@ void GpuRenderer::build_mvp(float out[16], const Camera &camera,
     view[3]  = 0.0f; view[7]  = 0.0f; view[11] = 0.0f; view[15] = 1.0f;
 
     static const float fov_x = 0.83909963118f;
-    float fx     = 1.0f / fov_x;
-    float fy     = fx * (static_cast<float>(width) * 0.5f)
-                       / (static_cast<float>(height) * 0.52f);
-    float fn     = far_z  + near_z;
-    float fd     = far_z  - near_z;
-    float A      = fn  / fd;
-    float B      = -2.0f * near_z * far_z / fd;
+    float fx = 1.0f / fov_x;
+    float fy = fx * (static_cast<float>(width) * 0.5f)
+                   / (static_cast<float>(height) * 0.52f);
+    float fn = far_z + near_z;
+    float fd = far_z - near_z;
+    float A  = fn / fd;
+    float B  = -2.0f * near_z * far_z / fd;
 
     float proj[16];
     std::memset(proj, 0, sizeof(proj));
-    proj[0] = fx;   proj[5] = fy;
-    proj[10] = A;   proj[11] = 1.0f;
+    proj[0] = fx;  proj[5] = fy;
+    proj[10] = A;  proj[11] = 1.0f;
     proj[14] = B;
 
     for (int col = 0; col < 4; ++col)
-    {
         for (int row = 0; row < 4; ++row)
         {
             float s = 0.0f;
@@ -273,7 +296,6 @@ void GpuRenderer::build_mvp(float out[16], const Camera &camera,
                 s += proj[k * 4 + row] * view[col * 4 + k];
             out[col * 4 + row] = s;
         }
-    }
 }
 
 void GpuRenderer::draw_sky() const noexcept
@@ -291,12 +313,7 @@ void GpuRenderer::draw_crosshair() const noexcept
     float sx = 8.0f / static_cast<float>(_width);
     float sy = 8.0f / static_cast<float>(_height);
 
-    float verts[] = {
-        -sx,   0.0f,
-         sx,   0.0f,
-         0.0f, -sy,
-         0.0f,  sy
-    };
+    float verts[] = { -sx, 0.0f, sx, 0.0f, 0.0f, -sy, 0.0f, sy };
 
     glBindVertexArray(_crosshair_vao);
     glBindBuffer(GL_ARRAY_BUFFER, _crosshair_vbo);
@@ -322,39 +339,82 @@ void GpuRenderer::render(const Camera &camera, const World &world) noexcept
 
     glViewport(0, 0, _width, _height);
     glClear(GL_DEPTH_BUFFER_BIT);
-
     draw_sky();
 
     float far_z = static_cast<float>(world.active_render_distance) + 64.0f;
     float mvp[16];
     build_mvp(mvp, camera, _width, _height, 0.08f, far_z);
 
-    _world_shader.use();
-    glUniformMatrix4fv(_u_mvp, 1, GL_FALSE, mvp);
-    _atlas.bind(0);
-
     RenderCache cache;
     cache.configure(camera, _width, _height, world.active_render_distance);
+
+    _mega_verts.clear();
+    _mega_idxs.clear();
 
     for (int i = 0; i < world.chunk_count; ++i)
     {
         const WorldChunk &wc = world.chunks[i];
-        if (wc.initialized == false)
-            continue ;
-        _meshes[i].sync(wc.mesh);
-        if (!_meshes[i].has_geometry())
+        if (wc.initialized == false || wc.mesh.vertices.empty() == FT_TRUE)
             continue ;
         if (!MeshCuller::chunk_is_visible(camera, wc, cache))
             continue ;
-        const float origin[3] = {
-            static_cast<float>(wc.world_x),
-            0.0f,
-            static_cast<float>(wc.world_z)
-        };
-        glUniform3fv(_u_chunk_origin, 1, origin);
-        _meshes[i].draw();
+
+        const uint32_t base = static_cast<uint32_t>(_mega_verts.size());
+        const float ox = static_cast<float>(wc.world_x);
+        const float oz = static_cast<float>(wc.world_z);
+        const size_t vcount = wc.mesh.vertices.size();
+        for (size_t j = 0; j < vcount; ++j)
+        {
+            const chunk_mesh_vertex &v = wc.mesh.vertices[j];
+            MegaVertex mv;
+            mv.x        = static_cast<float>(v.coordinate_x) + ox;
+            mv.y        = static_cast<float>(v.coordinate_y);
+            mv.z        = static_cast<float>(v.coordinate_z) + oz;
+            mv.tu       = v.texture_u;
+            mv.tv       = v.texture_v;
+            mv.block_id = v.block_id;
+            mv.face     = static_cast<uint32_t>(v.face);
+            _mega_verts.push_back(mv);
+        }
+        const size_t icount = wc.mesh.indices.size();
+        for (size_t j = 0; j < icount; ++j)
+            _mega_idxs.push_back(base + wc.mesh.indices[j]);
     }
-    glBindVertexArray(0);
+
+    if (!_mega_verts.empty())
+    {
+        const GLsizeiptr vbytes =
+            static_cast<GLsizeiptr>(_mega_verts.size() * sizeof(MegaVertex));
+        const GLsizeiptr ibytes =
+            static_cast<GLsizeiptr>(_mega_idxs.size() * sizeof(uint32_t));
+
+        glBindBuffer(GL_ARRAY_BUFFER, _mega_vbo);
+        if (static_cast<size_t>(vbytes) > _mega_vbo_cap)
+        {
+            glBufferData(GL_ARRAY_BUFFER, vbytes, nullptr, GL_DYNAMIC_DRAW);
+            _mega_vbo_cap = static_cast<size_t>(vbytes);
+        }
+        glBufferSubData(GL_ARRAY_BUFFER, 0, vbytes, _mega_verts.data());
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mega_ebo);
+        if (static_cast<size_t>(ibytes) > _mega_ebo_cap)
+        {
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, ibytes, nullptr,
+                GL_DYNAMIC_DRAW);
+            _mega_ebo_cap = static_cast<size_t>(ibytes);
+        }
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, ibytes, _mega_idxs.data());
+
+        _world_shader.use();
+        glUniformMatrix4fv(_u_mvp, 1, GL_FALSE, mvp);
+        _atlas.bind(0);
+
+        glBindVertexArray(_mega_vao);
+        glDrawElements(GL_TRIANGLES,
+            static_cast<GLsizei>(_mega_idxs.size()),
+            GL_UNSIGNED_INT, nullptr);
+        glBindVertexArray(0);
+    }
 
     draw_crosshair();
 }

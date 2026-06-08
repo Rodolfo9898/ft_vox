@@ -46,7 +46,7 @@ void Camera::initialize()
     this->z = -8.0;
     this->yaw = 0.0;
     this->pitch = 0.0;
-    this->speed = 2.0;
+    this->speed = 4.3;
     this->vertical_velocity = 0.0;
     this->on_ground = false;
 }
