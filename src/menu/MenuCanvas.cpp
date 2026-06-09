@@ -1,5 +1,8 @@
 #include "../../src/menu/MenuCanvas.hpp"
 
+const int MenuCanvas::W;
+const int MenuCanvas::H;
+
 MenuCanvas::MenuCanvas(const MenuCanvas &other)
 {
     *this = other;
