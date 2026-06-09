@@ -9,7 +9,7 @@
 #include "../../Libft/Modules/Voxel/voxel.hpp"
 #include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
 #include "../../src/frame/RendererColor.hpp"
-#include "../../src/gpur/gl_funcs.hpp"
+#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
 #include "../../src/assets/TextureAtlas.hpp"
 
 class GpuTextureAtlas

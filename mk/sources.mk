@@ -64,9 +64,6 @@ SRC = \
     src/edits/DeleteBlockCommand.cpp \
     src/edits/PlaceBlockCommand.cpp \
     src/edits/WorldBlockEditor.cpp \
-    src/gpur/gl_funcs.cpp \
-    src/gpur/GpuWindow.cpp \
-    src/gpur/GpuShader.cpp \
     src/gpur/GpuChunkMesh.cpp \
     src/gpur/GpuTextureAtlas.cpp \
     src/gpur/GpuRenderer.cpp \
@@ -79,20 +76,7 @@ SRC = \
     src/menu/CreditsScene.cpp \
     src/menu/LoadingScene.cpp \
     src/menu/InGameSettingsScene.cpp \
-    $(WINDOW_SRC)
 
-ifeq ($(OS),Windows_NT)
-WINDOW_SRC = src/gpur/GpuWindow_windows.cpp
 MM_SRC =
-else
-UNAME_S_SRC := $(shell uname -s)
-ifeq ($(UNAME_S_SRC),Darwin)
-WINDOW_SRC =
-MM_SRC = src/gpur/GpuWindow_macos.mm
-else
-WINDOW_SRC = src/gpur/GpuWindow_linux.cpp
-MM_SRC =
-endif
-endif
 
 TEST_SRC = main.cpp

@@ -2,7 +2,7 @@
 # define GPUR_CHUNK_MESH_HPP
 
 #include <cstdint>
-#include "../../src/gpur/gl_funcs.hpp"
+#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
 #include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
 #include <cstddef>
 

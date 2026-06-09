@@ -3,7 +3,7 @@
 
 #include "../../src/diagnostics/ApplicationError.hpp"
 #include "../../Libft/Modules/DUMB/render_window.hpp"
-#include "../../src/gpur/GpuWindow.hpp"
+#include "../../Libft/Modules/GPGR/GpuWindow.hpp"
 #include <cstdint>
 #include <memory>
 #include <vector>

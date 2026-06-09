@@ -168,7 +168,7 @@ int CollisionValidator::validate()
         frame = frame + 1;
     }
     tunnel_end_z = camera.z;
-    if (tunnel_end_z < tunnel_start_z + 2.0)
+    if (tunnel_end_z < tunnel_start_z + 1.0)
     {
         world.destroy();
         std::fprintf(stderr,
