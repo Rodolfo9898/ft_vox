@@ -13,11 +13,9 @@ class PerspectiveTriangleRasterizer : public TriangleRasterizer
 {
     public:
         PerspectiveTriangleRasterizer();
-        PerspectiveTriangleRasterizer(
-            const PerspectiveTriangleRasterizer &other);
+        PerspectiveTriangleRasterizer(const PerspectiveTriangleRasterizer &other);
         ~PerspectiveTriangleRasterizer();
-        PerspectiveTriangleRasterizer &operator=(
-            const PerspectiveTriangleRasterizer &other);
+        PerspectiveTriangleRasterizer &operator=(const PerspectiveTriangleRasterizer &other);
 
         void draw_triangle(ft_render_framebuffer &framebuffer,
             std::vector<double> &depth_buffer,

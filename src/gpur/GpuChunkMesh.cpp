@@ -1,5 +1,17 @@
 #include "../../src/gpur/GpuChunkMesh.hpp"
 
+GpuChunkMesh::GpuChunkMesh() noexcept
+    : _vao(0), _vbo(0), _ebo(0),
+      _uploaded_vertices(0), _uploaded_indices(0), _index_count(0) {}
+
+GpuChunkMesh::GpuChunkMesh(const GpuChunkMesh &other) { (void)other; }
+
+GpuChunkMesh::~GpuChunkMesh() noexcept { destroy(); }
+
+GpuChunkMesh &GpuChunkMesh::operator=(const GpuChunkMesh &other)
+{ (void)other; return *this; }
+
+
 void GpuChunkMesh::sync(const chunk_mesh &mesh) noexcept
 {
     size_t vcount = mesh.vertices.size();

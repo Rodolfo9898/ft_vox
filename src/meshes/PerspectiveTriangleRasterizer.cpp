@@ -1,5 +1,6 @@
 #include "../../src/meshes/PerspectiveTriangleRasterizer.hpp"
 
+
 PerspectiveTriangleRasterizer::PerspectiveTriangleRasterizer()
 {
 }

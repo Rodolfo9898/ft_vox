@@ -1,5 +1,10 @@
 #include "../../src/world/World.hpp"
 
+World::World(const World &other) { (void)other; }
+World &World::operator=(const World &other)
+{ (void)other; return (*this); }
+
+
 World::World()
 {
     int32_t index;

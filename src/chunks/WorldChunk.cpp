@@ -1,5 +1,6 @@
 #include "../../src/chunks/WorldChunk.hpp"
 
+
 WorldChunk::WorldChunk()
 {
     this->reset_coordinates();

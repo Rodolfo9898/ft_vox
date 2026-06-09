@@ -17,9 +17,9 @@ class WorldChunk
         bool              initialized;
 
         WorldChunk();
-        WorldChunk(const WorldChunk &other) = delete;
+        WorldChunk(const WorldChunk &other);
         ~WorldChunk();
-        WorldChunk &operator=(const WorldChunk &other) = delete;
+        WorldChunk &operator=(const WorldChunk &other);
 
         void reset_coordinates();
         void destroy();

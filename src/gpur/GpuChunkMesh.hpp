@@ -16,14 +16,11 @@ class GpuChunkMesh
     int32_t _index_count;
 
     public:
-        GpuChunkMesh() noexcept
-            : _vao(0), _vbo(0), _ebo(0),
-              _uploaded_vertices(0), _uploaded_indices(0),
-              _index_count(0) {}
-        ~GpuChunkMesh() noexcept { destroy(); }
+        GpuChunkMesh() noexcept;
+        GpuChunkMesh(const GpuChunkMesh &other);
+        ~GpuChunkMesh() noexcept;
+        GpuChunkMesh &operator=(const GpuChunkMesh &other);
 
-        GpuChunkMesh(const GpuChunkMesh &)            = delete;
-        GpuChunkMesh &operator=(const GpuChunkMesh &) = delete;
 
         void sync(const chunk_mesh &mesh) noexcept;
         void draw() const noexcept;

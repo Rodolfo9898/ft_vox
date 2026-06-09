@@ -19,8 +19,7 @@ class TerrainDeterminismValidator
         TerrainDeterminismValidator();
         TerrainDeterminismValidator(const TerrainDeterminismValidator &other);
         ~TerrainDeterminismValidator();
-        TerrainDeterminismValidator &operator=(
-            const TerrainDeterminismValidator &other);
+        TerrainDeterminismValidator &operator=(const TerrainDeterminismValidator &other);
 
         static int validate();
 };

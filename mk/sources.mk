@@ -66,6 +66,10 @@ SRC = \
     src/edits/WorldBlockEditor.cpp \
     src/gpur/GpuChunkMesh.cpp \
     src/gpur/GpuTextureAtlas.cpp \
+    src/gpur/GpuMvpBuilder.cpp \
+    src/gpur/GpuSkyRenderer.cpp \
+    src/gpur/GpuWorldRenderer.cpp \
+    src/gpur/GpuHudRenderer.cpp \
     src/gpur/GpuRenderer.cpp \
     src/settings/Settings.cpp \
     src/menu/MenuCanvas.cpp \
