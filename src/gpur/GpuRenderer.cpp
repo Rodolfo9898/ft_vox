@@ -148,6 +148,7 @@ GpuRenderer::GpuRenderer() noexcept
     : _mega_vao(0), _mega_vbo(0), _mega_ebo(0),
       _mega_vbo_cap(0), _mega_ebo_cap(0),
       _water_vao(0), _water_ebo(0), _water_ebo_cap(0),
+      _menu_tex(0), _menu_tex_w(0), _menu_tex_h(0),
       _sky_vao(0), _crosshair_vbo(0), _crosshair_vao(0),
       _overlay_tex(0), _overlay_w(0), _overlay_h(0),
       _ready(false), _width(0), _height(0),
@@ -257,6 +258,8 @@ void GpuRenderer::destroy() noexcept
     if (_water_vao != 0) { glDeleteVertexArrays(1, &_water_vao); _water_vao = 0; }
     if (_water_ebo != 0) { glDeleteBuffers(1, &_water_ebo);      _water_ebo = 0; }
     _water_ebo_cap = 0; _water_idxs.clear();
+    if (_menu_tex != 0)  { glDeleteTextures(1, &_menu_tex);       _menu_tex = 0;  }
+    _menu_tex_w = 0; _menu_tex_h = 0; _menu_rgba.clear();
     if (_overlay_tex != 0)   { glDeleteTextures(1, &_overlay_tex);        _overlay_tex = 0;   }
     if (_sky_vao != 0)       { glDeleteVertexArrays(1, &_sky_vao);        _sky_vao = 0;       }
     if (_crosshair_vao != 0) { glDeleteVertexArrays(1, &_crosshair_vao);  _crosshair_vao = 0; }
@@ -555,6 +558,75 @@ void GpuRenderer::draw_overlay() noexcept
     glBindTexture(GL_TEXTURE_2D, _overlay_tex);
     glUniform1i(_u_overlay_sampler, 1);
     glUniform2f(_u_overlay_ndc_br, ndc_br_x, ndc_br_y);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(_sky_vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
+}
+
+void GpuRenderer::clear_screen() noexcept
+{
+    glClearColor(0.05f, 0.05f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void GpuRenderer::upload_menu(const uint32_t *pixels, int w, int h) noexcept
+{
+    if (!pixels || w <= 0 || h <= 0) return;
+    const size_t count = static_cast<size_t>(w) * static_cast<size_t>(h);
+    if (_menu_rgba.size() != count * 4U)
+        _menu_rgba.resize(count * 4U);
+    for (size_t i = 0; i < count; ++i)
+    {
+        uint32_t p  = pixels[i];
+        uint8_t  r  = static_cast<uint8_t>((p >> 16) & 0xFFU);
+        uint8_t  g2 = static_cast<uint8_t>((p >>  8) & 0xFFU);
+        uint8_t  b  = static_cast<uint8_t>( p        & 0xFFU);
+        uint8_t  a  = (p == 0U) ? 0U : 255U;
+        _menu_rgba[i*4U+0U] = r;
+        _menu_rgba[i*4U+1U] = g2;
+        _menu_rgba[i*4U+2U] = b;
+        _menu_rgba[i*4U+3U] = a;
+    }
+    bool realloc = (_menu_tex == 0 || w != _menu_tex_w || h != _menu_tex_h);
+    if (_menu_tex == 0) glGenTextures(1, &_menu_tex);
+    glBindTexture(GL_TEXTURE_2D, _menu_tex);
+    if (realloc)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+            static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, _menu_rgba.data());
+        _menu_tex_w = w; _menu_tex_h = h;
+    }
+    else
+    {
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
+            static_cast<GLsizei>(w), static_cast<GLsizei>(h),
+            GL_RGBA, GL_UNSIGNED_BYTE, _menu_rgba.data());
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void GpuRenderer::draw_menu(float alpha) noexcept
+{
+    if (_menu_tex == 0) return;
+    (void)alpha;
+    _overlay_tex_shader.use();
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, _menu_tex);
+    glUniform1i(_u_overlay_sampler, 1);
+    glUniform2f(_u_overlay_ndc_br, 1.0f, -1.0f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_DEPTH_TEST);

@@ -207,4 +207,16 @@ void DebugOverlayRenderer::draw_debug_overlay(ft_render_framebuffer &framebuffer
         debug->selected_block_id);
     draw_debug_text(framebuffer, origin_x, origin_y + (line_height * 5), text,
         scale);
+    if (debug->ram_mb > 0U)
+    {
+        std::snprintf(text, sizeof(text), "RAM  %u MB", debug->ram_mb);
+        draw_debug_text(framebuffer, origin_x, origin_y + (line_height * 6), text,
+            scale);
+    }
+    if (debug->vram_approx_mb > 0U)
+    {
+        std::snprintf(text, sizeof(text), "VRAM  %u MB", debug->vram_approx_mb);
+        draw_debug_text(framebuffer, origin_x, origin_y + (line_height * 7), text,
+            scale);
+    }
 }

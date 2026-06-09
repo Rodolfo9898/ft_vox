@@ -172,3 +172,37 @@ ft_render_framebuffer &ApplicationWindow::framebuffer()
 {
     return (this->active_framebuffer);
 }
+
+int ApplicationWindow::mouse_x() const
+{
+    if (this->gpu_window != nullptr)
+        return (this->gpu_window->get_mouse_x());
+    return (0);
+}
+
+int ApplicationWindow::mouse_y() const
+{
+    if (this->gpu_window != nullptr)
+        return (this->gpu_window->get_mouse_y());
+    return (0);
+}
+
+bool ApplicationWindow::was_mouse_clicked() const
+{
+    if (this->gpu_window != nullptr)
+        return (this->gpu_window->was_mouse_clicked());
+    return (false);
+}
+
+void ApplicationWindow::set_cursor_visible(bool visible)
+{
+    if (this->gpu_window != nullptr)
+        this->gpu_window->set_cursor_visible(visible);
+}
+
+bool ApplicationWindow::was_settings_key_pressed() const
+{
+    if (this->gpu_window != nullptr)
+        return (this->gpu_window->was_settings_key_pressed());
+    return (false);
+}

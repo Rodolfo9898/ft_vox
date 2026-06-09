@@ -40,6 +40,11 @@ class GpuRenderer
     size_t _water_ebo_cap;
     std::vector<uint32_t>   _water_idxs;
 
+    GLuint _menu_tex;
+    int    _menu_tex_w;
+    int    _menu_tex_h;
+    std::vector<uint8_t> _menu_rgba;
+
     GLuint _sky_vao;
     GLuint _crosshair_vbo;
     GLuint _crosshair_vao;
@@ -84,7 +89,18 @@ class GpuRenderer
         void upload_overlay(const uint32_t *pixels, int w, int h) noexcept;
         void draw_overlay() noexcept;
         void draw_tint(float r, float g, float b, float a) noexcept;
-        bool is_ready() const noexcept { return _ready; }
+        void clear_screen() noexcept;
+        void upload_menu(const uint32_t *pixels, int w, int h) noexcept;
+        void draw_menu(float alpha) noexcept;
+        bool     is_ready() const noexcept { return _ready; }
+        uint32_t gpu_mb_approx() const noexcept
+        {
+            size_t b = _mega_vbo_cap + _mega_ebo_cap + _water_ebo_cap;
+            b += static_cast<size_t>(_atlas.is_loaded() ? 192 * 192 * 4 : 0);
+            b += static_cast<size_t>(_overlay_w) * static_cast<size_t>(_overlay_h) * 4U;
+            b += static_cast<size_t>(_menu_tex_w) * static_cast<size_t>(_menu_tex_h) * 4U;
+            return static_cast<uint32_t>(b / (1024UL * 1024UL));
+        }
 };
 
 #endif

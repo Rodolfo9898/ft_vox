@@ -6,6 +6,7 @@
 
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
+#include <X11/keysym.h>
 #include <GL/glx.h>
 #include <new>
 #include <cstring>
@@ -22,11 +23,20 @@ class GpuWindowLinux : public GpuWindow
     bool        _close_flag;
     int         _width;
     int         _height;
+    int         _mouse_x;
+    int         _mouse_y;
+    bool        _mouse_clicked;
+    bool        _settings_key;
+    bool        _cursor_visible;
+    Cursor      _invisible_cursor;
 
     public:
         GpuWindowLinux() noexcept
             : _display(nullptr), _window(0), _ctx(nullptr), _wm_delete(0),
-              _close_flag(false), _width(0), _height(0) {}
+              _close_flag(false), _width(0), _height(0),
+              _mouse_x(0), _mouse_y(0), _mouse_clicked(false),
+              _settings_key(false), _cursor_visible(true),
+              _invisible_cursor(0) {}
         ~GpuWindowLinux() override { destroy(); }
 
         bool initialize(const char *title, int width, int height,
@@ -37,6 +47,11 @@ class GpuWindowLinux : public GpuWindow
         bool should_close() const noexcept override { return _close_flag; }
         int  get_width()  const noexcept override   { return _width;      }
         int  get_height() const noexcept override   { return _height;     }
+        int  get_mouse_x() const noexcept override  { return _mouse_x;    }
+        int  get_mouse_y() const noexcept override  { return _mouse_y;    }
+        bool was_mouse_clicked() const noexcept override { return _mouse_clicked; }
+        void set_cursor_visible(bool v) noexcept override;
+        bool was_settings_key_pressed() const noexcept override { return _settings_key; }
 };
 
 bool GpuWindowLinux::initialize(const char *title, int width, int height,
@@ -90,7 +105,9 @@ bool GpuWindowLinux::initialize(const char *title, int width, int height,
     std::memset(&swa, 0, sizeof(swa));
     swa.colormap   = XCreateColormap(_display, RootWindow(_display, vi->screen),
         vi->visual, AllocNone);
-    swa.event_mask = ExposureMask | StructureNotifyMask;
+    swa.event_mask = ExposureMask | StructureNotifyMask
+        | ButtonPressMask | ButtonReleaseMask
+        | PointerMotionMask | KeyPressMask | KeyReleaseMask;
     swa.border_pixel = 0;
 
     _window = XCreateWindow(_display,
@@ -124,6 +141,14 @@ bool GpuWindowLinux::initialize(const char *title, int width, int height,
 
     XMapWindow(_display, _window);
     XFlush(_display);
+
+    char blank_data = 0;
+    Pixmap blank_pm = XCreateBitmapFromData(_display, _window, &blank_data, 1, 1);
+    XColor blank_col;
+    std::memset(&blank_col, 0, sizeof(blank_col));
+    _invisible_cursor = XCreatePixmapCursor(_display, blank_pm, blank_pm,
+        &blank_col, &blank_col, 0, 0);
+    XFreePixmap(_display, blank_pm);
 
     glx_create_ctx_fn create_ctx =
         reinterpret_cast<glx_create_ctx_fn>(glXGetProcAddressARB(
@@ -181,6 +206,11 @@ void GpuWindowLinux::destroy() noexcept
     if (_window != 0)
         ft_dumb_controls_linux_unregister_window(
             static_cast<unsigned long>(_window));
+    if (_invisible_cursor != 0)
+    {
+        XFreeCursor(_display, _invisible_cursor);
+        _invisible_cursor = 0;
+    }
     glXMakeCurrent(_display, None, nullptr);
     if (_ctx != nullptr)
     {
@@ -198,6 +228,8 @@ void GpuWindowLinux::destroy() noexcept
 
 void GpuWindowLinux::poll_events() noexcept
 {
+    _mouse_clicked = false;
+    _settings_key  = false;
     while (XPending(_display) > 0)
     {
         XEvent ev;
@@ -207,12 +239,43 @@ void GpuWindowLinux::poll_events() noexcept
             if (static_cast<Atom>(ev.xclient.data.l[0]) == _wm_delete)
                 _close_flag = true;
         }
+        else if (ev.type == ButtonPress && ev.xbutton.button == Button1)
+        {
+            _mouse_clicked = true;
+        }
+        else if (ev.type == MotionNotify)
+        {
+            _mouse_x = ev.xmotion.x;
+            _mouse_y = ev.xmotion.y;
+        }
+        else if (ev.type == ButtonPress || ev.type == ButtonRelease
+            || ev.type == MotionNotify)
+        {
+            _mouse_x = ev.xbutton.x;
+            _mouse_y = ev.xbutton.y;
+        }
+        else if (ev.type == KeyPress)
+        {
+            KeySym sym = XLookupKeysym(&ev.xkey, 0);
+            if (sym == XK_m || sym == XK_M)
+                _settings_key = true;
+        }
     }
 }
 
 void GpuWindowLinux::swap_buffers() noexcept
 {
     glXSwapBuffers(_display, _window);
+}
+
+void GpuWindowLinux::set_cursor_visible(bool v) noexcept
+{
+    if (_display == 0 || _window == 0) return;
+    if (!v)
+        XDefineCursor(_display, _window, _invisible_cursor);
+    else
+        XUndefineCursor(_display, _window);
+    _cursor_visible = v;
 }
 
 GpuWindow *GpuWindow::create() noexcept

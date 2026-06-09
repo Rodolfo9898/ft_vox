@@ -52,6 +52,11 @@ struct GpuWindowMacOSState
     bool              close_flag;
     int               width;
     int               height;
+    int               mouse_x;
+    int               mouse_y;
+    bool              mouse_clicked;
+    bool              settings_key_pressed;
+    bool              cursor_visible;
 };
 
 class GpuWindowMacOS : public GpuWindow
@@ -70,6 +75,11 @@ class GpuWindowMacOS : public GpuWindow
         bool should_close() const noexcept override;
         int  get_width()  const noexcept override;
         int  get_height() const noexcept override;
+        int  get_mouse_x() const noexcept override;
+        int  get_mouse_y() const noexcept override;
+        bool was_mouse_clicked() const noexcept override;
+        void set_cursor_visible(bool visible) noexcept override;
+        bool was_settings_key_pressed() const noexcept override;
 };
 
 bool GpuWindowMacOS::initialize(const char *title, int width, int height,
@@ -88,7 +98,12 @@ bool GpuWindowMacOS::initialize(const char *title, int width, int height,
     _state = new (std::nothrow) GpuWindowMacOSState();
     if (_state == nullptr)
         return (false);
-    _state->close_flag = false;
+    _state->close_flag           = false;
+    _state->mouse_x              = 0;
+    _state->mouse_y              = 0;
+    _state->mouse_clicked        = false;
+    _state->settings_key_pressed = false;
+    _state->cursor_visible       = true;
 
     [NSApplication sharedApplication];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
@@ -178,6 +193,9 @@ void GpuWindowMacOS::destroy() noexcept
 
 void GpuWindowMacOS::poll_events() noexcept
 {
+    if (_state == nullptr) return;
+    _state->mouse_clicked        = false;
+    _state->settings_key_pressed = false;
     @autoreleasepool
     {
         NSEvent *event;
@@ -188,13 +206,32 @@ void GpuWindowMacOS::poll_events() noexcept
                 dequeue:YES]) != nil)
         {
             NSEventType t = [event type];
-            if (t == NSEventTypeKeyDown || t == NSEventTypeKeyUp
-                    || t == NSEventTypeFlagsChanged)
+            if (t == NSEventTypeKeyDown)
+            {
+                if ([event keyCode] == 46U)
+                    _state->settings_key_pressed = true;
                 continue;
+            }
+            if (t == NSEventTypeKeyUp || t == NSEventTypeFlagsChanged)
+                continue;
+            if (t == NSEventTypeLeftMouseDown)
+                _state->mouse_clicked = true;
+            if (t == NSEventTypeMouseMoved || t == NSEventTypeLeftMouseDragged
+                || t == NSEventTypeRightMouseDragged
+                || t == NSEventTypeLeftMouseDown || t == NSEventTypeLeftMouseUp)
+            {
+                NSPoint loc = [event locationInWindow];
+                if (_state->window != nil)
+                {
+                    NSRect fr = [[_state->window contentView] frame];
+                    _state->mouse_x = static_cast<int>(loc.x);
+                    _state->mouse_y = static_cast<int>(fr.size.height - loc.y);
+                }
+            }
             [NSApp sendEvent:event];
         }
     }
-    if (_state != nullptr && _state->gl_context != nil)
+    if (_state->gl_context != nil)
         [_state->gl_context makeCurrentContext];
 }
 
@@ -217,6 +254,36 @@ int GpuWindowMacOS::get_width() const noexcept
 int GpuWindowMacOS::get_height() const noexcept
 {
     return (_state != nullptr ? _state->height : 0);
+}
+
+int GpuWindowMacOS::get_mouse_x() const noexcept
+{
+    return (_state != nullptr ? _state->mouse_x : 0);
+}
+
+int GpuWindowMacOS::get_mouse_y() const noexcept
+{
+    return (_state != nullptr ? _state->mouse_y : 0);
+}
+
+bool GpuWindowMacOS::was_mouse_clicked() const noexcept
+{
+    return (_state != nullptr && _state->mouse_clicked);
+}
+
+void GpuWindowMacOS::set_cursor_visible(bool visible) noexcept
+{
+    if (_state == nullptr) return;
+    if (visible && !_state->cursor_visible)
+        [NSCursor unhide];
+    else if (!visible && _state->cursor_visible)
+        [NSCursor hide];
+    _state->cursor_visible = visible;
+}
+
+bool GpuWindowMacOS::was_settings_key_pressed() const noexcept
+{
+    return (_state != nullptr && _state->settings_key_pressed);
 }
 
 GpuWindow *GpuWindow::create() noexcept

@@ -33,6 +33,11 @@ class ApplicationWindow
         bool is_gpu_mode() const;
         GpuWindow *get_gpu_window() const;
         ft_render_framebuffer &framebuffer();
+        int  mouse_x() const;
+        int  mouse_y() const;
+        bool was_mouse_clicked() const;
+        void set_cursor_visible(bool visible);
+        bool was_settings_key_pressed() const;
 };
 
 #endif

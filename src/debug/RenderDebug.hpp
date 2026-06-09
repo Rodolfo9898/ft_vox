@@ -12,6 +12,8 @@ class RenderDebug
         int32_t loaded_chunks;
         int32_t render_distance;
         uint32_t selected_block_id;
+        uint32_t ram_mb;
+        uint32_t vram_approx_mb;
 
         RenderDebug();
         RenderDebug(const RenderDebug &other);

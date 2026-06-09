@@ -24,6 +24,8 @@ RenderDebug &RenderDebug::operator=(const RenderDebug &other)
         this->loaded_chunks = other.loaded_chunks;
         this->render_distance = other.render_distance;
         this->selected_block_id = other.selected_block_id;
+        this->ram_mb = other.ram_mb;
+        this->vram_approx_mb = other.vram_approx_mb;
     }
     return (*this);
 }
@@ -36,4 +38,6 @@ void RenderDebug::clear()
     this->loaded_chunks = 0;
     this->render_distance = 0;
     this->selected_block_id = 0U;
+    this->ram_mb = 0U;
+    this->vram_approx_mb = 0U;
 }
