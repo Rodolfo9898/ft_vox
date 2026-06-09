@@ -33,7 +33,7 @@ else
     else
         COMPILE_FLAGS += -Wodr -Wuseless-cast -Wmaybe-uninitialized
         ifneq ($(OPT_LEVEL),0)
-            COMPILE_FLAGS += -flto -ffunction-sections -fdata-sections
+            COMPILE_FLAGS += -ffunction-sections -fdata-sections
         endif
     endif
 endif
@@ -98,7 +98,7 @@ ifneq ($(OPT_LEVEL),0)
         ifeq ($(UNAME_S),Darwin)
             LDFLAGS += -flto
         else
-            LDFLAGS += -flto -s -Wl,--gc-sections
+            LDFLAGS += -s -Wl,--gc-sections
         endif
     endif
 endif

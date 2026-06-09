@@ -28,7 +28,10 @@ void InGameSettingsScene::update(const MenuInput &in, MenuController &ctl)
     if (ctl.canvas().is_hovered(slx, sly, slw, 16, in) && in.mouse_clicked)
     {
         float f = static_cast<float>(in.mouse_x - slx) / static_cast<float>(slw);
-        if (f < 0.0f) f = 0.0f; if (f > 1.0f) f = 1.0f;
+        if (f < 0.0f)
+            f = 0.0f;
+        if (f > 1.0f)
+            f = 1.0f;
         s.set_render_distance(14 + static_cast<int>(f * static_cast<float>(160 - 14)));
     }
     if (ctl.canvas().was_clicked(qbx, qby, 110, 28, in))
