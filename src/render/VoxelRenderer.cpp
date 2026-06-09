@@ -54,6 +54,13 @@ void VoxelRenderer::render_world(ft_render_framebuffer &framebuffer,
     if (this->gpu.is_ready())
     {
         this->gpu.render(camera, world);
+        uint32_t eye_block = 0U;
+        if (world.block_id_at(
+                static_cast<int32_t>(std::floor(camera.x)),
+                static_cast<int32_t>(std::floor(camera.y)),
+                static_cast<int32_t>(std::floor(camera.z)),
+                &eye_block) && eye_block == TERRAIN_GENERATOR_WATER_BLOCK)
+            this->gpu.draw_tint(0.05f, 0.35f, 0.75f, 0.35f);
         if (debug != nullptr)
         {
             _overlay_frame += 1U;

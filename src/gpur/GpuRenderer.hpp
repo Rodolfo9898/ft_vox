@@ -24,6 +24,7 @@ class GpuRenderer
     GpuShader       _sky_shader;
     GpuShader       _overlay_shader;
     GpuShader       _overlay_tex_shader;
+    GpuShader       _tint_shader;
     GpuTextureAtlas _atlas;
 
     GLuint _mega_vao;
@@ -62,6 +63,7 @@ class GpuRenderer
     GLint _u_overlay_color;
     GLint _u_overlay_sampler;
     GLint _u_overlay_ndc_br;
+    GLint _u_tint_color;
 
     void build_mvp(float out[16], const Camera &camera,
         int width, int height, float near_z, float far_z) const noexcept;
@@ -81,6 +83,7 @@ class GpuRenderer
         void render(const Camera &camera, const World &world) noexcept;
         void upload_overlay(const uint32_t *pixels, int w, int h) noexcept;
         void draw_overlay() noexcept;
+        void draw_tint(float r, float g, float b, float a) noexcept;
         bool is_ready() const noexcept { return _ready; }
 };
 

@@ -8,15 +8,17 @@ Libft modules under `Libft/Modules/DUMB`, `Libft/Modules/Game`, and
 
 This file only lists work that still needs attention. Completed work, such as
 the DUMB window loop, chunk storage, terrain height generation, cave carving,
-terrain determinism validation, required-scale validation, texture atlas loading,
-visible-face mesh generation, frustum culling, skybox rendering, block texture
-presentation, debug overlay/FPS counter, block editing hooks, dynamic render
-distance, real-size software render target, biome block data, GPU/OpenGL
-renderer path, chunk mesh GPU upload, texture atlas GPU upload, depth testing,
-macOS key-event beep suppression, 160-cube fullscreen visibility, stable 60 fps
-minimum (60 fps floor / 90+ fps typical via mega-buffer single-draw-call
-batching, frustum culling, backface culling, and overlay throttling), and
-Minecraft-like player movement and jump physics,
+terrain determinism validation, required-scale validation, texture atlas loading
+and correct UV mapping, visible-face mesh generation, frustum culling, skybox
+rendering, block texture presentation, debug overlay/FPS counter, block editing
+hooks, dynamic render distance, real-size software render target, biome block
+data, GPU/OpenGL renderer path, chunk mesh GPU upload via mega-buffer batching,
+texture atlas GPU upload, depth testing, macOS key-event beep suppression,
+160-cube fullscreen visibility, stable 60+ fps via mega-buffer batching, frustum
+and backface culling, Minecraft-like movement speed, jump, and water physics,
+lakes with semi-transparent water rendering, water surface-only mesh generation,
+terrain faces visible through water, 1-block auto-step movement, and terrain
+proof hooks staying green through all terrain changes,
 has been removed from the active checklist.
 
 ## Mandatory Blockers
@@ -28,16 +30,6 @@ has been removed from the active checklist.
   be fixed and verified on Linux.
 - Re-run camera movement checks after the mouse-capture fix, including
   continuous forward/back/left/right movement relative to yaw.
-
-### World/Terrain
-
-- Decide whether lakes/water are part of the final mandatory interpretation and
-  implement them if needed for the natural-topography expectation.
-- Check ground-level readability so the player is not visually lost when looking
-  across terrain.
-- Keep the terrain proof hooks green during future work:
-  `--validate-terrain-determinism`, `--validate-world-scale`, and
-  `--validate-caves`.
 
 ### Stability
 
@@ -68,13 +60,9 @@ rperez-t:
   camera;
 - run long-duration memory/stability tests.
 
-bvangene:
-
-- decide whether optional lakes/water are needed and implement them if yes.
-
 ## Immediate Order
 
 1. Fix Linux FPS mouse capture and verify the camera feels like a true FPS
    camera.
 2. Run long-duration memory/stability tests and real GUI x20 movement tests.
-3. Verify terrain proof hooks remain green.
+3. Confirm all terrain validators remain green after any further changes.

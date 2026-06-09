@@ -94,6 +94,11 @@ void PlayerMovement::update_player_horizontal_motion(Camera *camera,
     double delta_x;
     double delta_z;
     bool   in_water;
+    bool   can_step;
+    bool   stepped;
+    double pre_x;
+    double pre_y;
+    double pre_z;
 
     if (camera == nullptr || delta_seconds <= 0.0)
         return ;
@@ -101,8 +106,33 @@ void PlayerMovement::update_player_horizontal_motion(Camera *camera,
     in_water = player_in_water(*camera, world);
     PlayerMovement::camera_horizontal_delta(*camera, input, delta_seconds,
         in_water ? 0.5 : 1.0, &delta_x, &delta_z);
-    (void)PlayerCollision::move_player_axis(camera, world, 0, delta_x);
-    (void)PlayerCollision::move_player_axis(camera, world, 2, delta_z);
+
+    can_step = in_water && !input.speed_boost;
+    stepped  = false;
+
+    pre_x = camera->x; pre_y = camera->y; pre_z = camera->z;
+    if (PlayerCollision::move_player_axis(camera, world, 0, delta_x) && can_step)
+    {
+        camera->x = pre_x; camera->y = pre_y; camera->z = pre_z;
+        PlayerCollision::move_player_axis(camera, world, 1, 1.05);
+        if (!PlayerCollision::move_player_axis(camera, world, 0, delta_x))
+            stepped = true;
+        else
+        { camera->x = pre_x; camera->y = pre_y; camera->z = pre_z; }
+    }
+
+    pre_x = camera->x; pre_y = camera->y; pre_z = camera->z;
+    if (PlayerCollision::move_player_axis(camera, world, 2, delta_z)
+        && can_step && !stepped)
+    {
+        camera->x = pre_x; camera->y = pre_y; camera->z = pre_z;
+        PlayerCollision::move_player_axis(camera, world, 1, 1.05);
+        if (!PlayerCollision::move_player_axis(camera, world, 2, delta_z))
+            stepped = true;
+        else
+        { camera->x = pre_x; camera->y = pre_y; camera->z = pre_z; }
+    }
+    (void)stepped;
 }
 
 void PlayerMovement::update_player_vertical_motion(Camera *camera,

@@ -137,6 +137,13 @@ void main()
 }
 )GLSL";
 
+static const char *TINT_FRAG = R"GLSL(
+#version 330 core
+uniform vec4 u_tint_color;
+out vec4 frag_color;
+void main() { frag_color = u_tint_color; }
+)GLSL";
+
 GpuRenderer::GpuRenderer() noexcept
     : _mega_vao(0), _mega_vbo(0), _mega_ebo(0),
       _mega_vbo_cap(0), _mega_ebo_cap(0),
@@ -146,7 +153,7 @@ GpuRenderer::GpuRenderer() noexcept
       _ready(false), _width(0), _height(0),
       _u_mvp(-1), _u_atlas(-1), _u_atlas_loaded(-1),
       _u_tile_uvs(-1), _u_fallback(-1), _u_sky_size(-1), _u_overlay_color(-1),
-      _u_overlay_sampler(-1), _u_overlay_ndc_br(-1)
+      _u_overlay_sampler(-1), _u_overlay_ndc_br(-1), _u_tint_color(-1)
 {
     std::memset(_tile_uvs,       0, sizeof(_tile_uvs));
     std::memset(_fallback_colors, 0, sizeof(_fallback_colors));
@@ -160,6 +167,7 @@ bool GpuRenderer::initialize(int width, int height) noexcept
     if (!_sky_shader.compile(SKY_VERT, SKY_FRAG))                          return (false);
     if (!_overlay_shader.compile(OVERLAY_VERT, OVERLAY_FRAG))              return (false);
     if (!_overlay_tex_shader.compile(OVERLAY_TEX_VERT, OVERLAY_TEX_FRAG)) return (false);
+    if (!_tint_shader.compile(SKY_VERT, TINT_FRAG))                        return (false);
 
     _u_mvp             = _world_shader.uniform("u_mvp");
     _u_atlas           = _world_shader.uniform("u_atlas");
@@ -170,6 +178,7 @@ bool GpuRenderer::initialize(int width, int height) noexcept
     _u_overlay_color   = _overlay_shader.uniform("u_overlay_color");
     _u_overlay_sampler = _overlay_tex_shader.uniform("u_overlay_sampler");
     _u_overlay_ndc_br  = _overlay_tex_shader.uniform("u_overlay_ndc_br");
+    _u_tint_color      = _tint_shader.uniform("u_tint_color");
 
     constexpr GLsizei S = static_cast<GLsizei>(sizeof(MegaVertex));
     glGenVertexArrays(1, &_mega_vao);
@@ -256,6 +265,7 @@ void GpuRenderer::destroy() noexcept
     _sky_shader.destroy();
     _overlay_shader.destroy();
     _overlay_tex_shader.destroy();
+    _tint_shader.destroy();
     _overlay_rgba.clear();
 }
 
@@ -556,4 +566,20 @@ void GpuRenderer::draw_overlay() noexcept
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);
+}
+
+void GpuRenderer::draw_tint(float r, float g, float b, float a) noexcept
+{
+    if (!_ready)
+        return ;
+    _tint_shader.use();
+    glUniform4f(_u_tint_color, r, g, b, a);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(_sky_vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
 }
