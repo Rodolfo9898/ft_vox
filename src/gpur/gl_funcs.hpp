@@ -100,3 +100,6 @@ bool gpur_load_gl_functions() noexcept;
 #endif
 
 #endif
+
+#include <cstring>
+#include <cstdint>

@@ -1,5 +1,13 @@
 #include "../../src/gpur/GpuShader.hpp"
-#include <cstdio>
+
+GpuShader::GpuShader() noexcept : _program(0) {}
+
+GpuShader::GpuShader(const GpuShader &other) noexcept { (void)other; }
+
+GpuShader::~GpuShader() noexcept { destroy(); }
+
+GpuShader &GpuShader::operator=(const GpuShader &other) noexcept
+{ (void)other; return *this; }
 
 static GLuint compile_stage(GLenum type, const char *src) noexcept
 {
@@ -21,6 +29,7 @@ static GLuint compile_stage(GLenum type, const char *src) noexcept
     }
     return (shader);
 }
+
 
 bool GpuShader::compile(const char *vert_src, const char *frag_src) noexcept
 {
@@ -73,3 +82,5 @@ GLint GpuShader::uniform(const char *name) const noexcept
 {
     return (glGetUniformLocation(_program, name));
 }
+
+bool GpuShader::ready() const noexcept { return _program != 0; }

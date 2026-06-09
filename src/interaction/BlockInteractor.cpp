@@ -1,5 +1,4 @@
 #include "../../src/interaction/BlockInteractor.hpp"
-#include <cstddef>
 
 BlockInteractor::BlockInteractor()
 {
@@ -112,7 +111,10 @@ int32_t BlockInteractor::try_delete_target_block(World *world,
         &block_y, &block_z);
     if (error_code != FT_ERR_SUCCESS)
         return (FT_ERR_SUCCESS);
-    return (world->delete_block_at(block_x, block_y, block_z));
+    {
+        DeleteBlockCommand cmd(block_x, block_y, block_z);
+        return (cmd.execute(*world));
+    }
 }
 
 int32_t BlockInteractor::try_pick_target_block(const World *world,
@@ -170,8 +172,10 @@ int32_t BlockInteractor::try_place_selected_block(World *world,
     if (PlayerController::block_overlaps_player(camera, place_x, place_y, place_z)
         == true)
         return (FT_ERR_SUCCESS);
-    error_code = world->place_block_at(place_x, place_y, place_z,
-        selected_block_id);
+    {
+        PlaceBlockCommand cmd(place_x, place_y, place_z, selected_block_id);
+        error_code = cmd.execute(*world);
+    }
     if (error_code == FT_ERR_ALREADY_EXISTS || error_code == FT_ERR_NOT_FOUND)
         return (FT_ERR_SUCCESS);
     if (error_code == FT_ERR_SUCCESS

@@ -1,20 +1,8 @@
 #include "../../src/edits/PlaceBlockCommand.hpp"
 
 PlaceBlockCommand::PlaceBlockCommand()
+    : world_x(0), world_y(0), world_z(0), block_id(0)
 {
-    this->world_x = 0;
-    this->world_y = 0;
-    this->world_z = 0;
-    this->block_id = GAME_VOXEL_AIR_BLOCK;
-}
-
-PlaceBlockCommand::PlaceBlockCommand(int32_t block_x, int32_t block_y,
-    int32_t block_z, uint32_t selected_block_id)
-{
-    this->world_x = block_x;
-    this->world_y = block_y;
-    this->world_z = block_z;
-    this->block_id = selected_block_id;
 }
 
 PlaceBlockCommand::PlaceBlockCommand(const PlaceBlockCommand &other)
@@ -27,17 +15,24 @@ PlaceBlockCommand::~PlaceBlockCommand()
 {
 }
 
-PlaceBlockCommand &PlaceBlockCommand::operator=(
-    const PlaceBlockCommand &other)
+PlaceBlockCommand &PlaceBlockCommand::operator=(const PlaceBlockCommand &other)
 {
     if (this != &other)
     {
-        this->world_x = other.world_x;
-        this->world_y = other.world_y;
-        this->world_z = other.world_z;
+        this->world_x  = other.world_x;
+        this->world_y  = other.world_y;
+        this->world_z  = other.world_z;
         this->block_id = other.block_id;
     }
     return (*this);
+}
+
+
+PlaceBlockCommand::PlaceBlockCommand(int32_t block_x, int32_t block_y,
+    int32_t block_z, uint32_t selected_block_id)
+    : world_x(block_x), world_y(block_y), world_z(block_z),
+      block_id(selected_block_id)
+{
 }
 
 int32_t PlaceBlockCommand::execute(World &world) const

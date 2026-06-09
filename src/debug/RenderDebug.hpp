@@ -14,6 +14,9 @@ class RenderDebug
         uint32_t selected_block_id;
         uint32_t ram_mb;
         uint32_t vram_approx_mb;
+        double   camera_x;
+        double   camera_y;
+        double   camera_z;
 
         RenderDebug();
         RenderDebug(const RenderDebug &other);

@@ -1,10 +1,5 @@
 #include "../../src/config/LaunchSettingsMenu.hpp"
 
-#include "../../Libft/Modules/DUMB/controls.hpp"
-#include "../../src/gpur/GpuRenderer.hpp"
-#include <cstdio>
-#include <cstring>
-#include <vector>
 
 namespace
 {

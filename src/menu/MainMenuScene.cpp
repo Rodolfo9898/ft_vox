@@ -1,5 +1,12 @@
-#include "../../src/menu/MenuScene.hpp"
-#include "../../src/menu/MenuController.hpp"
+#include "../../src/menu/MainMenuScene.hpp"
+
+MainMenuScene::MainMenuScene()
+    : MenuScene() {}
+MainMenuScene::MainMenuScene(const MainMenuScene &other)
+    : MenuScene() { (void)other; }
+MainMenuScene::~MainMenuScene() {}
+MainMenuScene &MainMenuScene::operator=(const MainMenuScene &other) { (void)other; return *this; }
+
 
 static const int BTN_W = 280;
 static const int BTN_H = 44;
@@ -51,9 +58,7 @@ void MainMenuScene::update(const MenuInput &in, MenuController &ctl)
 void MainMenuScene::render(MenuCanvas &c) const
 {
     c.clear(MC::BG);
-    c.draw_text_centered(MenuCanvas::W / 2, 60,  "FT_VOX",  6, MC::TITLE);
-    c.draw_text_centered(MenuCanvas::W / 2, 135, "A VOXEL WORLD", 2, MC::TEXT_DIM);
-    c.draw_text_centered(MenuCanvas::W / 2, 160, "BY RPEREZ-T AND BVANGENE", 2, MC::TEXT_DIM);
+    c.draw_text_centered(MenuCanvas::W / 2, 80, "FT_VOX", 6, MC::TITLE);
     for (int i = 0; i < 4; ++i)
     {
         int by = 210 + i * (BTN_H + 12);

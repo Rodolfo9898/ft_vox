@@ -1,6 +1,10 @@
 #ifndef PLAYER_MOVEMENT_HPP
 # define PLAYER_MOVEMENT_HPP
 
+#ifndef GAME_USE_VOXEL_REGION_BACKEND
+# define GAME_USE_VOXEL_REGION_BACKEND
+#endif
+#include "../../Libft/Modules/Voxel/voxel.hpp"
 #include "../../src/physics/PlayerCollision.hpp"
 #include "../../src/camera/CameraInput.hpp"
 #include <cmath>

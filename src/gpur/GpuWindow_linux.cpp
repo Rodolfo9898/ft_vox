@@ -1,15 +1,6 @@
 #if !defined(_WIN32) && !defined(__APPLE__)
 
-#include "../../src/gpur/GpuWindow.hpp"
-#include "../../src/gpur/gl_funcs.hpp"
-#include "../../Libft/Modules/Compatebility/compatebility_dumb_controls_internal.hpp"
-
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
-#include <GL/glx.h>
-#include <new>
-#include <cstring>
+#include "../../src/gpur/GpuWindow_linux.hpp"
 
 typedef GLXContext (*glx_create_ctx_fn)(Display *, GLXFBConfig, GLXContext,
     Bool, const int *);

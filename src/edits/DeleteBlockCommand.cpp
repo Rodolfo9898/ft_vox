@@ -1,18 +1,8 @@
 #include "../../src/edits/DeleteBlockCommand.hpp"
 
 DeleteBlockCommand::DeleteBlockCommand()
+    : world_x(0), world_y(0), world_z(0)
 {
-    this->world_x = 0;
-    this->world_y = 0;
-    this->world_z = 0;
-}
-
-DeleteBlockCommand::DeleteBlockCommand(int32_t block_x, int32_t block_y,
-    int32_t block_z)
-{
-    this->world_x = block_x;
-    this->world_y = block_y;
-    this->world_z = block_z;
 }
 
 DeleteBlockCommand::DeleteBlockCommand(const DeleteBlockCommand &other)
@@ -25,8 +15,7 @@ DeleteBlockCommand::~DeleteBlockCommand()
 {
 }
 
-DeleteBlockCommand &DeleteBlockCommand::operator=(
-    const DeleteBlockCommand &other)
+DeleteBlockCommand &DeleteBlockCommand::operator=(const DeleteBlockCommand &other)
 {
     if (this != &other)
     {
@@ -35,6 +24,13 @@ DeleteBlockCommand &DeleteBlockCommand::operator=(
         this->world_z = other.world_z;
     }
     return (*this);
+}
+
+
+DeleteBlockCommand::DeleteBlockCommand(int32_t block_x, int32_t block_y,
+    int32_t block_z)
+    : world_x(block_x), world_y(block_y), world_z(block_z)
+{
 }
 
 int32_t DeleteBlockCommand::execute(World &world) const

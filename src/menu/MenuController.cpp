@@ -1,7 +1,25 @@
 #include "../../src/menu/MenuController.hpp"
-#include "../../src/gpur/GpuRenderer.hpp"
-#include <ctime>
-#include <cstdio>
+#include "../../src/menu/MainMenuScene.hpp"
+#include "../../src/menu/SettingsScene.hpp"
+#include "../../src/menu/CreditsScene.hpp"
+#include "../../src/menu/LoadingScene.hpp"
+#include "../../src/menu/InGameSettingsScene.hpp"
+
+MenuController::MenuController(const MenuController &other)
+{
+    (void)other;
+}
+
+MenuController::~MenuController()
+{
+}
+
+MenuController &MenuController::operator=(const MenuController &other)
+{
+    (void)other;
+    return (*this);
+}
+
 
 static std::string make_seed()
 {
@@ -120,3 +138,10 @@ void MenuController::request_credits()    { show_credits();             }
 void MenuController::request_back()       { show_main_menu();           }
 void MenuController::request_dismiss_in_game()  { dismissed_in_game_ = true; }
 void MenuController::request_main_menu_from_game() { wants_main_menu_ = true; }
+
+bool MenuController::wants_start()       const { return wants_start_; }
+bool MenuController::wants_exit()        const { return wants_exit_; }
+bool MenuController::dismissed_in_game() const { return dismissed_in_game_; }
+bool MenuController::wants_main_menu()   const { return wants_main_menu_; }
+const std::string &MenuController::start_seed() const { return start_seed_; }
+MenuCanvas &MenuController::canvas() { return canvas_; }

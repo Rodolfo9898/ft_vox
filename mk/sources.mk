@@ -1,6 +1,8 @@
 SRC = \
     main.cpp \
     src/app/Application.cpp \
+    src/app/GameSession.cpp \
+    src/app/PerfSession.cpp \
     src/config/ApplicationOptions.cpp \
     src/config/CommandLine.cpp \
     src/config/LaunchSettings.cpp \
@@ -40,6 +42,7 @@ SRC = \
     src/geometry/ClipVertex.cpp \
     src/geometry/TriangleTexture.cpp \
     src/assets/TextureAtlas.cpp \
+    src/assets/BlockTextureRegistry.cpp \
     src/debug/RenderDebug.cpp \
     src/debug/DebugView.cpp \
     src/debug/DebugOverlayRenderer.cpp \
@@ -62,12 +65,14 @@ SRC = \
     src/edits/PlaceBlockCommand.cpp \
     src/edits/WorldBlockEditor.cpp \
     src/gpur/gl_funcs.cpp \
+    src/gpur/GpuWindow.cpp \
     src/gpur/GpuShader.cpp \
     src/gpur/GpuChunkMesh.cpp \
     src/gpur/GpuTextureAtlas.cpp \
     src/gpur/GpuRenderer.cpp \
     src/settings/Settings.cpp \
     src/menu/MenuCanvas.cpp \
+    src/menu/MenuScene.cpp \
     src/menu/MenuController.cpp \
     src/menu/MainMenuScene.cpp \
     src/menu/SettingsScene.cpp \

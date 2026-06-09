@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstdint>
 #include <vector>
+#include <cstring>
 
 class VoxelRenderer
 {
@@ -38,7 +39,7 @@ class VoxelRenderer
             const RenderDebug *debug);
         void preload_assets();
         void initialize_gpu(int width, int height);
-        GpuRenderer *get_gpu_renderer() noexcept { return gpu.is_ready() ? &gpu : nullptr; }
+        GpuRenderer *get_gpu_renderer() noexcept;
 
     private:
         static const int OVERLAY_W = 512;

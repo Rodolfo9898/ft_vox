@@ -7,23 +7,29 @@
 #include "../../src/config/LaunchSettingsMenu.hpp"
 #include "../../src/platform/ApplicationWindow.hpp"
 #include "../../src/validators/ApplicationValidator.hpp"
-#include "../../src/interaction/BlockInteractor.hpp"
 #include "../../src/config/CommandLine.hpp"
 #include "../../src/diagnostics/DebugCrashHandler.hpp"
-#include "../../src/diagnostics/FramebufferHasher.hpp"
-#include "../../src/platform/InputReader.hpp"
-#include "../../src/player/PlayerController.hpp"
 #include "../../src/policy/RenderPolicy.hpp"
 #include "../../src/policy/RenderStrategyFactory.hpp"
-#include "../../Libft/Modules/DUMB/controls.hpp"
-#include "../../src/camera/Camera.hpp"
-#include "../../src/camera/CameraInput.hpp"
-#include "../../src/debug/RenderDebug.hpp"
 #include "../../src/render/VoxelRenderer.hpp"
-#include "../../src/world/World.hpp"
+#include "../../src/settings/Settings.hpp"
+#include "../../src/menu/MenuController.hpp"
+#include "../../src/menu/MenuCanvas.hpp"
+#include "../../src/app/GameSession.hpp"
+#include "../../src/app/PerfSession.hpp"
+#include "../../Libft/Modules/DUMB/controls.hpp"
 #include <chrono>
 #include <cstdio>
 #include <cstdint>
+
+#if defined(_WIN32)
+# include <windows.h>
+#endif
+#if defined(__APPLE__)
+# include <Carbon/Carbon.h>
+#endif
+#include <cstdlib>
+#include <cstring>
 
 class Application
 {

@@ -1,5 +1,13 @@
 #include "../../src/settings/Settings.hpp"
-#include <algorithm>
+
+Settings::Settings(const Settings &other) { (void)other; }
+Settings::~Settings() {}
+Settings &Settings::operator=(const Settings &other) { (void)other; return *this; }
+
+
+bool Settings::fps_overlay() const { return fps_overlay_; }
+int  Settings::render_distance() const { return render_distance_; }
+ft_dumb_keyboard_layout Settings::keyboard_layout() const { return layout_; }
 
 Settings &Settings::instance()
 {

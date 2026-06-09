@@ -1,22 +1,21 @@
 #include "../../src/policy/AdaptiveRenderStrategy.hpp"
 
 AdaptiveRenderStrategy::AdaptiveRenderStrategy()
+    : RenderDistanceStrategy()
 {
 }
 
-AdaptiveRenderStrategy::AdaptiveRenderStrategy(
-    const AdaptiveRenderStrategy &other)
-    : RenderDistanceStrategy(other)
+AdaptiveRenderStrategy::AdaptiveRenderStrategy(const AdaptiveRenderStrategy &other)
+    : RenderDistanceStrategy()
 {
-    *this = other;
+    (void)other;
 }
 
 AdaptiveRenderStrategy::~AdaptiveRenderStrategy()
 {
 }
 
-AdaptiveRenderStrategy &AdaptiveRenderStrategy::operator=(
-    const AdaptiveRenderStrategy &other)
+AdaptiveRenderStrategy &AdaptiveRenderStrategy::operator=(const AdaptiveRenderStrategy &other)
 {
     (void)other;
     return (*this);

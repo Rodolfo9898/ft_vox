@@ -1,6 +1,12 @@
-#include "../../src/menu/MenuScene.hpp"
-#include "../../src/menu/MenuController.hpp"
-#include "../../src/settings/Settings.hpp"
+#include "../../src/menu/InGameSettingsScene.hpp"
+
+InGameSettingsScene::InGameSettingsScene()
+    : MenuScene() {}
+InGameSettingsScene::InGameSettingsScene(const InGameSettingsScene &other)
+    : MenuScene() { (void)other; }
+InGameSettingsScene::~InGameSettingsScene() {}
+InGameSettingsScene &InGameSettingsScene::operator=(const InGameSettingsScene &other) { (void)other; return *this; }
+
 
 static const int IG_W = 400, IG_H = 320;
 static const int IG_X = (MenuCanvas::W - IG_W) / 2;

@@ -1,10 +1,5 @@
 #include "../../src/config/LaunchSettings.hpp"
 
-#include "../../Libft/Modules/JSon/json.hpp"
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <string>
 
 namespace
 {

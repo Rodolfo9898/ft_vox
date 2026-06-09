@@ -1,5 +1,12 @@
-#include "../../src/menu/MenuScene.hpp"
-#include "../../src/menu/MenuController.hpp"
+#include "../../src/menu/CreditsScene.hpp"
+
+CreditsScene::CreditsScene()
+    : MenuScene() {}
+CreditsScene::CreditsScene(const CreditsScene &other)
+    : MenuScene() { (void)other; }
+CreditsScene::~CreditsScene() {}
+CreditsScene &CreditsScene::operator=(const CreditsScene &other) { (void)other; return *this; }
+
 
 void CreditsScene::update(const MenuInput &in, MenuController &ctl)
 {

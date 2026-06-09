@@ -1,16 +1,11 @@
 #if defined(_WIN32)
 
-#ifndef WIN32_LEAN_AND_MEAN
+#include "../../src/gpur/GpuWindow_windows.hpp"
+
 # define WIN32_LEAN_AND_MEAN
 #endif
 
-#include <windows.h>
-#include <new>
-#include <cstring>
 
-#include "../../src/gpur/GpuWindow.hpp"
-#include "../../src/gpur/gl_funcs.hpp"
-#include "../../Libft/Modules/Compatebility/compatebility_dumb_controls_internal.hpp"
 
 class GpuWindowWindows : public GpuWindow
 {

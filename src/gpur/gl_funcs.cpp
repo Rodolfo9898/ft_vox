@@ -1,7 +1,5 @@
 #include "../../src/gpur/gl_funcs.hpp"
 
-#include <cstdint>
-#include <cstring>
 
 #if !defined(__APPLE__)
 

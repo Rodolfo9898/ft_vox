@@ -11,6 +11,7 @@ class RenderDistanceStrategy
         virtual ~RenderDistanceStrategy();
         RenderDistanceStrategy &operator=(const RenderDistanceStrategy &other);
 
+
         virtual int32_t update_render_distance(int32_t current_distance,
             double frame_ms, bool boost_enabled) const = 0;
         virtual int32_t generation_budget_for_frame(double frame_ms,

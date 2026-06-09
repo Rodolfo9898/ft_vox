@@ -1,6 +1,15 @@
 #ifndef GPUR_RENDERER_HPP
 # define GPUR_RENDERER_HPP
 
+#ifndef GAME_USE_VOXEL_REGION_BACKEND
+# define GAME_USE_VOXEL_REGION_BACKEND
+#endif
+#include <cstring>
+#include <cmath>
+#include "../../Libft/Modules/Voxel/voxel.hpp"
+#include "../../src/meshes/MeshCuller.hpp"
+#include "../../src/frame/RenderCache.hpp"
+#include "../../src/assets/TextureAtlas.hpp"
 #include "../../src/gpur/gl_funcs.hpp"
 #include "../../src/gpur/GpuShader.hpp"
 #include "../../src/gpur/GpuTextureAtlas.hpp"
@@ -92,15 +101,8 @@ class GpuRenderer
         void clear_screen() noexcept;
         void upload_menu(const uint32_t *pixels, int w, int h) noexcept;
         void draw_menu(float alpha) noexcept;
-        bool     is_ready() const noexcept { return _ready; }
-        uint32_t gpu_mb_approx() const noexcept
-        {
-            size_t b = _mega_vbo_cap + _mega_ebo_cap + _water_ebo_cap;
-            b += static_cast<size_t>(_atlas.is_loaded() ? 192 * 192 * 4 : 0);
-            b += static_cast<size_t>(_overlay_w) * static_cast<size_t>(_overlay_h) * 4U;
-            b += static_cast<size_t>(_menu_tex_w) * static_cast<size_t>(_menu_tex_h) * 4U;
-            return static_cast<uint32_t>(b / (1024UL * 1024UL));
-        }
+        bool     is_ready() const noexcept;
+        uint32_t gpu_mb_approx() const noexcept;
 };
 
 #endif

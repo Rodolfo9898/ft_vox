@@ -1,8 +1,4 @@
 #include "../../src/frame/RendererColor.hpp"
-#ifndef GAME_USE_VOXEL_REGION_BACKEND
-# define GAME_USE_VOXEL_REGION_BACKEND
-#endif
-#include "../../Libft/Modules/Voxel/voxel.hpp"
 
 RendererColor::RendererColor()
 {
@@ -22,6 +18,7 @@ RendererColor &RendererColor::operator=(const RendererColor &other)
     (void)other;
     return (*this);
 }
+
 
 uint32_t RendererColor::rgba(uint8_t red, uint8_t green, uint8_t blue)
 {

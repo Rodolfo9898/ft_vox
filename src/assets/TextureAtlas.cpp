@@ -1,8 +1,4 @@
 #include "../../src/assets/TextureAtlas.hpp"
-#ifndef GAME_USE_VOXEL_REGION_BACKEND
-# define GAME_USE_VOXEL_REGION_BACKEND
-#endif
-#include "../../Libft/Modules/Voxel/voxel.hpp"
 
 TextureAtlas::TextureAtlas()
 {
@@ -159,50 +155,10 @@ const TextureAtlas &TextureAtlas::instance()
 void TextureAtlas::atlas_tile_for_block(uint32_t block_id, uint8_t face,
     int32_t *tile_x, int32_t *tile_y)
 {
-    if (tile_x == nullptr || tile_y == nullptr)
-        return ;
-    *tile_x = 2;
-    *tile_y = 2;
-    if (block_id == TERRAIN_GENERATOR_GRASS_BLOCK)
-    {
-        *tile_x = (face == CHUNK_MESH_FACE_UP) ? 0 : 1;
-        *tile_y = 0;
-    }
-    else if (block_id == TERRAIN_GENERATOR_DIRT_BLOCK)
-    {
-        *tile_x = 2;
-        *tile_y = 0;
-    }
-    else if (block_id == TERRAIN_GENERATOR_STONE_BLOCK)
-    {
-        *tile_x = 3;
-        *tile_y = 0;
-    }
-    else if (block_id == TERRAIN_GENERATOR_SHRUB_BLOCK)
-    {
-        *tile_x = 1;
-        *tile_y = 2;
-    }
-    else if (block_id == TERRAIN_GENERATOR_OAK_LOG_BLOCK)
-    {
-        *tile_x = 2;
-        *tile_y = 1;
-    }
-    else if (block_id == TERRAIN_GENERATOR_OAK_LEAVES_BLOCK)
-    {
-        *tile_x = 3;
-        *tile_y = 1;
-    }
-    else if (block_id == TERRAIN_GENERATOR_CACTUS_BLOCK)
-    {
-        *tile_x = 0;
-        *tile_y = 2;
-    }
-    else if (block_id == TERRAIN_GENERATOR_WATER_BLOCK)
-    {
-        *tile_x = 0;
-        *tile_y = 1;
-    }
+    int tx = 2, ty = 2;
+    BlockTextureRegistry::tile_for_block(block_id, face, &tx, &ty);
+    if (tile_x) *tile_x = static_cast<int32_t>(tx);
+    if (tile_y) *tile_y = static_cast<int32_t>(ty);
 }
 
 double TextureAtlas::fraction(double value)

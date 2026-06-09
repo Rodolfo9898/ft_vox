@@ -1,7 +1,20 @@
-#include "../../src/menu/MenuScene.hpp"
-#include "../../src/menu/MenuController.hpp"
+#include "../../src/menu/LoadingScene.hpp"
+
+LoadingScene::LoadingScene()
+    : MenuScene() {}
+LoadingScene::LoadingScene(const LoadingScene &other)
+    : MenuScene() { (void)other; }
+LoadingScene::~LoadingScene() {}
+LoadingScene &LoadingScene::operator=(const LoadingScene &other) { (void)other; return *this; }
+
 
 static const char *DOTS[4] = { ".", "..", "...", "...." };
+
+void LoadingScene::on_enter()
+{
+    tick_ = 0;
+}
+
 
 void LoadingScene::update(const MenuInput &in, MenuController &ctl)
 {

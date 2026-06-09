@@ -1,6 +1,12 @@
-#include "../../src/menu/MenuScene.hpp"
-#include "../../src/menu/MenuController.hpp"
-#include "../../src/settings/Settings.hpp"
+#include "../../src/menu/SettingsScene.hpp"
+
+SettingsScene::SettingsScene()
+    : MenuScene() {}
+SettingsScene::SettingsScene(const SettingsScene &other)
+    : MenuScene() { (void)other; }
+SettingsScene::~SettingsScene() {}
+SettingsScene &SettingsScene::operator=(const SettingsScene &other) { (void)other; return *this; }
+
 
 static const int STOG_X = MenuCanvas::W - 120;
 static const int STOG_Y = 110;

@@ -1,13 +1,4 @@
 #include "../../src/gpur/GpuRenderer.hpp"
-#include "../../src/assets/TextureAtlas.hpp"
-#include "../../src/frame/RenderCache.hpp"
-#include "../../src/meshes/MeshCuller.hpp"
-#ifndef GAME_USE_VOXEL_REGION_BACKEND
-# define GAME_USE_VOXEL_REGION_BACKEND
-#endif
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include <cmath>
-#include <cstring>
 
 static const char *WORLD_VERT = R"GLSL(
 #version 330 core
@@ -654,4 +645,15 @@ void GpuRenderer::draw_tint(float r, float g, float b, float a) noexcept
     glBindVertexArray(0);
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+}
+
+bool GpuRenderer::is_ready() const noexcept { return _ready; }
+
+uint32_t GpuRenderer::gpu_mb_approx() const noexcept
+{
+    size_t b = _mega_vbo_cap + _mega_ebo_cap + _water_ebo_cap;
+    b += static_cast<size_t>(_atlas.is_loaded() ? 192 * 192 * 4 : 0);
+    b += static_cast<size_t>(_overlay_w) * static_cast<size_t>(_overlay_h) * 4U;
+    b += static_cast<size_t>(_menu_tex_w) * static_cast<size_t>(_menu_tex_h) * 4U;
+    return static_cast<uint32_t>(b / (1024UL * 1024UL));
 }

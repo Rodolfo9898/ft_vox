@@ -1,12 +1,13 @@
 #include "../../src/gpur/GpuTextureAtlas.hpp"
-#include "../../src/frame/RendererColor.hpp"
-#include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
-#ifndef GAME_USE_VOXEL_REGION_BACKEND
-# define GAME_USE_VOXEL_REGION_BACKEND
-#endif
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include <algorithm>
-#include <cstring>
+
+GpuTextureAtlas::GpuTextureAtlas() noexcept : _tex(0), _loaded(false) {}
+
+GpuTextureAtlas::GpuTextureAtlas(const GpuTextureAtlas &other) noexcept { (void)other; }
+
+GpuTextureAtlas::~GpuTextureAtlas() noexcept { destroy(); }
+
+GpuTextureAtlas &GpuTextureAtlas::operator=(const GpuTextureAtlas &other) noexcept
+{ (void)other; return *this; }
 
 bool GpuTextureAtlas::upload(const TextureAtlas &atlas) noexcept
 {
@@ -127,3 +128,5 @@ void GpuTextureAtlas::fill_fallback_colors(float colors_out[16 * 3]) const noexc
         colors_out[bid * 3 + 2] = static_cast<float>( c        & 0xFFU) / 255.0f;
     }
 }
+
+bool GpuTextureAtlas::is_loaded() const noexcept { return _loaded; }

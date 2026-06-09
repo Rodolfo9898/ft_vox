@@ -1,6 +1,9 @@
 #ifndef BLOCK_INTERACTOR_HPP
 # define BLOCK_INTERACTOR_HPP
 
+#include <cstddef>
+#include "../../src/edits/PlaceBlockCommand.hpp"
+#include "../../src/edits/DeleteBlockCommand.hpp"
 #include "../../src/player/PlayerController.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/world/World.hpp"

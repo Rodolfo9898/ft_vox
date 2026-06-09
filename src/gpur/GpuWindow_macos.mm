@@ -1,13 +1,6 @@
 #if defined(__APPLE__)
 
-#ifndef GL_SILENCE_DEPRECATION
-# define GL_SILENCE_DEPRECATION
-#endif
-
-#import <Cocoa/Cocoa.h>
-#include <OpenGL/gl3.h>
-#include <new>
-#include "../../src/gpur/GpuWindow.hpp"
+#include "../../src/gpur/GpuWindow_macos.hpp"
 
 @interface GpuWindowDelegate : NSObject<NSWindowDelegate>
 {

@@ -1,23 +1,13 @@
 #include "../../src/platform/ApplicationWindow.hpp"
 
-ApplicationWindow::ApplicationWindow()
-{
-    this->active_framebuffer.width  = 0;
-    this->active_framebuffer.height = 0;
-    this->active_framebuffer.pixels = nullptr;
-    this->gpu_window = nullptr;
-    this->headless   = false;
-    this->opened     = false;
-}
-
 ApplicationWindow::ApplicationWindow(const ApplicationWindow &other)
 {
-    *this = other;
-}
-
-ApplicationWindow::~ApplicationWindow()
-{
-    (void)this->destroy();
+    this->active_framebuffer = other.active_framebuffer;
+    this->headless_pixels    = other.headless_pixels;
+    this->headless           = other.headless;
+    this->opened             = false;
+    if (!this->headless_pixels.empty())
+        this->active_framebuffer.pixels = this->headless_pixels.data();
 }
 
 ApplicationWindow &ApplicationWindow::operator=(const ApplicationWindow &other)
@@ -26,14 +16,32 @@ ApplicationWindow &ApplicationWindow::operator=(const ApplicationWindow &other)
     {
         this->active_framebuffer = other.active_framebuffer;
         this->headless_pixels    = other.headless_pixels;
-        this->gpu_window         = nullptr;
+        this->gpu_window.reset();
         this->headless           = other.headless;
         this->opened             = false;
-        if (this->headless_pixels.empty() == false)
+        if (!this->headless_pixels.empty())
             this->active_framebuffer.pixels = this->headless_pixels.data();
     }
     return (*this);
 }
+
+
+ApplicationWindow::ApplicationWindow()
+{
+    this->active_framebuffer.width  = 0;
+    this->active_framebuffer.height = 0;
+    this->active_framebuffer.pixels = nullptr;
+    this->gpu_window.reset();
+    this->headless   = false;
+    this->opened     = false;
+}
+
+
+ApplicationWindow::~ApplicationWindow()
+{
+    (void)this->destroy();
+}
+
 
 int ApplicationWindow::initialize(bool headless_mode, int width, int height,
     bool fullscreen, bool allow_gpu)
@@ -56,7 +64,7 @@ int ApplicationWindow::initialize(bool headless_mode, int width, int height,
 
     if (allow_gpu == true)
     {
-        this->gpu_window = GpuWindow::create();
+        this->gpu_window.reset(GpuWindow::create());
         if (this->gpu_window != nullptr)
         {
             if (this->gpu_window->initialize("Voxel World", width, height,
@@ -68,8 +76,7 @@ int ApplicationWindow::initialize(bool headless_mode, int width, int height,
                 this->opened = true;
                 return (0);
             }
-            delete this->gpu_window;
-            this->gpu_window = nullptr;
+            this->gpu_window.reset();
         }
     }
 
@@ -137,8 +144,7 @@ int ApplicationWindow::destroy()
     if (this->gpu_window != nullptr)
     {
         this->gpu_window->destroy();
-        delete this->gpu_window;
-        this->gpu_window = nullptr;
+        this->gpu_window.reset();
         return (FT_ERR_SUCCESS);
     }
     return (this->sw_window.destroy());
@@ -165,7 +171,7 @@ bool ApplicationWindow::is_gpu_mode() const
 
 GpuWindow *ApplicationWindow::get_gpu_window() const
 {
-    return (this->gpu_window);
+    return (this->gpu_window.get());
 }
 
 ft_render_framebuffer &ApplicationWindow::framebuffer()

@@ -1,8 +1,25 @@
 #include "../../src/menu/MenuCanvas.hpp"
-#include <cstring>
-#include <cstdio>
-#include <cmath>
-#include <algorithm>
+
+MenuCanvas::MenuCanvas(const MenuCanvas &other)
+{
+    *this = other;
+}
+
+MenuCanvas::~MenuCanvas()
+{
+}
+
+MenuCanvas &MenuCanvas::operator=(const MenuCanvas &other)
+{
+    if (this != &other)
+    {
+        this->pixels_ = other.pixels_;
+        this->fb_ = other.fb_;
+        this->fb_.pixels = this->pixels_.data();
+    }
+    return (*this);
+}
+
 
 static const uint8_t s_glyphs[39][5] = {
     { 7U, 5U, 5U, 5U, 7U }, { 2U, 6U, 2U, 2U, 7U }, { 7U, 1U, 7U, 4U, 7U },
@@ -173,3 +190,8 @@ float MenuCanvas::slider(int x, int y, int w,
     }
     return value;
 }
+
+const uint32_t *MenuCanvas::pixels() const { return pixels_.data(); }
+int MenuCanvas::width()  const { return W; }
+int MenuCanvas::height() const { return H; }
+ft_render_framebuffer &MenuCanvas::framebuffer() { return fb_; }

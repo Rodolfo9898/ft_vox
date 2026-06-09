@@ -1,9 +1,9 @@
 #ifndef PLACE_BLOCK_COMMAND_HPP
 # define PLACE_BLOCK_COMMAND_HPP
 
-#include "../../src/world/World.hpp"
-
 #include "../../src/edits/WorldEditCommand.hpp"
+#include "../../src/world/World.hpp"
+#include "../../src/coordinates/WorldCoordinates.hpp"
 #include "../../src/chunks/WorldChunkLoader.hpp"
 #include "../../Libft/Modules/Errno/errno.hpp"
 #include "../../Libft/Modules/Voxel/voxel.hpp"
@@ -11,11 +11,10 @@
 
 class PlaceBlockCommand : public WorldEditCommand
 {
-    private:
-        int32_t world_x;
-        int32_t world_y;
-        int32_t world_z;
-        uint32_t block_id;
+    int32_t  world_x;
+    int32_t  world_y;
+    int32_t  world_z;
+    uint32_t block_id;
 
     public:
         PlaceBlockCommand();
@@ -24,6 +23,7 @@ class PlaceBlockCommand : public WorldEditCommand
         PlaceBlockCommand(const PlaceBlockCommand &other);
         ~PlaceBlockCommand() override;
         PlaceBlockCommand &operator=(const PlaceBlockCommand &other);
+
 
         int32_t execute(World &world) const override;
 };

@@ -1,21 +1,21 @@
 #include "../../src/policy/FixedRenderStrategy.hpp"
 
 FixedRenderStrategy::FixedRenderStrategy()
+    : RenderDistanceStrategy()
 {
 }
 
 FixedRenderStrategy::FixedRenderStrategy(const FixedRenderStrategy &other)
-    : RenderDistanceStrategy(other)
+    : RenderDistanceStrategy()
 {
-    *this = other;
+    (void)other;
 }
 
 FixedRenderStrategy::~FixedRenderStrategy()
 {
 }
 
-FixedRenderStrategy &FixedRenderStrategy::operator=(
-    const FixedRenderStrategy &other)
+FixedRenderStrategy &FixedRenderStrategy::operator=(const FixedRenderStrategy &other)
 {
     (void)other;
     return (*this);

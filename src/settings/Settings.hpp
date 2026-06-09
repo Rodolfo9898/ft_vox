@@ -5,15 +5,16 @@
 #include <cstdint>
 #include <functional>
 #include <vector>
+#include <algorithm>
 
 class Settings
 {
     public:
         static Settings &instance();
 
-        bool fps_overlay() const          { return fps_overlay_; }
-        int  render_distance() const      { return render_distance_; }
-        ft_dumb_keyboard_layout keyboard_layout() const { return layout_; }
+        bool fps_overlay() const;
+        int  render_distance() const;
+        ft_dumb_keyboard_layout keyboard_layout() const;
 
         void set_fps_overlay(bool v);
         void set_render_distance(int v);
@@ -24,8 +25,9 @@ class Settings
 
     private:
         Settings();
-        Settings(const Settings &) = delete;
-        Settings &operator=(const Settings &) = delete;
+        Settings(const Settings &other);
+        ~Settings();
+        Settings &operator=(const Settings &other);
 
         void notify();
 

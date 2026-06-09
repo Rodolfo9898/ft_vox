@@ -4,7 +4,11 @@
 class GpuWindow
 {
     public:
-        virtual ~GpuWindow() = default;
+        GpuWindow();
+        GpuWindow(const GpuWindow &other);
+        virtual ~GpuWindow();
+        GpuWindow &operator=(const GpuWindow &other);
+
 
         virtual bool initialize(const char *title, int width, int height,
             bool fullscreen) noexcept = 0;

@@ -1,0 +1,181 @@
+#include "../../src/app/GameSession.hpp"
+
+GameSession::GameSession()
+    : active_render_distance_(WORLD_REQUIRED_VISIBLE_DISTANCE),
+      fps_accumulator_(0.0), rd_accumulator_(0.0),
+      display_fps_(0.0), frame_ms_(0.0), fps_frame_count_(0U),
+      selected_block_id_(TERRAIN_GENERATOR_DIRT_BLOCK),
+      boost_enabled_(false), active_(false), error_code_(FT_ERR_SUCCESS)
+{
+}
+
+GameSession::GameSession(const GameSession &other)
+{
+    *this = other;
+}
+
+GameSession::~GameSession()
+{
+    if (active_)
+        stop();
+}
+
+GameSession &GameSession::operator=(const GameSession &other)
+{
+    (void)other;
+    return (*this);
+}
+
+uint32_t GameSession::system_ram_mb()
+{
+#if defined(__APPLE__)
+    struct task_basic_info info;
+    mach_msg_type_number_t sz = TASK_BASIC_INFO_COUNT;
+    if (task_info(mach_task_self(), TASK_BASIC_INFO,
+            reinterpret_cast<task_info_t>(&info), &sz) == KERN_SUCCESS)
+        return static_cast<uint32_t>(info.resident_size / (1024UL * 1024UL));
+#elif !defined(_WIN32)
+    FILE *f = std::fopen("/proc/self/status", "r");
+    if (f)
+    {
+        char line[256];
+        while (std::fgets(line, sizeof(line), f))
+        {
+            if (std::strncmp(line, "VmRSS:", 6) == 0)
+            {
+                uint32_t kb = 0U;
+                std::sscanf(line + 6, "%u", &kb);
+                std::fclose(f);
+                return kb / 1024U;
+            }
+        }
+        std::fclose(f);
+    }
+#endif
+    return 0U;
+}
+
+int GameSession::start(const std::string &seed,
+    ApplicationWindow &window, VoxelRenderer &renderer)
+{
+    error_code_ = world_.initialize(seed.c_str());
+    if (error_code_ != FT_ERR_SUCCESS)
+        return error_code_;
+    camera_.initialize();
+    PlayerController::spawn_player_on_ground(&camera_, world_);
+    active_render_distance_ = Settings::instance().render_distance();
+    boost_enabled_   = false;
+    selected_block_id_ = TERRAIN_GENERATOR_DIRT_BLOCK;
+    fps_accumulator_ = 0.0; fps_frame_count_ = 0U;
+    rd_accumulator_  = 0.0; display_fps_     = 0.0;
+    frame_ms_        = 0.0;
+    error_code_      = FT_ERR_SUCCESS;
+    active_          = true;
+    if (window.is_gpu_mode() && window.get_gpu_window())
+        renderer.initialize_gpu(window.get_gpu_window()->get_width(),
+            window.get_gpu_window()->get_height());
+    renderer.preload_assets();
+    return FT_ERR_SUCCESS;
+}
+
+void GameSession::stop()
+{
+    if (active_)
+        world_.destroy();
+    active_ = false;
+}
+
+bool GameSession::is_active()        const { return active_; }
+bool GameSession::is_ready_to_play() const
+{
+    return active_ && world_.loaded_chunk_count >= 4;
+}
+int  GameSession::error_code()       const { return error_code_; }
+
+int GameSession::loading_tick(const RenderDistanceStrategy &strategy)
+{
+    if (!active_) return FT_ERR_INVALID_ARGUMENT;
+    int gen = strategy.generation_budget_for_frame(frame_ms_, false);
+    error_code_ = world_.update_around(camera_.x, camera_.z,
+        gen, active_render_distance_);
+    return error_code_;
+}
+
+GameAction GameSession::update(double delta_seconds,
+    const RenderDistanceStrategy &strategy,
+    ApplicationWindow &window)
+{
+    if (!active_) return GameAction::ERROR;
+
+    ft_dumb_controls_poll();
+
+    if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_BACK) == FT_TRUE)
+        return GameAction::EXIT_TO_MENU;
+    if (window.was_settings_key_pressed())
+        return GameAction::OPEN_SETTINGS;
+    if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_BOOST) == FT_TRUE)
+        boost_enabled_ = !boost_enabled_;
+
+    CameraInput input = InputReader::read_camera_input(boost_enabled_);
+    PlayerController::update_player_vertical_motion(&camera_, input,
+        world_, delta_seconds);
+    PlayerController::update_player_horizontal_motion(&camera_, input,
+        world_, delta_seconds);
+
+    active_render_distance_ = std::min(active_render_distance_,
+        Settings::instance().render_distance());
+    int gen = strategy.generation_budget_for_frame(frame_ms_, boost_enabled_);
+    error_code_ = world_.update_around(camera_.x, camera_.z,
+        gen, active_render_distance_);
+    if (error_code_ != FT_ERR_SUCCESS) return GameAction::ERROR;
+
+    if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_MOUSE_PRIMARY) == FT_TRUE)
+        BlockInteractor::try_delete_target_block(&world_, camera_);
+    if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_MOUSE_TERTIARY) == FT_TRUE)
+        BlockInteractor::try_pick_target_block(&world_, camera_, &selected_block_id_);
+    if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_MOUSE_SECONDARY) == FT_TRUE)
+        BlockInteractor::try_place_selected_block(&world_, camera_, selected_block_id_);
+
+    rd_accumulator_ += delta_seconds;
+    if (strategy.should_update_render_distance(rd_accumulator_))
+    {
+        active_render_distance_ = strategy.update_render_distance(
+            active_render_distance_, frame_ms_, boost_enabled_);
+        active_render_distance_ = std::min(active_render_distance_,
+            Settings::instance().render_distance());
+        rd_accumulator_ = 0.0;
+    }
+    frame_ms_        = delta_seconds * 1000.0;
+    fps_accumulator_ += delta_seconds;
+    fps_frame_count_ += 1U;
+    if (fps_accumulator_ >= 0.25)
+    {
+        display_fps_    = static_cast<double>(fps_frame_count_) / fps_accumulator_;
+        fps_accumulator_ = 0.0;
+        fps_frame_count_ = 0U;
+    }
+    return GameAction::CONTINUE;
+}
+
+void GameSession::render(ApplicationWindow &window,
+    VoxelRenderer &renderer, bool with_overlay)
+{
+    if (!active_) return;
+
+    render_debug_.fps               = display_fps_;
+    render_debug_.frame_ms          = frame_ms_;
+    render_debug_.visible_chunks    = 0;
+    render_debug_.loaded_chunks     = world_.loaded_chunk_count;
+    render_debug_.render_distance   = world_.active_render_distance;
+    render_debug_.selected_block_id = selected_block_id_;
+    render_debug_.camera_x          = camera_.x;
+    render_debug_.camera_y          = camera_.y;
+    render_debug_.camera_z          = camera_.z;
+    render_debug_.ram_mb            = system_ram_mb();
+    render_debug_.vram_approx_mb    = renderer.get_gpu_renderer()
+        ? renderer.get_gpu_renderer()->gpu_mb_approx() : 0U;
+
+    const RenderDebug *dbg = (with_overlay && Settings::instance().fps_overlay())
+        ? &render_debug_ : nullptr;
+    renderer.render_world(window.framebuffer(), camera_, world_, dbg);
+}

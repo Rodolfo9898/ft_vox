@@ -1,10 +1,5 @@
 #include "../../src/camera/Camera.hpp"
 
-Camera::Camera()
-{
-    this->initialize();
-}
-
 Camera::Camera(const Camera &other)
 {
     *this = other;
@@ -28,6 +23,12 @@ Camera &Camera::operator=(const Camera &other)
         this->on_ground = other.on_ground;
     }
     return (*this);
+}
+
+
+Camera::Camera()
+{
+    this->initialize();
 }
 
 double Camera::clamp(double value, double minimum, double maximum)

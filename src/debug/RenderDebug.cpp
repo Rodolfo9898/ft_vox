@@ -26,6 +26,9 @@ RenderDebug &RenderDebug::operator=(const RenderDebug &other)
         this->selected_block_id = other.selected_block_id;
         this->ram_mb = other.ram_mb;
         this->vram_approx_mb = other.vram_approx_mb;
+        this->camera_x = other.camera_x;
+        this->camera_y = other.camera_y;
+        this->camera_z = other.camera_z;
     }
     return (*this);
 }
@@ -40,4 +43,7 @@ void RenderDebug::clear()
     this->selected_block_id = 0U;
     this->ram_mb = 0U;
     this->vram_approx_mb = 0U;
+    this->camera_x = 0.0;
+    this->camera_y = 0.0;
+    this->camera_z = 0.0;
 }

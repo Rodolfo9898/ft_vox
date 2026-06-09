@@ -1,5 +1,4 @@
 #include "../../src/gpur/GpuChunkMesh.hpp"
-#include <cstdint>
 
 void GpuChunkMesh::sync(const chunk_mesh &mesh) noexcept
 {
@@ -77,3 +76,5 @@ void GpuChunkMesh::destroy() noexcept
     _uploaded_indices  = 0;
     _index_count       = 0;
 }
+
+bool GpuChunkMesh::has_geometry() const noexcept { return _index_count > 0; }

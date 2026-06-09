@@ -1,12 +1,20 @@
 #ifndef MENU_CONTROLLER_HPP
 # define MENU_CONTROLLER_HPP
 
+#include "../../src/gpur/GpuRenderer.hpp"
 #include "../../src/menu/MenuCanvas.hpp"
 #include "../../src/menu/MenuScene.hpp"
 #include <string>
 #include <memory>
+#include <ctime>
+#include <cstdio>
 
 class GpuRenderer;
+class MainMenuScene;
+class SettingsScene;
+class CreditsScene;
+class LoadingScene;
+class InGameSettingsScene;
 
 enum class MenuPhase
 {
@@ -21,6 +29,9 @@ class MenuController
 {
     public:
         MenuController();
+        MenuController(const MenuController &other);
+        ~MenuController();
+        MenuController &operator=(const MenuController &other);
 
         void show_main_menu();
         void show_settings();
@@ -32,12 +43,12 @@ class MenuController
         void render(GpuRenderer *gpu);
         void render_overlay(GpuRenderer *gpu);
 
-        bool wants_start()       const { return wants_start_; }
-        bool wants_exit()        const { return wants_exit_; }
-        bool dismissed_in_game() const { return dismissed_in_game_; }
-        bool wants_main_menu()   const { return wants_main_menu_; }
+        bool wants_start()       const;
+        bool wants_exit()        const;
+        bool dismissed_in_game() const;
+        bool wants_main_menu()   const;
 
-        const std::string &start_seed() const { return start_seed_; }
+        const std::string &start_seed() const;
         void clear_flags();
 
         void request_start(const std::string &seed);
@@ -48,7 +59,7 @@ class MenuController
         void request_dismiss_in_game();
         void request_main_menu_from_game();
 
-        MenuCanvas &canvas() { return canvas_; }
+        MenuCanvas &canvas();
 
     private:
         MenuCanvas    canvas_;

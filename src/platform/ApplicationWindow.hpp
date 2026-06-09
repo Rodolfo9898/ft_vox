@@ -5,13 +5,14 @@
 #include "../../Libft/Modules/DUMB/render_window.hpp"
 #include "../../src/gpur/GpuWindow.hpp"
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 class ApplicationWindow
 {
     private:
         ft_render_window      sw_window;
-        GpuWindow            *gpu_window;
+        std::unique_ptr<GpuWindow> gpu_window;
         ft_render_framebuffer active_framebuffer;
         std::vector<uint32_t> headless_pixels;
         bool                  headless;

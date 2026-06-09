@@ -4,6 +4,10 @@
 #include "../../Libft/Modules/DUMB/render_window.hpp"
 #include <cstdint>
 #include <vector>
+#include <cstring>
+#include <cstdio>
+#include <cmath>
+#include <algorithm>
 
 struct MenuInput
 {
@@ -39,6 +43,9 @@ class MenuCanvas
         static const int H = 540;
 
         MenuCanvas();
+        MenuCanvas(const MenuCanvas &other);
+        ~MenuCanvas();
+        MenuCanvas &operator=(const MenuCanvas &other);
 
         void clear(uint32_t color = MC::BG);
         void fill_rect(int x, int y, int w, int h, uint32_t color);
@@ -60,11 +67,11 @@ class MenuCanvas
         bool is_hovered(int x, int y, int w, int h, const MenuInput &in) const;
         bool was_clicked(int x, int y, int w, int h, const MenuInput &in) const;
 
-        const uint32_t *pixels() const { return pixels_.data(); }
-        int width()  const { return W; }
-        int height() const { return H; }
+        const uint32_t *pixels() const;
+        int width()  const;
+        int height() const;
 
-        ft_render_framebuffer &framebuffer() { return fb_; }
+        ft_render_framebuffer &framebuffer();
 
     private:
         std::vector<uint32_t>  pixels_;

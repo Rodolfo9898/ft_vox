@@ -1,6 +1,7 @@
 #ifndef GPUR_CHUNK_MESH_HPP
 # define GPUR_CHUNK_MESH_HPP
 
+#include <cstdint>
 #include "../../src/gpur/gl_funcs.hpp"
 #include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
 #include <cstddef>
@@ -27,7 +28,7 @@ class GpuChunkMesh
         void sync(const chunk_mesh &mesh) noexcept;
         void draw() const noexcept;
         void destroy() noexcept;
-        bool has_geometry() const noexcept { return _index_count > 0; }
+        bool has_geometry() const noexcept;
 };
 
 #endif

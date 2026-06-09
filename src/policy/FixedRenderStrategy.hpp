@@ -12,6 +12,7 @@ class FixedRenderStrategy : public RenderDistanceStrategy
         ~FixedRenderStrategy() override;
         FixedRenderStrategy &operator=(const FixedRenderStrategy &other);
 
+
         int32_t update_render_distance(int32_t current_distance,
             double frame_ms, bool boost_enabled) const override;
         int32_t generation_budget_for_frame(double frame_ms,
