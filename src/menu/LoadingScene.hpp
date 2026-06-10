@@ -12,7 +12,7 @@ class LoadingScene : public MenuScene
         LoadingScene(const LoadingScene &other);
         ~LoadingScene() override;
         LoadingScene &operator=(const LoadingScene &other);
-        void update(const MenuInput &in, MenuController &ctl) override;
+        void update(const MenuCanvas::MenuInput &in, MenuController &ctl) override;
         void render(MenuCanvas &c) const override;
         void on_enter() override;
 };

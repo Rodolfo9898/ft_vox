@@ -90,7 +90,7 @@ void MenuController::show_in_game_settings()
     clear_flags();
 }
 
-void MenuController::update(const MenuInput &in)
+void MenuController::update(const MenuCanvas::MenuInput &in)
 {
     MenuScene *s = current_scene();
     if (s) s->update(in, *this);
@@ -100,7 +100,7 @@ void MenuController::render(GpuRenderer *gpu)
 {
     if (!gpu) return;
     gpu->clear_screen();
-    canvas_.clear(MC::BG);
+    canvas_.clear(MenuCanvas::Colors::BG);
     MenuScene *s = current_scene();
     if (s) s->render(canvas_);
     gpu->upload_menu(canvas_.pixels(), canvas_.width(), canvas_.height());

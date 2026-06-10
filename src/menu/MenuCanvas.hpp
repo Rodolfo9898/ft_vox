@@ -9,17 +9,6 @@
 #include <cmath>
 #include <algorithm>
 
-struct MenuInput
-{
-    int  mouse_x;
-    int  mouse_y;
-    bool mouse_clicked;
-    bool key_up;
-    bool key_down;
-    bool key_enter;
-    bool key_escape;
-};
-
 namespace MC
 {
     static const uint32_t BG      = 0x0D0D1AU;
@@ -39,8 +28,36 @@ namespace MC
 class MenuCanvas
 {
     public:
-        static const int W = 960;
-        static const int H = 540;
+        struct MenuInput
+        {
+            int  mouse_x;
+            int  mouse_y;
+            bool mouse_clicked;
+            bool key_up;
+            bool key_down;
+            bool key_enter;
+            bool key_escape;
+        };
+
+        struct Colors
+        {
+            static const uint32_t BG;
+            static const uint32_t PANEL;
+            static const uint32_t BTN_N;
+            static const uint32_t BTN_H;
+            static const uint32_t BTN_A;
+            static const uint32_t TEXT;
+            static const uint32_t TEXT_DIM;
+            static const uint32_t TITLE;
+            static const uint32_t ACCENT;
+            static const uint32_t GREEN;
+            static const uint32_t SLIDER;
+            static const uint32_t WHITE;
+        };
+
+        static const int W;
+        static const int H;
+
 
         MenuCanvas();
         MenuCanvas(const MenuCanvas &other);

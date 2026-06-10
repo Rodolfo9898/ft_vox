@@ -26,10 +26,11 @@
 # include <mach/mach.h>
 #endif
 
-enum class GameAction { CONTINUE, OPEN_SETTINGS, EXIT_TO_MENU, ERROR };
-
 class GameSession
 {
+    public:
+        enum class Action { CONTINUE, OPEN_SETTINGS, EXIT_TO_MENU, ERROR };
+
     Camera      camera_;
     World       world_;
     RenderDebug render_debug_;
@@ -62,7 +63,7 @@ class GameSession
         int  error_code()          const;
 
         int         loading_tick(const RenderDistanceStrategy &strategy);
-        GameAction  update(double delta_seconds,
+        Action     update(double delta_seconds,
             const RenderDistanceStrategy &strategy,
             ApplicationWindow &window);
         void        render(ApplicationWindow &window,

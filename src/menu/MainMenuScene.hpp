@@ -12,7 +12,7 @@ class MainMenuScene : public MenuScene
         MainMenuScene(const MainMenuScene &other);
         ~MainMenuScene() override;
         MainMenuScene &operator=(const MainMenuScene &other);
-        void update(const MenuInput &in, MenuController &ctl) override;
+        void update(const MenuCanvas::MenuInput &in, MenuController &ctl) override;
         void render(MenuCanvas &c) const override;
 };
 

@@ -103,18 +103,18 @@ int GameSession::loading_tick(const RenderDistanceStrategy &strategy)
     return error_code_;
 }
 
-GameAction GameSession::update(double delta_seconds,
+GameSession::Action GameSession::update(double delta_seconds,
     const RenderDistanceStrategy &strategy,
     ApplicationWindow &window)
 {
-    if (!active_) return GameAction::ERROR;
+    if (!active_) return GameSession::Action::ERROR;
 
     ft_dumb_controls_poll();
 
     if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_BACK) == FT_TRUE)
-        return GameAction::EXIT_TO_MENU;
+        return GameSession::Action::EXIT_TO_MENU;
     if (window.was_settings_key_pressed())
-        return GameAction::OPEN_SETTINGS;
+        return GameSession::Action::OPEN_SETTINGS;
     if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_BOOST) == FT_TRUE)
         boost_enabled_ = !boost_enabled_;
 
@@ -129,7 +129,7 @@ GameAction GameSession::update(double delta_seconds,
     int gen = strategy.generation_budget_for_frame(frame_ms_, boost_enabled_);
     error_code_ = world_.update_around(camera_.x, camera_.z,
         gen, active_render_distance_);
-    if (error_code_ != FT_ERR_SUCCESS) return GameAction::ERROR;
+    if (error_code_ != FT_ERR_SUCCESS) return GameSession::Action::ERROR;
 
     if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_MOUSE_PRIMARY) == FT_TRUE)
         BlockInteractor::try_delete_target_block(&world_, camera_);
@@ -156,7 +156,7 @@ GameAction GameSession::update(double delta_seconds,
         fps_accumulator_ = 0.0;
         fps_frame_count_ = 0U;
     }
-    return GameAction::CONTINUE;
+    return GameSession::Action::CONTINUE;
 }
 
 void GameSession::render(ApplicationWindow &window,

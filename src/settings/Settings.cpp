@@ -16,6 +16,9 @@ Settings &Settings::instance()
 }
 
 Settings::Settings()
+    : fps_overlay_(true),
+      render_distance_(160),
+      layout_(FT_DUMB_KEYBOARD_LAYOUT_QWERTY)
 {
 }
 

@@ -19,16 +19,18 @@
 #include <cstdint>
 #include <vector>
 
-struct MegaVertex
-{
-    float    x, y, z;
-    uint16_t tu, tv;
-    uint32_t block_id;
-    uint32_t face;
-};
-
 class GpuRenderer
 {
+    public:
+        struct MegaVertex
+        {
+            float    x, y, z;
+            uint16_t tu, tv;
+            uint32_t block_id;
+            uint32_t face;
+        };
+
+    private:
     GpuShader       _world_shader;
     GpuShader       _sky_shader;
     GpuShader       _overlay_shader;
@@ -80,29 +82,29 @@ class GpuRenderer
     GLint _u_tint_color;
 
     void build_mvp(float out[16], const Camera &camera,
-        int width, int height, float near_z, float far_z) const noexcept;
-    void draw_sky() const noexcept;
-    void draw_crosshair() const noexcept;
+        int width, int height, float near_z, float far_z) const;
+    void draw_sky() const;
+    void draw_crosshair() const;
 
     public:
-        GpuRenderer() noexcept;
-        ~GpuRenderer() noexcept { destroy(); }
+        GpuRenderer();
+        ~GpuRenderer();
 
-        GpuRenderer(const GpuRenderer &)            = delete;
-        GpuRenderer &operator=(const GpuRenderer &) = delete;
+        GpuRenderer(const GpuRenderer &);
+        GpuRenderer &operator=(const GpuRenderer &);
 
-        bool initialize(int width, int height) noexcept;
-        void destroy() noexcept;
-        void resize(int width, int height) noexcept;
-        void render(const Camera &camera, const World &world) noexcept;
-        void upload_overlay(const uint32_t *pixels, int w, int h) noexcept;
-        void draw_overlay() noexcept;
-        void draw_tint(float r, float g, float b, float a) noexcept;
-        void clear_screen() noexcept;
-        void upload_menu(const uint32_t *pixels, int w, int h) noexcept;
-        void draw_menu(float alpha) noexcept;
-        bool     is_ready() const noexcept;
-        uint32_t gpu_mb_approx() const noexcept;
+        bool initialize(int width, int height);
+        void destroy();
+        void resize(int width, int height);
+        void render(const Camera &camera, const World &world);
+        void upload_overlay(const uint32_t *pixels, int w, int h);
+        void draw_overlay();
+        void draw_tint(float r, float g, float b, float a);
+        void clear_screen();
+        void upload_menu(const uint32_t *pixels, int w, int h);
+        void draw_menu(float alpha);
+        bool     is_ready() const;
+        uint32_t gpu_mb_approx() const;
 };
 
 #endif

@@ -57,9 +57,9 @@ namespace
 #endif
     }
 
-    static MenuInput collect_menu_input(ApplicationWindow &window)
+    static MenuCanvas::MenuInput collect_menu_input(ApplicationWindow &window)
     {
-        MenuInput in = {};
+        MenuCanvas::MenuInput in = {};
         int gw = (window.is_gpu_mode() && window.get_gpu_window())
             ? window.get_gpu_window()->get_width()  : MenuCanvas::W;
         int gh = (window.is_gpu_mode() && window.get_gpu_window())
@@ -157,7 +157,7 @@ int Application::run(int argc, char **argv)
 
         if (phase == AppPhase::MAIN_MENU)
         {
-            MenuInput in = collect_menu_input(window);
+            MenuCanvas::MenuInput in = collect_menu_input(window);
             menu_ctl.update(in);
             if (menu_ctl.wants_start())
             {
@@ -172,7 +172,7 @@ int Application::run(int argc, char **argv)
         }
         else if (phase == AppPhase::LOADING)
         {
-            MenuInput in = collect_menu_input(window);
+            MenuCanvas::MenuInput in = collect_menu_input(window);
             menu_ctl.update(in);
             if (game_session.loading_tick(*strategy) != FT_ERR_SUCCESS)
             {
@@ -188,25 +188,25 @@ int Application::run(int argc, char **argv)
         }
         else if (phase == AppPhase::IN_GAME)
         {
-            GameAction action = game_session.update(dt, *strategy, window);
-            if (action == GameAction::OPEN_SETTINGS)
+            GameSession::Action action = game_session.update(dt, *strategy, window);
+            if (action == GameSession::Action::OPEN_SETTINGS)
             {
                 menu_ctl.show_in_game_settings();
                 phase = AppPhase::IN_GAME_SETTINGS;
                 window.set_cursor_visible(true);
             }
-            else if (action == GameAction::EXIT_TO_MENU || action == GameAction::ERROR)
+            else if (action == GameSession::Action::EXIT_TO_MENU || action == GameSession::Action::ERROR)
             {
                 game_session.stop();
                 menu_ctl.show_main_menu();
                 phase = AppPhase::MAIN_MENU;
                 window.set_cursor_visible(true);
-                if (action == GameAction::ERROR) break;
+                if (action == GameSession::Action::ERROR) break;
             }
         }
         else if (phase == AppPhase::IN_GAME_SETTINGS)
         {
-            MenuInput in = collect_menu_input(window);
+            MenuCanvas::MenuInput in = collect_menu_input(window);
             menu_ctl.update(in);
             ft_dumb_controls_set_keyboard_layout(Settings::instance().keyboard_layout());
             if (menu_ctl.dismissed_in_game())

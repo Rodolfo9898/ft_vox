@@ -17,7 +17,7 @@ static const int SQ_X = 60,  SQ_Y = 274 + 28;
 static const int SA_X = 180, SA_Y = 274 + 28;
 static const int SBACK_X = 40, SBACK_Y = MenuCanvas::H - 60;
 
-void SettingsScene::update(const MenuInput &in, MenuController &ctl)
+void SettingsScene::update(const MenuCanvas::MenuInput &in, MenuController &ctl)
 {
     if (in.key_escape)
     { ctl.request_back(); return; }
@@ -44,36 +44,36 @@ void SettingsScene::update(const MenuInput &in, MenuController &ctl)
 void SettingsScene::render(MenuCanvas &c) const
 {
     Settings &s = Settings::instance();
-    c.clear(MC::BG);
-    c.draw_text_centered(MenuCanvas::W / 2, 30, "SETTINGS", 4, MC::TITLE);
-    c.fill_rect(40, 88, MenuCanvas::W - 80, 1, MC::TEXT_DIM);
-    c.draw_text(60, STOG_Y - 4, "FPS OVERLAY", 2, MC::TEXT);
+    c.clear(MenuCanvas::Colors::BG);
+    c.draw_text_centered(MenuCanvas::W / 2, 30, "SETTINGS", 4, MenuCanvas::Colors::TITLE);
+    c.fill_rect(40, 88, MenuCanvas::W - 80, 1, MenuCanvas::Colors::TEXT_DIM);
+    c.draw_text(60, STOG_Y - 4, "FPS OVERLAY", 2, MenuCanvas::Colors::TEXT);
     bool fps = s.fps_overlay();
-    c.fill_rect(STOG_X, STOG_Y, 60, 20, fps ? MC::GREEN : MC::PANEL);
-    c.draw_border(STOG_X, STOG_Y, 60, 20, fps ? MC::GREEN : MC::TEXT_DIM);
-    c.draw_text(STOG_X + 12, STOG_Y + 4, fps ? "ON" : "OFF", 2, MC::TEXT);
+    c.fill_rect(STOG_X, STOG_Y, 60, 20, fps ? MenuCanvas::Colors::GREEN : MenuCanvas::Colors::PANEL);
+    c.draw_border(STOG_X, STOG_Y, 60, 20, fps ? MenuCanvas::Colors::GREEN : MenuCanvas::Colors::TEXT_DIM);
+    c.draw_text(STOG_X + 12, STOG_Y + 4, fps ? "ON" : "OFF", 2, MenuCanvas::Colors::TEXT);
     int y2 = 150;
-    c.draw_text(60, y2, "RENDER DISTANCE", 2, MC::TEXT);
-    c.fill_rect(SSLIDER_X, SSLIDER_Y, SSLIDER_W, 12, MC::PANEL);
-    c.draw_border(SSLIDER_X, SSLIDER_Y, SSLIDER_W, 12, MC::TEXT_DIM);
+    c.draw_text(60, y2, "RENDER DISTANCE", 2, MenuCanvas::Colors::TEXT);
+    c.fill_rect(SSLIDER_X, SSLIDER_Y, SSLIDER_W, 12, MenuCanvas::Colors::PANEL);
+    c.draw_border(SSLIDER_X, SSLIDER_Y, SSLIDER_W, 12, MenuCanvas::Colors::TEXT_DIM);
     int rd = s.render_distance();
     float frac = static_cast<float>(rd - 14) / static_cast<float>(160 - 14);
     int fw = static_cast<int>(frac * static_cast<float>(SSLIDER_W));
-    c.fill_rect(SSLIDER_X, SSLIDER_Y, fw, 12, MC::SLIDER);
-    c.fill_rect(SSLIDER_X + fw - 4, SSLIDER_Y - 4, 8, 20, MC::ACCENT);
+    c.fill_rect(SSLIDER_X, SSLIDER_Y, fw, 12, MenuCanvas::Colors::SLIDER);
+    c.fill_rect(SSLIDER_X + fw - 4, SSLIDER_Y - 4, 8, 20, MenuCanvas::Colors::ACCENT);
     char rbuf[32]; std::snprintf(rbuf, sizeof(rbuf), "%d CHUNKS", rd);
-    c.draw_text(SSLIDER_X, SSLIDER_Y + 20, rbuf, 2, MC::TEXT);
+    c.draw_text(SSLIDER_X, SSLIDER_Y + 20, rbuf, 2, MenuCanvas::Colors::TEXT);
     int y3 = 274;
-    c.draw_text(60, y3, "KEYBOARD LAYOUT", 2, MC::TEXT);
+    c.draw_text(60, y3, "KEYBOARD LAYOUT", 2, MenuCanvas::Colors::TEXT);
     ft_dumb_keyboard_layout layout = s.keyboard_layout();
     bool qsel = (layout == FT_DUMB_KEYBOARD_LAYOUT_QWERTY);
-    c.fill_rect(SQ_X, SQ_Y, 110, 32, qsel ? MC::BTN_A : MC::BTN_N);
-    c.draw_border(SQ_X, SQ_Y, 110, 32, qsel ? MC::ACCENT : MC::TEXT_DIM);
-    c.draw_text(SQ_X + 14, SQ_Y + 8, "QWERTY", 2, MC::TEXT);
-    c.fill_rect(SA_X, SA_Y, 110, 32, !qsel ? MC::BTN_A : MC::BTN_N);
-    c.draw_border(SA_X, SA_Y, 110, 32, !qsel ? MC::ACCENT : MC::TEXT_DIM);
-    c.draw_text(SA_X + 14, SA_Y + 8, "AZERTY", 2, MC::TEXT);
-    c.fill_rect(SBACK_X, SBACK_Y, 200, 36, MC::BTN_N);
-    c.draw_border(SBACK_X, SBACK_Y, 200, 36, MC::TEXT_DIM);
-    c.draw_text(SBACK_X + 56, SBACK_Y + 8, "BACK", 3, MC::TEXT);
+    c.fill_rect(SQ_X, SQ_Y, 110, 32, qsel ? MenuCanvas::Colors::BTN_A : MenuCanvas::Colors::BTN_N);
+    c.draw_border(SQ_X, SQ_Y, 110, 32, qsel ? MenuCanvas::Colors::ACCENT : MenuCanvas::Colors::TEXT_DIM);
+    c.draw_text(SQ_X + 14, SQ_Y + 8, "QWERTY", 2, MenuCanvas::Colors::TEXT);
+    c.fill_rect(SA_X, SA_Y, 110, 32, !qsel ? MenuCanvas::Colors::BTN_A : MenuCanvas::Colors::BTN_N);
+    c.draw_border(SA_X, SA_Y, 110, 32, !qsel ? MenuCanvas::Colors::ACCENT : MenuCanvas::Colors::TEXT_DIM);
+    c.draw_text(SA_X + 14, SA_Y + 8, "AZERTY", 2, MenuCanvas::Colors::TEXT);
+    c.fill_rect(SBACK_X, SBACK_Y, 200, 36, MenuCanvas::Colors::BTN_N);
+    c.draw_border(SBACK_X, SBACK_Y, 200, 36, MenuCanvas::Colors::TEXT_DIM);
+    c.draw_text(SBACK_X + 56, SBACK_Y + 8, "BACK", 3, MenuCanvas::Colors::TEXT);
 }

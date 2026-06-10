@@ -15,7 +15,7 @@ class MenuScene
 
         virtual void on_enter();
         virtual void on_exit();
-        virtual void update(const MenuInput &in, MenuController &ctl) = 0;
+        virtual void update(const MenuCanvas::MenuInput &in, MenuController &ctl) = 0;
         virtual void render(MenuCanvas &c) const = 0;
 };
 

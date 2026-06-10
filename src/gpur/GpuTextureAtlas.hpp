@@ -18,20 +18,20 @@ class GpuTextureAtlas
     bool   _loaded;
 
     public:
-        GpuTextureAtlas() noexcept;
-        GpuTextureAtlas(const GpuTextureAtlas &other) noexcept;
-    ~GpuTextureAtlas() noexcept;
-    GpuTextureAtlas &operator=(const GpuTextureAtlas &other) noexcept;
+        GpuTextureAtlas();
+        GpuTextureAtlas(const GpuTextureAtlas &other);
+    ~GpuTextureAtlas();
+    GpuTextureAtlas &operator=(const GpuTextureAtlas &other);
 
 
-        bool upload(const TextureAtlas &atlas) noexcept;
-        void bind(int unit) const noexcept;
-        void destroy() noexcept;
-        bool is_loaded() const noexcept;
+        bool upload(const TextureAtlas &atlas);
+        void bind(int unit) const;
+        void destroy();
+        bool is_loaded() const;
 
         void fill_tile_uvs(const TextureAtlas &atlas,
-            float uv_out[96 * 4]) const noexcept;
-        void fill_fallback_colors(float colors_out[16 * 3]) const noexcept;
+            float uv_out[96 * 4]) const;
+        void fill_fallback_colors(float colors_out[16 * 3]) const;
 };
 
 #endif

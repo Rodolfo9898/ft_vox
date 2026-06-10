@@ -16,7 +16,7 @@ void LoadingScene::on_enter()
 }
 
 
-void LoadingScene::update(const MenuInput &in, MenuController &ctl)
+void LoadingScene::update(const MenuCanvas::MenuInput &in, MenuController &ctl)
 {
     (void)in; (void)ctl;
     ++tick_;
@@ -24,19 +24,19 @@ void LoadingScene::update(const MenuInput &in, MenuController &ctl)
 
 void LoadingScene::render(MenuCanvas &c) const
 {
-    c.clear(MC::BG);
+    c.clear(MenuCanvas::Colors::BG);
     c.draw_text_centered(MenuCanvas::W / 2, MenuCanvas::H / 2 - 60,
-        "GENERATING WORLD", 4, MC::TITLE);
+        "GENERATING WORLD", 4, MenuCanvas::Colors::TITLE);
     const char *dots = DOTS[(tick_ / 12) % 4];
     c.draw_text_centered(MenuCanvas::W / 2, MenuCanvas::H / 2 + 10,
-        dots, 4, MC::ACCENT);
+        dots, 4, MenuCanvas::Colors::ACCENT);
     c.draw_text_centered(MenuCanvas::W / 2, MenuCanvas::H / 2 + 70,
-        "PLEASE WAIT", 2, MC::TEXT_DIM);
+        "PLEASE WAIT", 2, MenuCanvas::Colors::TEXT_DIM);
     int bar_w = MenuCanvas::W - 160;
     int bar_x = 80;
     int bar_y = MenuCanvas::H / 2 + 110;
-    c.fill_rect(bar_x, bar_y, bar_w, 10, MC::PANEL);
-    c.draw_border(bar_x, bar_y, bar_w, 10, MC::TEXT_DIM);
+    c.fill_rect(bar_x, bar_y, bar_w, 10, MenuCanvas::Colors::PANEL);
+    c.draw_border(bar_x, bar_y, bar_w, 10, MenuCanvas::Colors::TEXT_DIM);
     int fill = (tick_ % 60) * bar_w / 60;
-    c.fill_rect(bar_x, bar_y, fill, 10, MC::SLIDER);
+    c.fill_rect(bar_x, bar_y, fill, 10, MenuCanvas::Colors::SLIDER);
 }

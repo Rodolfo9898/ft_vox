@@ -39,7 +39,7 @@ class MenuController
         void show_loading();
         void show_in_game_settings();
 
-        void update(const MenuInput &in);
+        void update(const MenuCanvas::MenuInput &in);
         void render(GpuRenderer *gpu);
         void render_overlay(GpuRenderer *gpu);
 
@@ -63,7 +63,7 @@ class MenuController
 
     private:
         MenuCanvas    canvas_;
-        MenuPhase     phase_    = MenuPhase::MAIN_MENU;
+        MenuPhase     phase_;
 
         std::unique_ptr<MainMenuScene>        main_scene_;
         std::unique_ptr<SettingsScene>        settings_scene_;
@@ -71,10 +71,10 @@ class MenuController
         std::unique_ptr<LoadingScene>         loading_scene_;
         std::unique_ptr<InGameSettingsScene>  in_game_scene_;
 
-        bool        wants_start_       = false;
-        bool        wants_exit_        = false;
-        bool        dismissed_in_game_ = false;
-        bool        wants_main_menu_   = false;
+        bool        wants_start_;
+        bool        wants_exit_;
+        bool        dismissed_in_game_;
+        bool        wants_main_menu_;
         std::string start_seed_;
 
         MenuScene *current_scene();

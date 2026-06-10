@@ -12,7 +12,7 @@ class InGameSettingsScene : public MenuScene
         InGameSettingsScene(const InGameSettingsScene &other);
         ~InGameSettingsScene() override;
         InGameSettingsScene &operator=(const InGameSettingsScene &other);
-        void update(const MenuInput &in, MenuController &ctl) override;
+        void update(const MenuCanvas::MenuInput &in, MenuController &ctl) override;
         void render(MenuCanvas &c) const override;
 };
 

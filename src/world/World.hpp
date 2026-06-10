@@ -27,9 +27,9 @@ class World
         char       seed[128];
 
         World();
-        World(const World &other) = delete;
+        World(const World &other);
         ~World();
-        World &operator=(const World &other) = delete;
+        World &operator=(const World &other);
 
         int32_t initialize(const char *seed_value);
         void destroy();

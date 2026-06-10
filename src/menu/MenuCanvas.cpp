@@ -1,7 +1,20 @@
 #include "../../src/menu/MenuCanvas.hpp"
+const int MenuCanvas::W = 960;
+const int MenuCanvas::H = 540;
 
-const int MenuCanvas::W;
-const int MenuCanvas::H;
+const uint32_t MenuCanvas::Colors::BG       = 0x0D0D1AU;
+const uint32_t MenuCanvas::Colors::PANEL     = 0x151525U;
+const uint32_t MenuCanvas::Colors::BTN_N     = 0x1C2E50U;
+const uint32_t MenuCanvas::Colors::BTN_H     = 0x2A507AU;
+const uint32_t MenuCanvas::Colors::BTN_A     = 0x3A78B0U;
+const uint32_t MenuCanvas::Colors::TEXT      = 0xEEEEFFU;
+const uint32_t MenuCanvas::Colors::TEXT_DIM  = 0x8888AAU;
+const uint32_t MenuCanvas::Colors::TITLE     = 0xFFCC00U;
+const uint32_t MenuCanvas::Colors::ACCENT    = 0x00B4D8U;
+const uint32_t MenuCanvas::Colors::GREEN     = 0x4CAF50U;
+const uint32_t MenuCanvas::Colors::SLIDER    = 0x5DA3FAU;
+const uint32_t MenuCanvas::Colors::WHITE     = 0xFFFFFFU;
+
 
 MenuCanvas::MenuCanvas(const MenuCanvas &other)
 {
@@ -53,7 +66,7 @@ static const uint8_t *glyph_for(char c)
     return nullptr;
 }
 
-MenuCanvas::MenuCanvas() : pixels_(static_cast<size_t>(W * H), MC::BG)
+MenuCanvas::MenuCanvas() : pixels_(static_cast<size_t>(W * H), MenuCanvas::Colors::BG)
 {
     fb_.width  = W;
     fb_.height = H;
@@ -139,14 +152,14 @@ bool MenuCanvas::button(int x, int y, int w, int h,
     const MenuInput &in, bool selected)
 {
     bool hov  = is_hovered(x, y, w, h, in);
-    uint32_t bg = selected ? MC::BTN_A : (hov ? MC::BTN_H : MC::BTN_N);
+    uint32_t bg = selected ? MenuCanvas::Colors::BTN_A : (hov ? MenuCanvas::Colors::BTN_H : MenuCanvas::Colors::BTN_N);
     fill_rect(x, y, w, h, bg);
-    draw_border(x, y, w, h, hov ? MC::ACCENT : MC::TEXT_DIM);
+    draw_border(x, y, w, h, hov ? MenuCanvas::Colors::ACCENT : MenuCanvas::Colors::TEXT_DIM);
     int tw = 0;
     for (const char *p = label; *p; ++p) tw += 4 * scale;
     int tx = x + (w - tw) / 2;
     int ty = y + (h - 5 * scale) / 2;
-    draw_text(tx, ty, label, scale, MC::TEXT);
+    draw_text(tx, ty, label, scale, MenuCanvas::Colors::TEXT);
     return was_clicked(x, y, w, h, in);
 }
 
@@ -155,11 +168,11 @@ bool MenuCanvas::checkbox(int x, int y, bool checked,
     const MenuInput &in)
 {
     int box = scale * 6;
-    fill_rect(x, y, box, box, checked ? MC::GREEN : MC::PANEL);
-    draw_border(x, y, box, box, checked ? MC::GREEN : MC::TEXT_DIM);
+    fill_rect(x, y, box, box, checked ? MenuCanvas::Colors::GREEN : MenuCanvas::Colors::PANEL);
+    draw_border(x, y, box, box, checked ? MenuCanvas::Colors::GREEN : MenuCanvas::Colors::TEXT_DIM);
     if (checked)
-        draw_text(x + scale, y + scale, "X", scale, MC::WHITE);
-    draw_text(x + box + scale * 2, y + scale, label, scale, MC::TEXT);
+        draw_text(x + scale, y + scale, "X", scale, MenuCanvas::Colors::WHITE);
+    draw_text(x + box + scale * 2, y + scale, label, scale, MenuCanvas::Colors::TEXT);
     int click_w = box + scale * 2 + static_cast<int>(std::strlen(label)) * 4 * scale;
     if (was_clicked(x, y, click_w, box, in))
         return !checked;
@@ -173,18 +186,18 @@ float MenuCanvas::slider(int x, int y, int w,
 {
     int th  = scale * 3;
     int ty  = y + scale * 2;
-    fill_rect(x, ty, w, th, MC::PANEL);
-    draw_border(x, ty, w, th, MC::TEXT_DIM);
+    fill_rect(x, ty, w, th, MenuCanvas::Colors::PANEL);
+    draw_border(x, ty, w, th, MenuCanvas::Colors::TEXT_DIM);
     float frac = (value - vmin) / (vmax - vmin);
     if (frac < 0.0f) frac = 0.0f;
     if (frac > 1.0f) frac = 1.0f;
     int fw = static_cast<int>(frac * static_cast<float>(w));
-    fill_rect(x, ty, fw, th, MC::SLIDER);
+    fill_rect(x, ty, fw, th, MenuCanvas::Colors::SLIDER);
     int kx = x + fw - scale;
-    fill_rect(kx, ty - scale, scale * 2, th + scale * 2, MC::ACCENT);
+    fill_rect(kx, ty - scale, scale * 2, th + scale * 2, MenuCanvas::Colors::ACCENT);
     char buf[64];
     std::snprintf(buf, sizeof(buf), "%s  %d", label, static_cast<int>(value));
-    draw_text(x, ty + th + scale * 2, buf, scale, MC::TEXT);
+    draw_text(x, ty + th + scale * 2, buf, scale, MenuCanvas::Colors::TEXT);
     if (is_hovered(x, ty, w, th + scale * 4, in) && in.mouse_clicked)
     {
         float nf = static_cast<float>(in.mouse_x - x) / static_cast<float>(w);

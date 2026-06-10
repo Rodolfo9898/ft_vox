@@ -31,9 +31,9 @@ class Settings
 
         void notify();
 
-        bool                      fps_overlay_      = true;
-        int                       render_distance_  = 160;
-        ft_dumb_keyboard_layout   layout_           = FT_DUMB_KEYBOARD_LAYOUT_QWERTY;
+        bool                      fps_overlay_;
+        int                       render_distance_;
+        ft_dumb_keyboard_layout   layout_;
         std::vector<ChangeCallback> observers_;
 };
 

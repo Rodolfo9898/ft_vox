@@ -39,12 +39,12 @@ class VoxelRenderer
             const RenderDebug *debug);
         void preload_assets();
         void initialize_gpu(int width, int height);
-        GpuRenderer *get_gpu_renderer() noexcept;
+        GpuRenderer *get_gpu_renderer();
 
     private:
-        static const int OVERLAY_W = 512;
-        static const int OVERLAY_H = 360;
-        uint32_t              _overlay_buf[OVERLAY_W * OVERLAY_H];
+        static const int OVERLAY_W;
+        static const int OVERLAY_H;
+        uint32_t              _overlay_buf[512 * 360];
         ft_render_framebuffer _overlay_fb;
         uint64_t              _overlay_frame;
         RenderTarget      target;
