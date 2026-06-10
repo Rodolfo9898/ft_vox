@@ -528,7 +528,7 @@ void GpuRenderer::upload_overlay(const uint32_t *pixels, int w, int h)
  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
- static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0,
+ w, h, 0,
  GL_RGBA, GL_UNSIGNED_BYTE, _overlay_rgba.data());
  _overlay_w = w;
  _overlay_h = h;
@@ -536,7 +536,7 @@ void GpuRenderer::upload_overlay(const uint32_t *pixels, int w, int h)
  else
  {
  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
- static_cast<GLsizei>(w), static_cast<GLsizei>(h),
+ w, h,
  GL_RGBA, GL_UNSIGNED_BYTE, _overlay_rgba.data());
  }
  glBindTexture(GL_TEXTURE_2D, 0);
@@ -602,14 +602,14 @@ void GpuRenderer::upload_menu(const uint32_t *pixels, int w, int h)
  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
- static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0,
+ w, h, 0,
  GL_RGBA, GL_UNSIGNED_BYTE, _menu_rgba.data());
  _menu_tex_w = w; _menu_tex_h = h;
  }
  else
  {
  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
- static_cast<GLsizei>(w), static_cast<GLsizei>(h),
+ w, h,
  GL_RGBA, GL_UNSIGNED_BYTE, _menu_rgba.data());
  }
  glBindTexture(GL_TEXTURE_2D, 0);
