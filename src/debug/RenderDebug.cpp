@@ -29,6 +29,10 @@ RenderDebug &RenderDebug::operator=(const RenderDebug &other)
         this->camera_x = other.camera_x;
         this->camera_y = other.camera_y;
         this->camera_z = other.camera_z;
+        this->camera_speed = other.camera_speed;
+        this->boost_speed  = other.boost_speed;
+        std::memcpy(this->seed,       other.seed,       sizeof(this->seed));
+        std::memcpy(this->biome_name, other.biome_name, sizeof(this->biome_name));
     }
     return (*this);
 }
@@ -46,4 +50,8 @@ void RenderDebug::clear()
     this->camera_x = 0.0;
     this->camera_y = 0.0;
     this->camera_z = 0.0;
+    this->camera_speed = 0.0;
+    this->boost_speed  = 0.0;
+    this->seed[0]       = '\0';
+    this->biome_name[0] = '\0';
 }

@@ -44,6 +44,7 @@ class GameSession
     bool     boost_enabled_;
     bool     active_;
     int32_t  error_code_;
+    char     seed_[32];
 
     static uint32_t system_ram_mb();
 

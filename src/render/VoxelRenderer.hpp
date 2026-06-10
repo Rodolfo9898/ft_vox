@@ -43,7 +43,7 @@ class VoxelRenderer
 
     private:
         static const int OVERLAY_W = 512;
-        static const int OVERLAY_H = 200;
+        static const int OVERLAY_H = 360;
         uint32_t              _overlay_buf[OVERLAY_W * OVERLAY_H];
         ft_render_framebuffer _overlay_fb;
         uint64_t              _overlay_frame;

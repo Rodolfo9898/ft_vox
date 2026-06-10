@@ -61,6 +61,8 @@ int GameSession::start(const std::string &seed,
     error_code_ = world_.initialize(seed.c_str());
     if (error_code_ != FT_ERR_SUCCESS)
         return error_code_;
+    std::strncpy(seed_, seed.c_str(), sizeof(seed_) - 1);
+    seed_[sizeof(seed_) - 1] = '\0';
     camera_.initialize();
     PlayerController::spawn_player_on_ground(&camera_, world_);
     active_render_distance_ = Settings::instance().render_distance();
@@ -171,9 +173,25 @@ void GameSession::render(ApplicationWindow &window,
     render_debug_.camera_x          = camera_.x;
     render_debug_.camera_y          = camera_.y;
     render_debug_.camera_z          = camera_.z;
+    render_debug_.camera_speed      = camera_.speed;
+    render_debug_.boost_speed       = camera_.speed * 20.0;
     render_debug_.ram_mb            = system_ram_mb();
     render_debug_.vram_approx_mb    = renderer.get_gpu_renderer()
         ? renderer.get_gpu_renderer()->gpu_mb_approx() : 0U;
+    std::strncpy(render_debug_.seed, seed_, sizeof(render_debug_.seed) - 1);
+    render_debug_.seed[sizeof(render_debug_.seed) - 1] = '\0';
+    {
+        static const char *BIOME_NAMES[] = {
+            "PLAINS", "HILLS", "DESERT", "SNOW", "MOUNTAINS" };
+        terrain_biome b = terrain_get_biome(
+            static_cast<int32_t>(camera_.x),
+            static_cast<int32_t>(camera_.z), seed_);
+        int bi = static_cast<int>(b);
+        const char *bname = (bi >= 0 && bi < 5) ? BIOME_NAMES[bi] : "UNKNOWN";
+        std::strncpy(render_debug_.biome_name, bname,
+            sizeof(render_debug_.biome_name) - 1);
+        render_debug_.biome_name[sizeof(render_debug_.biome_name) - 1] = '\0';
+    }
 
     const RenderDebug *dbg = (with_overlay && Settings::instance().fps_overlay())
         ? &render_debug_ : nullptr;

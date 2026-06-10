@@ -2,6 +2,7 @@
 # define RENDER_DEBUG_HPP
 
 #include <cstdint>
+#include <cstring>
 
 class RenderDebug
 {
@@ -17,6 +18,10 @@ class RenderDebug
         double   camera_x;
         double   camera_y;
         double   camera_z;
+        double   camera_speed;
+        double   boost_speed;
+        char     seed[32];
+        char     biome_name[24];
 
         RenderDebug();
         RenderDebug(const RenderDebug &other);
