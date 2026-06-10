@@ -124,6 +124,7 @@ int Application::run(int argc, char **argv)
     }
 
     if (window.initialize(false, 0, 0, true, true) != 0) return 1;
+    FontRenderer::instance().load(22.0f);
     if (window.is_gpu_mode())
         renderer.initialize_gpu(window.get_gpu_window()->get_width(),
             window.get_gpu_window()->get_height());

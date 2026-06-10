@@ -1,4 +1,5 @@
 #include "../../src/debug/DebugOverlayRenderer.hpp"
+#include "../../src/font/FontRenderer.hpp"
 
 DebugOverlayRenderer::DebugOverlayRenderer()
 {
@@ -148,25 +149,13 @@ void DebugOverlayRenderer::draw_debug_char(ft_render_framebuffer &framebuffer,
 void DebugOverlayRenderer::draw_debug_text(ft_render_framebuffer &framebuffer,
     int32_t origin_x, int32_t origin_y, const char *text, int32_t scale)
 {
-    int32_t index;
-    int32_t x;
-
-    if (text == nullptr)
-        return ;
-    index = 0;
-    x = origin_x;
-    while (text[index] != '\0')
-    {
-        if (text[index] == ' ')
-            x = x + (5 * scale);
-        else
-        {
-            draw_debug_char(framebuffer, x, origin_y, text[index],
-                scale);
-            x = x + (5 * scale);
-        }
-        index = index + 1;
-    }
+    (void)scale;
+    if (text == nullptr || framebuffer.pixels == nullptr) return;
+    FontRenderer &fr = FontRenderer::instance();
+    if (fr.is_loaded())
+        fr.draw_text(reinterpret_cast<uint32_t *>(framebuffer.pixels),
+            framebuffer.width, framebuffer.height,
+            origin_x, origin_y, text, 0xEEEEFFU);
 }
 
 void DebugOverlayRenderer::draw_debug_overlay(ft_render_framebuffer &framebuffer,

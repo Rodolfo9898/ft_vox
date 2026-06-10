@@ -3,6 +3,7 @@
 
 #include "../../Libft/Modules/DUMB/render_window.hpp"
 #include <cstdint>
+#include "../../src/font/FontRenderer.hpp"
 #include <vector>
 #include <cstring>
 #include <cstdio>

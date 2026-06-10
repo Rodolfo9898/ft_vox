@@ -1,4 +1,5 @@
 #include "../../src/menu/MenuCanvas.hpp"
+#include "../../src/font/FontRenderer.hpp"
 const int MenuCanvas::W = 960;
 const int MenuCanvas::H = 540;
 
@@ -37,34 +38,6 @@ MenuCanvas &MenuCanvas::operator=(const MenuCanvas &other)
 }
 
 
-static const uint8_t s_glyphs[39][5] = {
-    { 7U, 5U, 5U, 5U, 7U }, { 2U, 6U, 2U, 2U, 7U }, { 7U, 1U, 7U, 4U, 7U },
-    { 7U, 1U, 7U, 1U, 7U }, { 5U, 5U, 7U, 1U, 1U }, { 7U, 4U, 7U, 1U, 7U },
-    { 7U, 4U, 7U, 5U, 7U }, { 7U, 1U, 1U, 1U, 1U }, { 7U, 5U, 7U, 5U, 7U },
-    { 7U, 5U, 7U, 1U, 7U }, { 7U, 5U, 7U, 5U, 5U }, { 6U, 5U, 6U, 5U, 6U },
-    { 7U, 4U, 4U, 4U, 7U }, { 6U, 5U, 5U, 5U, 6U }, { 7U, 4U, 6U, 4U, 7U },
-    { 7U, 4U, 6U, 4U, 4U }, { 7U, 4U, 5U, 5U, 7U }, { 5U, 5U, 7U, 5U, 5U },
-    { 7U, 2U, 2U, 2U, 7U }, { 1U, 1U, 1U, 5U, 7U }, { 5U, 5U, 6U, 5U, 5U },
-    { 4U, 4U, 4U, 4U, 7U }, { 5U, 7U, 7U, 5U, 5U }, { 5U, 7U, 7U, 7U, 5U },
-    { 7U, 5U, 5U, 5U, 7U }, { 6U, 5U, 6U, 4U, 4U }, { 7U, 5U, 5U, 7U, 1U },
-    { 6U, 5U, 6U, 5U, 5U }, { 7U, 4U, 7U, 1U, 7U }, { 7U, 2U, 2U, 2U, 2U },
-    { 5U, 5U, 5U, 5U, 7U }, { 5U, 5U, 5U, 5U, 2U }, { 5U, 5U, 7U, 7U, 5U },
-    { 5U, 5U, 2U, 5U, 5U }, { 5U, 5U, 2U, 2U, 2U }, { 7U, 1U, 2U, 4U, 7U },
-    { 0U, 0U, 0U, 0U, 2U },
-    { 0U, 0U, 7U, 0U, 0U },
-    { 0U, 0U, 0U, 0U, 7U }
-};
-
-static const uint8_t *glyph_for(char c)
-{
-    if (c >= '0' && c <= '9') return s_glyphs[c - '0'];
-    if (c >= 'A' && c <= 'Z') return s_glyphs[10 + (c - 'A')];
-    if (c >= 'a' && c <= 'z') return s_glyphs[10 + (c - 'a')];
-    if (c == '.') return s_glyphs[36];
-    if (c == '-') return s_glyphs[37];
-    if (c == '_') return s_glyphs[38];
-    return nullptr;
-}
 
 MenuCanvas::MenuCanvas() : pixels_(static_cast<size_t>(W * H), MenuCanvas::Colors::BG)
 {
@@ -106,34 +79,20 @@ void MenuCanvas::draw_border(int x, int y, int w, int h, uint32_t color, int thi
     fill_rect(x + w - thickness, y,                 thickness, h,         color);
 }
 
-void MenuCanvas::draw_text(int x, int y, const char *text, int scale, uint32_t color)
+void MenuCanvas::draw_text(int x, int y, const char *text, int /*scale*/, uint32_t color)
 {
     if (!text) return;
-    int cx = x;
-    for (int i = 0; text[i]; ++i)
-    {
-        if (text[i] == ' ') { cx += 5 * scale; continue; }
-        if (text[i] == ':') { cx += 4 * scale; continue; }
-        const uint8_t *bm = glyph_for(text[i]);
-        if (!bm) { cx += 5 * scale; continue; }
-        for (int row = 0; row < 5; ++row)
-            for (int col = 0; col < 3; ++col)
-                if (bm[row] & (1U << (2 - col)))
-                    for (int sy = 0; sy < scale; ++sy)
-                        for (int sx = 0; sx < scale; ++sx)
-                            set_pixel(cx + col * scale + sx,
-                                      y + row * scale + sy, color);
-        cx += 4 * scale;
-    }
+    FontRenderer &fr = FontRenderer::instance();
+    if (fr.is_loaded())
+        fr.draw_text(pixels_.data(), W, H, x, y, text, color);
 }
 
-void MenuCanvas::draw_text_centered(int cx, int y, const char *text, int scale, uint32_t color)
+void MenuCanvas::draw_text_centered(int cx, int y, const char *text, int /*scale*/, uint32_t color)
 {
     if (!text) return;
-    int len = 0;
-    for (const char *p = text; *p; ++p) ++len;
-    int tw = len * 4 * scale;
-    draw_text(cx - tw / 2, y, text, scale, color);
+    FontRenderer &fr = FontRenderer::instance();
+    if (fr.is_loaded())
+        fr.draw_text_centered(pixels_.data(), W, H, cx, y, text, color);
 }
 
 bool MenuCanvas::is_hovered(int x, int y, int w, int h, const MenuInput &in) const

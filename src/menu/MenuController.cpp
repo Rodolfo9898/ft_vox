@@ -1,4 +1,5 @@
 #include "../../src/menu/MenuController.hpp"
+#include "../../src/font/FontRenderer.hpp"
 #include "../../src/menu/MainMenuScene.hpp"
 #include "../../src/menu/SettingsScene.hpp"
 #include "../../src/menu/CreditsScene.hpp"

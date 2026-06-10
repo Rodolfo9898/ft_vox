@@ -17,6 +17,7 @@
 #include "../../src/menu/MenuCanvas.hpp"
 #include "../../src/app/GameSession.hpp"
 #include "../../src/app/PerfSession.hpp"
+#include "../../src/font/FontRenderer.hpp"
 #include "../../Libft/Modules/DUMB/controls.hpp"
 #include <chrono>
 #include <cstdio>
