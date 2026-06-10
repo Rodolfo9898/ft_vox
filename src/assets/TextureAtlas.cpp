@@ -157,8 +157,8 @@ void TextureAtlas::atlas_tile_for_block(uint32_t block_id, uint8_t face,
 {
     int tx = 2, ty = 2;
     BlockTextureRegistry::tile_for_block(block_id, face, &tx, &ty);
-    if (tile_x) *tile_x = static_cast<int32_t>(tx);
-    if (tile_y) *tile_y = static_cast<int32_t>(ty);
+    if (tile_x) *tile_x = tx;
+    if (tile_y) *tile_y = ty;
 }
 
 double TextureAtlas::fraction(double value)
