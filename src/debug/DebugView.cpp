@@ -21,10 +21,8 @@ DebugView &DebugView::operator=(const DebugView &other)
 
 uint32_t DebugView::rgba(uint8_t red, uint8_t green, uint8_t blue)
 {
-    return ((static_cast<uint32_t>(red) << 24U)
-        | (static_cast<uint32_t>(green) << 16U)
-        | (static_cast<uint32_t>(blue) << 8U)
-        | 0xFFU);
+    return ((static_cast<uint32_t>(red) << 24U) | (static_cast<uint32_t>(green) << 16U) |
+            (static_cast<uint32_t>(blue) << 8U) | 0xFFU);
 }
 
 int32_t DebugView::camera_offset(double value)
@@ -64,11 +62,11 @@ void DebugView::draw_crosshair(ft_render_framebuffer &framebuffer)
     while (index <= 10)
     {
         if (center_x + index >= 0 && center_x + index < framebuffer.width)
-            framebuffer.pixels[(center_y * framebuffer.width) + center_x + index]
-                = DebugView::rgba(245U, 245U, 235U);
+            framebuffer.pixels[(center_y * framebuffer.width) + center_x + index] =
+                DebugView::rgba(245U, 245U, 235U);
         if (center_y + index >= 0 && center_y + index < framebuffer.height)
-            framebuffer.pixels[((center_y + index) * framebuffer.width)
-                + center_x] = DebugView::rgba(245U, 245U, 235U);
+            framebuffer.pixels[((center_y + index) * framebuffer.width) + center_x] =
+                DebugView::rgba(245U, 245U, 235U);
         index = index + 1;
     }
 }
@@ -82,9 +80,8 @@ void DebugView::draw(ft_render_framebuffer &framebuffer, const Camera &camera)
     int32_t offset_z;
     uint32_t color;
 
-    if (framebuffer.pixels == nullptr || framebuffer.width <= 0
-        || framebuffer.height <= 0)
-        return ;
+    if (framebuffer.pixels == nullptr || framebuffer.width <= 0 || framebuffer.height <= 0)
+        return;
     horizon = framebuffer.height / 2;
     offset_x = DebugView::camera_offset(camera.x);
     offset_z = DebugView::camera_offset(camera.z);
@@ -95,9 +92,7 @@ void DebugView::draw(ft_render_framebuffer &framebuffer, const Camera &camera)
         while (x < framebuffer.width)
         {
             color = DebugView::background_color(y, horizon);
-            if (y >= horizon
-                && (((x + offset_x) % 96) == 0
-                    || ((y + offset_z) % 48) == 0))
+            if (y >= horizon && (((x + offset_x) % 96) == 0 || ((y + offset_z) % 48) == 0))
                 color = DebugView::rgba(88U, 122U, 82U);
             framebuffer.pixels[(y * framebuffer.width) + x] = color;
             x = x + 1;
