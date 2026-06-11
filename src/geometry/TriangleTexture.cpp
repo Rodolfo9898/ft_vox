@@ -1,18 +1,14 @@
 #include "../../src/geometry/TriangleTexture.hpp"
 
 TriangleTexture::TriangleTexture()
+    : atlas(nullptr), fallback_color(0U), base_x(0), base_y(0), sample_width(1), sample_height(1),
+      shade(1.0), loaded(false)
 {
-    this->atlas = nullptr;
-    this->fallback_color = 0U;
-    this->base_x = 0;
-    this->base_y = 0;
-    this->sample_width = 1;
-    this->sample_height = 1;
-    this->shade = 1.0;
-    this->loaded = false;
 }
 
 TriangleTexture::TriangleTexture(const TriangleTexture &other)
+    : atlas(nullptr), fallback_color(0U), base_x(0), base_y(0), sample_width(1), sample_height(1),
+      shade(1.0), loaded(false)
 {
     *this = other;
 }
@@ -25,14 +21,14 @@ TriangleTexture &TriangleTexture::operator=(const TriangleTexture &other)
 {
     if (this != &other)
     {
-        this->atlas = other.atlas;
-        this->fallback_color = other.fallback_color;
-        this->base_x = other.base_x;
-        this->base_y = other.base_y;
-        this->sample_width = other.sample_width;
-        this->sample_height = other.sample_height;
-        this->shade = other.shade;
-        this->loaded = other.loaded;
+        atlas = other.atlas;
+        fallback_color = other.fallback_color;
+        base_x = other.base_x;
+        base_y = other.base_y;
+        sample_width = other.sample_width;
+        sample_height = other.sample_height;
+        shade = other.shade;
+        loaded = other.loaded;
     }
-    return (*this);
+    return *this;
 }
