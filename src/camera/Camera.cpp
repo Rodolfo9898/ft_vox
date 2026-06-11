@@ -1,6 +1,22 @@
 #include "../../src/camera/Camera.hpp"
 
+const double Camera::MOUSE_SENSITIVITY = 0.0025;
+const double Camera::TURN_SPEED = 1.8;
+const double Camera::LOOK_SPEED = 1.2;
+const double Camera::PITCH_LIMIT = 1.2;
+const double Camera::BOOST_MULTIPLIER = 20.0;
+const double Camera::INV_SQRT_2 = 0.7071067811865475;
+
+Camera::Camera()
+    : x(0.0), y(0.0), z(0.0), yaw(0.0), pitch(0.0), speed(0.0), vertical_velocity(0.0),
+      on_ground(false)
+{
+    this->initialize();
+}
+
 Camera::Camera(const Camera &other)
+    : x(0.0), y(0.0), z(0.0), yaw(0.0), pitch(0.0), speed(0.0), vertical_velocity(0.0),
+      on_ground(false)
 {
     *this = other;
 }
@@ -22,22 +38,16 @@ Camera &Camera::operator=(const Camera &other)
         this->vertical_velocity = other.vertical_velocity;
         this->on_ground = other.on_ground;
     }
-    return (*this);
-}
-
-
-Camera::Camera()
-{
-    this->initialize();
+    return *this;
 }
 
 double Camera::clamp(double value, double minimum, double maximum)
 {
     if (value < minimum)
-        return (minimum);
+        return minimum;
     if (value > maximum)
-        return (maximum);
-    return (value);
+        return maximum;
+    return value;
 }
 
 void Camera::initialize()
@@ -55,71 +65,63 @@ void Camera::initialize()
 void Camera::update_orientation(const CameraInput &input, double delta_seconds)
 {
     if (delta_seconds <= 0.0)
-        return ;
+        return;
 #ifdef DEBUG
     std::fprintf(stderr,
-        "[camera-debug] before yaw=%.4f pitch=%.4f mouse=%.2f,%.2f dt=%.4f "
-        "turn=%d,%d look=%d,%d\n",
-        this->yaw, this->pitch, input.mouse_delta_x,
-        input.mouse_delta_y, delta_seconds, input.turn_left ? 1 : 0,
-        input.turn_right ? 1 : 0, input.look_up ? 1 : 0,
-        input.look_down ? 1 : 0);
+                 "[camera-debug] before yaw=%.4f pitch=%.4f mouse=%.2f,%.2f dt=%.4f "
+                 "turn=%d,%d look=%d,%d\n",
+                 this->yaw, this->pitch, input.mouse_delta_x, input.mouse_delta_y, delta_seconds,
+                 input.turn_left ? 1 : 0, input.turn_right ? 1 : 0, input.look_up ? 1 : 0,
+                 input.look_down ? 1 : 0);
 #endif
-    this->yaw = this->yaw + (input.mouse_delta_x * 0.0025);
-    this->pitch = this->pitch - (input.mouse_delta_y * 0.0025);
-    if (input.turn_left == true)
-        this->yaw = this->yaw - (1.8 * delta_seconds);
-    if (input.turn_right == true)
-        this->yaw = this->yaw + (1.8 * delta_seconds);
-    if (input.look_up == true)
-        this->pitch = this->pitch + (1.2 * delta_seconds);
-    if (input.look_down == true)
-        this->pitch = this->pitch - (1.2 * delta_seconds);
-    this->pitch = Camera::clamp(this->pitch, -1.2, 1.2);
+    this->yaw += input.mouse_delta_x * MOUSE_SENSITIVITY;
+    this->pitch -= input.mouse_delta_y * MOUSE_SENSITIVITY;
+    if (input.turn_left)
+        this->yaw -= TURN_SPEED * delta_seconds;
+    if (input.turn_right)
+        this->yaw += TURN_SPEED * delta_seconds;
+    if (input.look_up)
+        this->pitch += LOOK_SPEED * delta_seconds;
+    if (input.look_down)
+        this->pitch -= LOOK_SPEED * delta_seconds;
+    this->pitch = Camera::clamp(this->pitch, -PITCH_LIMIT, PITCH_LIMIT);
 #ifdef DEBUG
-    std::fprintf(stderr,
-        "[camera-debug] after  yaw=%.4f pitch=%.4f\n",
-        this->yaw, this->pitch);
+    std::fprintf(stderr, "[camera-debug] after  yaw=%.4f pitch=%.4f\n", this->yaw, this->pitch);
 #endif
+}
+
+void Camera::apply_movement(const CameraInput &input, double delta_seconds)
+{
+    double local_x = 0.0;
+    double local_z = 0.0;
+
+    if (input.move_forward)
+        local_z += 1.0;
+    if (input.move_backward)
+        local_z -= 1.0;
+    if (input.move_right)
+        local_x += 1.0;
+    if (input.move_left)
+        local_x -= 1.0;
+
+    if ((local_x * local_x + local_z * local_z) > 1.0)
+    {
+        local_x *= INV_SQRT_2;
+        local_z *= INV_SQRT_2;
+    }
+
+    double current_speed = input.speed_boost ? this->speed * BOOST_MULTIPLIER : this->speed;
+    double distance = current_speed * delta_seconds;
+    double yaw_cos = std::cos(this->yaw);
+    double yaw_sin = std::sin(this->yaw);
+    this->x += (local_x * yaw_cos + local_z * yaw_sin) * distance;
+    this->z += (local_z * yaw_cos - local_x * yaw_sin) * distance;
 }
 
 void Camera::update(const CameraInput &input, double delta_seconds)
 {
-    double local_x;
-    double local_z;
-    double move_length;
-    double distance;
-    double yaw_cos;
-    double yaw_sin;
-    double current_speed;
-
     if (delta_seconds <= 0.0)
-        return ;
+        return;
     this->update_orientation(input, delta_seconds);
-    local_x = 0.0;
-    local_z = 0.0;
-    if (input.move_forward == true)
-        local_z = local_z + 1.0;
-    if (input.move_backward == true)
-        local_z = local_z - 1.0;
-    if (input.move_right == true)
-        local_x = local_x + 1.0;
-    if (input.move_left == true)
-        local_x = local_x - 1.0;
-    move_length = (local_x * local_x) + (local_z * local_z);
-    if (move_length > 1.0)
-    {
-        local_x = local_x * 0.7071067811865475;
-        local_z = local_z * 0.7071067811865475;
-    }
-    current_speed = this->speed;
-    if (input.speed_boost == true)
-        current_speed = current_speed * 20.0;
-    distance = current_speed * delta_seconds;
-    yaw_cos = std::cos(this->yaw);
-    yaw_sin = std::sin(this->yaw);
-    this->x = this->x + (((local_x * yaw_cos) + (local_z * yaw_sin))
-        * distance);
-    this->z = this->z + (((local_z * yaw_cos) - (local_x * yaw_sin))
-        * distance);
+    this->apply_movement(input, delta_seconds);
 }
