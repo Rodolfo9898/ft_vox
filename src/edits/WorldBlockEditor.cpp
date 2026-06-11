@@ -19,16 +19,16 @@ WorldBlockEditor &WorldBlockEditor::operator=(const WorldBlockEditor &other)
     return (*this);
 }
 
-int32_t WorldBlockEditor::delete_block_at(World &world, int32_t world_x,
-    int32_t world_y, int32_t world_z)
+int32_t WorldBlockEditor::delete_block_at(World &world, int32_t world_x, int32_t world_y,
+                                          int32_t world_z)
 {
     DeleteBlockCommand command(world_x, world_y, world_z);
 
     return (command.execute(world));
 }
 
-int32_t WorldBlockEditor::place_block_at(World &world, int32_t world_x,
-    int32_t world_y, int32_t world_z, uint32_t block_id)
+int32_t WorldBlockEditor::place_block_at(World &world, int32_t world_x, int32_t world_y,
+                                         int32_t world_z, uint32_t block_id)
 {
     PlaceBlockCommand command(world_x, world_y, world_z, block_id);
 
