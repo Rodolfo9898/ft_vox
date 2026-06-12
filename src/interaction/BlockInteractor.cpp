@@ -1,185 +1,162 @@
 #include "../../src/interaction/BlockInteractor.hpp"
 
+const int32_t BlockInteractor::WATER_HOPS_MAX = 7;
+const int32_t BlockInteractor::WATER_FILL_MAX = 150;
+const int32_t BlockInteractor::WATER_BUF = WATER_FILL_MAX + 16;
+
 BlockInteractor::BlockInteractor()
 {
 }
-
 BlockInteractor::BlockInteractor(const BlockInteractor &other)
 {
-    *this = other;
+    (void)other;
 }
-
 BlockInteractor::~BlockInteractor()
 {
 }
-
 BlockInteractor &BlockInteractor::operator=(const BlockInteractor &other)
 {
     (void)other;
-    return (*this);
+    return *this;
 }
 
-static void spread_water(World *world, int32_t sx, int32_t sy, int32_t sz)
+bool BlockInteractor::is_visited(int32_t x, int32_t y, int32_t z, const WaterState &s)
 {
-    static const int32_t HOPS_MAX = 7;
-    static const int32_t FILL_MAX = 150;
-    static const int32_t BUF     = FILL_MAX + 16;
+    for (int32_t i = 0; i < s.v_count; ++i)
+        if (s.vx[i] == x && s.vy[i] == y && s.vz[i] == z)
+            return true;
+    return false;
+}
 
-    struct Pos { int32_t x, y, z, hd; };
-    Pos     q[BUF];
-    int32_t vx[BUF], vy[BUF], vz[BUF];
-    int32_t q_front = 0, q_back = 0, v_count = 0, fills = 0;
-
-    const int32_t DX[4] = {1, -1, 0, 0};
-    const int32_t DZ[4] = {0, 0, 1, -1};
-
-    auto visited = [&](int32_t x, int32_t y, int32_t z) -> bool {
-        for (int32_t i = 0; i < v_count; ++i)
-            if (vx[i] == x && vy[i] == y && vz[i] == z) return true;
-        return false;
-    };
-    auto mark = [&](int32_t x, int32_t y, int32_t z) {
-        if (v_count < BUF - 1) { vx[v_count] = x; vy[v_count] = y; vz[v_count] = z; ++v_count; }
-    };
-    auto enqueue = [&](int32_t x, int32_t y, int32_t z, int32_t hd) {
-        if (q_back < BUF - 1) q[q_back++] = {x, y, z, hd};
-    };
-
-    mark(sx, sy, sz);
-    enqueue(sx, sy, sz, 0);
-
-    while (q_front < q_back && fills < FILL_MAX)
+void BlockInteractor::mark(int32_t x, int32_t y, int32_t z, WaterState &s)
+{
+    if (s.v_count < WATER_BUF - 1)
     {
-        Pos cur = q[q_front++];
+        s.vx[s.v_count] = x;
+        s.vy[s.v_count] = y;
+        s.vz[s.v_count] = z;
+        ++s.v_count;
+    }
+}
 
-        if (!world->solid_block_at(cur.x, cur.y - 1, cur.z))
+void BlockInteractor::enqueue(int32_t x, int32_t y, int32_t z, int32_t hd, WaterState &s)
+{
+    if (s.q_back < WATER_BUF - 1)
+    {
+        s.qx[s.q_back] = x;
+        s.qy[s.q_back] = y;
+        s.qz[s.q_back] = z;
+        s.qhd[s.q_back] = hd;
+        ++s.q_back;
+    }
+}
+
+void BlockInteractor::try_spread_down(World *world, int32_t x, int32_t y, int32_t z, WaterState &s)
+{
+    if (world->solid_block_at(x, y - 1, z))
+        return;
+    uint32_t b = 0;
+    world->block_id_at(x, y - 1, z, &b);
+    if (b != GAME_VOXEL_AIR_BLOCK || is_visited(x, y - 1, z, s))
+        return;
+    if (world->place_block_at(x, y - 1, z, TERRAIN_GENERATOR_WATER_BLOCK) == FT_ERR_SUCCESS)
+    {
+        ++s.fills;
+        mark(x, y - 1, z, s);
+        enqueue(x, y - 1, z, 0, s);
+    }
+}
+
+void BlockInteractor::try_spread_horizontal(World *world, int32_t x, int32_t y, int32_t z, int32_t hd, WaterState &s)
+{
+    static const int32_t DX[4] = {1, -1, 0, 0};
+    static const int32_t DZ[4] = {0, 0, 1, -1};
+    for (int d = 0; d < 4; ++d)
+    {
+        int32_t nx = x + DX[d];
+        int32_t nz = z + DZ[d];
+        if (is_visited(nx, y, nz, s))
+            continue;
+        uint32_t b = 0;
+        world->block_id_at(nx, y, nz, &b);
+        if (b == GAME_VOXEL_AIR_BLOCK)
         {
-            uint32_t b = 0;
-            world->block_id_at(cur.x, cur.y - 1, cur.z, &b);
-            if (b == GAME_VOXEL_AIR_BLOCK && !visited(cur.x, cur.y - 1, cur.z))
+            if (world->place_block_at(nx, y, nz, TERRAIN_GENERATOR_WATER_BLOCK) == FT_ERR_SUCCESS)
             {
-                if (world->place_block_at(cur.x, cur.y - 1, cur.z,
-                        TERRAIN_GENERATOR_WATER_BLOCK) == FT_ERR_SUCCESS)
-                {
-                    ++fills;
-                    mark(cur.x, cur.y - 1, cur.z);
-                    enqueue(cur.x, cur.y - 1, cur.z, 0);
-                }
+                ++s.fills;
+                mark(nx, y, nz, s);
+                enqueue(nx, y, nz, hd + 1, s);
             }
         }
-
-        if (cur.hd < HOPS_MAX)
-        {
-            for (int d = 0; d < 4; ++d)
-            {
-                int32_t nx = cur.x + DX[d];
-                int32_t nz = cur.z + DZ[d];
-                if (visited(nx, cur.y, nz)) continue;
-                uint32_t b = 0;
-                world->block_id_at(nx, cur.y, nz, &b);
-                if (b == GAME_VOXEL_AIR_BLOCK)
-                {
-                    if (world->place_block_at(nx, cur.y, nz,
-                            TERRAIN_GENERATOR_WATER_BLOCK) == FT_ERR_SUCCESS)
-                    {
-                        ++fills;
-                        mark(nx, cur.y, nz);
-                        enqueue(nx, cur.y, nz, cur.hd + 1);
-                    }
-                }
-            }
-        }
     }
 }
 
-int32_t BlockInteractor::try_delete_target_block(World *world,
-    const Camera &camera)
+void BlockInteractor::spread_water(World *world, int32_t sx, int32_t sy, int32_t sz)
 {
-    double direction_x;
-    double direction_y;
-    double direction_z;
-    int32_t block_x;
-    int32_t block_y;
-    int32_t block_z;
-    int32_t error_code;
-
-    if (world == nullptr)
-        return (FT_ERR_INVALID_ARGUMENT);
-    PlayerController::camera_forward(camera, &direction_x, &direction_y, &direction_z);
-    error_code = world->raycast_solid(camera.x, camera.y,
-        camera.z, direction_x, direction_y, direction_z, 10.0, &block_x,
-        &block_y, &block_z);
-    if (error_code != FT_ERR_SUCCESS)
-        return (FT_ERR_SUCCESS);
+    WaterState s = {};
+    mark(sx, sy, sz, s);
+    enqueue(sx, sy, sz, 0, s);
+    while (s.q_front < s.q_back && s.fills < WATER_FILL_MAX)
     {
-        DeleteBlockCommand cmd(block_x, block_y, block_z);
-        return (cmd.execute(*world));
+        int32_t x = s.qx[s.q_front], y = s.qy[s.q_front];
+        int32_t z = s.qz[s.q_front], hd = s.qhd[s.q_front];
+        ++s.q_front;
+        try_spread_down(world, x, y, z, s);
+        if (hd < WATER_HOPS_MAX)
+            try_spread_horizontal(world, x, y, z, hd, s);
     }
 }
 
-int32_t BlockInteractor::try_pick_target_block(const World *world,
-    const Camera &camera, uint32_t *selected_block_id)
+static void get_camera_direction(const Camera &camera, double &dx, double &dy, double &dz)
 {
-    double direction_x;
-    double direction_y;
-    double direction_z;
-    int32_t hit_x;
-    int32_t hit_y;
-    int32_t hit_z;
-    int32_t place_x;
-    int32_t place_y;
-    int32_t place_z;
-    uint32_t hit_block_id;
-    int32_t error_code;
-
-    if (world == nullptr || selected_block_id == nullptr)
-        return (FT_ERR_INVALID_ARGUMENT);
-    PlayerController::camera_forward(camera, &direction_x, &direction_y, &direction_z);
-    error_code = world->raycast_edit_target(camera.x, camera.y,
-        camera.z, direction_x, direction_y, direction_z, 10.0, &hit_x, &hit_y,
-        &hit_z, &place_x, &place_y, &place_z, &hit_block_id);
-    if (error_code != FT_ERR_SUCCESS)
-        return (FT_ERR_SUCCESS);
-    if (hit_block_id != GAME_VOXEL_AIR_BLOCK
-        && terrain_block_is_known(hit_block_id) == FT_TRUE)
-        *selected_block_id = hit_block_id;
-    return (FT_ERR_SUCCESS);
+    PlayerController::camera_forward(camera, &dx, &dy, &dz);
 }
 
-int32_t BlockInteractor::try_place_selected_block(World *world,
-    const Camera &camera, uint32_t selected_block_id)
+int32_t BlockInteractor::try_delete_target_block(World *world, const Camera &camera)
 {
-    double direction_x;
-    double direction_y;
-    double direction_z;
-    int32_t hit_x;
-    int32_t hit_y;
-    int32_t hit_z;
-    int32_t place_x;
-    int32_t place_y;
-    int32_t place_z;
-    uint32_t hit_block_id;
-    int32_t error_code;
+    if (!world)
+        return FT_ERR_INVALID_ARGUMENT;
+    double dx, dy, dz;
+    get_camera_direction(camera, dx, dy, dz);
+    int32_t bx, by, bz;
+    if (world->raycast_solid(camera.x, camera.y, camera.z, dx, dy, dz, 10.0, &bx, &by, &bz) != FT_ERR_SUCCESS)
+        return FT_ERR_SUCCESS;
+    DeleteBlockCommand cmd(bx, by, bz);
+    return cmd.execute(*world);
+}
 
-    if (world == nullptr || selected_block_id == GAME_VOXEL_AIR_BLOCK)
-        return (FT_ERR_INVALID_ARGUMENT);
-    PlayerController::camera_forward(camera, &direction_x, &direction_y, &direction_z);
-    error_code = world->raycast_edit_target(camera.x, camera.y,
-        camera.z, direction_x, direction_y, direction_z, 10.0, &hit_x, &hit_y,
-        &hit_z, &place_x, &place_y, &place_z, &hit_block_id);
-    if (error_code != FT_ERR_SUCCESS)
-        return (FT_ERR_SUCCESS);
-    if (PlayerController::block_overlaps_player(camera, place_x, place_y, place_z)
-        == true)
-        return (FT_ERR_SUCCESS);
-    {
-        PlaceBlockCommand cmd(place_x, place_y, place_z, selected_block_id);
-        error_code = cmd.execute(*world);
-    }
-    if (error_code == FT_ERR_ALREADY_EXISTS || error_code == FT_ERR_NOT_FOUND)
-        return (FT_ERR_SUCCESS);
-    if (error_code == FT_ERR_SUCCESS
-        && selected_block_id == TERRAIN_GENERATOR_WATER_BLOCK)
-        spread_water(world, place_x, place_y, place_z);
-    return (error_code);
+int32_t BlockInteractor::try_pick_target_block(const World *world, const Camera &camera, uint32_t *selected_block_id)
+{
+    if (!world || !selected_block_id)
+        return FT_ERR_INVALID_ARGUMENT;
+    double dx, dy, dz;
+    get_camera_direction(camera, dx, dy, dz);
+    int32_t hx, hy, hz, px, py, pz;
+    uint32_t hit_id;
+    if (world->raycast_edit_target(camera.x, camera.y, camera.z, dx, dy, dz, 10.0, &hx, &hy, &hz, &px, &py, &pz, &hit_id) != FT_ERR_SUCCESS)
+        return FT_ERR_SUCCESS;
+    if (hit_id != GAME_VOXEL_AIR_BLOCK && terrain_block_is_known(hit_id) == FT_TRUE)
+        *selected_block_id = hit_id;
+    return FT_ERR_SUCCESS;
+}
+
+int32_t BlockInteractor::try_place_selected_block(World *world, const Camera &camera, uint32_t selected_block_id)
+{
+    if (!world || selected_block_id == GAME_VOXEL_AIR_BLOCK)
+        return FT_ERR_INVALID_ARGUMENT;
+    double dx, dy, dz;
+    get_camera_direction(camera, dx, dy, dz);
+    int32_t hx, hy, hz, px, py, pz;
+    uint32_t hit_id;
+    if (world->raycast_edit_target(camera.x, camera.y, camera.z, dx, dy, dz, 10.0, &hx, &hy, &hz, &px, &py, &pz, &hit_id) != FT_ERR_SUCCESS)
+        return FT_ERR_SUCCESS;
+    if (PlayerController::block_overlaps_player(camera, px, py, pz))
+        return FT_ERR_SUCCESS;
+    PlaceBlockCommand cmd(px, py, pz, selected_block_id);
+    int32_t err = cmd.execute(*world);
+    if (err == FT_ERR_ALREADY_EXISTS || err == FT_ERR_NOT_FOUND)
+        return FT_ERR_SUCCESS;
+    if (err == FT_ERR_SUCCESS && selected_block_id == TERRAIN_GENERATOR_WATER_BLOCK)
+        spread_water(world, px, py, pz);
+    return err;
 }
