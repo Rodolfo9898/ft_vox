@@ -3,230 +3,163 @@
 PerspectiveTriangleRasterizer::PerspectiveTriangleRasterizer()
 {
 }
-
 PerspectiveTriangleRasterizer::PerspectiveTriangleRasterizer(
     const PerspectiveTriangleRasterizer &other)
     : TriangleRasterizer(other)
 {
-    *this = other;
+    (void)other;
 }
-
 PerspectiveTriangleRasterizer::~PerspectiveTriangleRasterizer()
 {
 }
-
-PerspectiveTriangleRasterizer &PerspectiveTriangleRasterizer::operator=(
-    const PerspectiveTriangleRasterizer &other)
+PerspectiveTriangleRasterizer &
+PerspectiveTriangleRasterizer::operator=(const PerspectiveTriangleRasterizer &other)
 {
     (void)other;
-    return (*this);
+    return *this;
 }
 
-double PerspectiveTriangleRasterizer::edge(const ScreenVertex &a,
-    const ScreenVertex &b, double x, double y)
+double PerspectiveTriangleRasterizer::edge(const ScreenVertex &a, const ScreenVertex &b, double x,
+                                           double y)
 {
-    return (((x - a.x) * (b.y - a.y)) - ((y - a.y) * (b.x - a.x)));
+    return ((x - a.x) * (b.y - a.y)) - ((y - a.y) * (b.x - a.x));
 }
 
-double PerspectiveTriangleRasterizer::edge_step_x(const ScreenVertex &a,
-    const ScreenVertex &b)
+double PerspectiveTriangleRasterizer::edge_step_x(const ScreenVertex &a, const ScreenVertex &b)
 {
-    return (b.y - a.y);
+    return b.y - a.y;
 }
 
-double PerspectiveTriangleRasterizer::edge_step_y(const ScreenVertex &a,
-    const ScreenVertex &b)
+double PerspectiveTriangleRasterizer::edge_step_y(const ScreenVertex &a, const ScreenVertex &b)
 {
-    return (a.x - b.x);
+    return a.x - b.x;
 }
 
-void PerspectiveTriangleRasterizer::draw_triangle(
-    ft_render_framebuffer &framebuffer, std::vector<double> &depth_buffer,
-    const ScreenVertex vertices[3], uint32_t block_id, uint8_t face) const
+bool PerspectiveTriangleRasterizer::compute_bounds(const ScreenVertex vertices[3],
+                                                   const ft_render_framebuffer &fb, int32_t &sx,
+                                                   int32_t &ex, int32_t &sy, int32_t &ey)
 {
-    double min_x;
-    double max_x;
-    double min_y;
-    double max_y;
-    double area;
-    int32_t start_x;
-    int32_t end_x;
-    int32_t start_y;
-    int32_t end_y;
-    int32_t y;
-    double edge0_row;
-    double edge1_row;
-    double edge2_row;
-    double edge0;
-    double edge1;
-    double edge2;
-    double step_x0;
-    double step_y0;
-    double step_x1;
-    double step_y1;
-    double step_x2;
-    double step_y2;
-    double inv_area;
-    double inv_depth_values[3];
-    double texture_u_over_depth_values[3];
-    double texture_v_over_depth_values[3];
-    double inv_depth_row;
-    double texture_u_over_depth_row;
-    double texture_v_over_depth_row;
-    double inv_depth_step_x;
-    double inv_depth_step_y;
-    double texture_u_over_depth_step_x;
-    double texture_u_over_depth_step_y;
-    double texture_v_over_depth_step_x;
-    double texture_v_over_depth_step_y;
-    double depth;
-    double inv_depth;
-    double texture_u_over_depth;
-    double texture_v_over_depth;
-    double texture_u;
-    double texture_v;
-    size_t row_start_index;
-    size_t row_end_index;
-    size_t pixel_index;
-    size_t framebuffer_width;
-    uint32_t *framebuffer_row;
-    double *depth_row;
-    TriangleTexture texture;
+    double min_x = std::min(vertices[0].x, std::min(vertices[1].x, vertices[2].x));
+    double max_x = std::max(vertices[0].x, std::max(vertices[1].x, vertices[2].x));
+    double min_y = std::min(vertices[0].y, std::min(vertices[1].y, vertices[2].y));
+    double max_y = std::max(vertices[0].y, std::max(vertices[1].y, vertices[2].y));
+    sx = std::max(0, static_cast<int32_t>(std::floor(min_x)));
+    ex = std::min(fb.width - 1, static_cast<int32_t>(std::ceil(max_x)));
+    sy = std::max(0, static_cast<int32_t>(std::floor(min_y)));
+    ey = std::min(fb.height - 1, static_cast<int32_t>(std::ceil(max_y)));
+    return sx <= ex && sy <= ey;
+}
 
-    area = edge(vertices[0], vertices[1], vertices[2].x, vertices[2].y);
-    if (std::fabs(area) < 0.000001)
-        return ;
-    inv_area = 1.0 / area;
-    min_x = std::min(vertices[0].x, std::min(vertices[1].x, vertices[2].x));
-    max_x = std::max(vertices[0].x, std::max(vertices[1].x, vertices[2].x));
-    min_y = std::min(vertices[0].y, std::min(vertices[1].y, vertices[2].y));
-    max_y = std::max(vertices[0].y, std::max(vertices[1].y, vertices[2].y));
-    start_x = static_cast<int32_t>(std::floor(min_x));
-    end_x = static_cast<int32_t>(std::ceil(max_x));
-    start_y = static_cast<int32_t>(std::floor(min_y));
-    end_y = static_cast<int32_t>(std::ceil(max_y));
-    if (start_x < 0)
-        start_x = 0;
-    if (start_y < 0)
-        start_y = 0;
-    if (end_x >= framebuffer.width)
-        end_x = framebuffer.width - 1;
-    if (end_y >= framebuffer.height)
-        end_y = framebuffer.height - 1;
-    if (start_x > end_x || start_y > end_y)
-        return ;
-    step_x0 = edge_step_x(vertices[1], vertices[2]);
-    step_y0 = edge_step_y(vertices[1], vertices[2]);
-    step_x1 = edge_step_x(vertices[2], vertices[0]);
-    step_y1 = edge_step_y(vertices[2], vertices[0]);
-    step_x2 = edge_step_x(vertices[0], vertices[1]);
-    step_y2 = edge_step_y(vertices[0], vertices[1]);
-    edge0_row = edge(vertices[1], vertices[2],
-        static_cast<double>(start_x) + 0.5,
-        static_cast<double>(start_y) + 0.5);
-    edge1_row = edge(vertices[2], vertices[0],
-        static_cast<double>(start_x) + 0.5,
-        static_cast<double>(start_y) + 0.5);
-    edge2_row = edge(vertices[0], vertices[1],
-        static_cast<double>(start_x) + 0.5,
-        static_cast<double>(start_y) + 0.5);
-    inv_depth_values[0] = 1.0 / vertices[0].depth;
-    inv_depth_values[1] = 1.0 / vertices[1].depth;
-    inv_depth_values[2] = 1.0 / vertices[2].depth;
-    texture_u_over_depth_values[0] = vertices[0].texture_u
-        * inv_depth_values[0];
-    texture_u_over_depth_values[1] = vertices[1].texture_u
-        * inv_depth_values[1];
-    texture_u_over_depth_values[2] = vertices[2].texture_u
-        * inv_depth_values[2];
-    texture_v_over_depth_values[0] = vertices[0].texture_v
-        * inv_depth_values[0];
-    texture_v_over_depth_values[1] = vertices[1].texture_v
-        * inv_depth_values[1];
-    texture_v_over_depth_values[2] = vertices[2].texture_v
-        * inv_depth_values[2];
-    inv_depth_step_x = ((inv_depth_values[0] * step_x0)
-        + (inv_depth_values[1] * step_x1)
-        + (inv_depth_values[2] * step_x2)) * inv_area;
-    inv_depth_step_y = ((inv_depth_values[0] * step_y0)
-        + (inv_depth_values[1] * step_y1)
-        + (inv_depth_values[2] * step_y2)) * inv_area;
-    texture_u_over_depth_step_x = ((texture_u_over_depth_values[0] * step_x0)
-        + (texture_u_over_depth_values[1] * step_x1)
-        + (texture_u_over_depth_values[2] * step_x2)) * inv_area;
-    texture_u_over_depth_step_y = ((texture_u_over_depth_values[0] * step_y0)
-        + (texture_u_over_depth_values[1] * step_y1)
-        + (texture_u_over_depth_values[2] * step_y2)) * inv_area;
-    texture_v_over_depth_step_x = ((texture_v_over_depth_values[0] * step_x0)
-        + (texture_v_over_depth_values[1] * step_x1)
-        + (texture_v_over_depth_values[2] * step_x2)) * inv_area;
-    texture_v_over_depth_step_y = ((texture_v_over_depth_values[0] * step_y0)
-        + (texture_v_over_depth_values[1] * step_y1)
-        + (texture_v_over_depth_values[2] * step_y2)) * inv_area;
-    inv_depth_row = ((inv_depth_values[0] * edge0_row)
-        + (inv_depth_values[1] * edge1_row)
-        + (inv_depth_values[2] * edge2_row)) * inv_area;
-    texture_u_over_depth_row = ((texture_u_over_depth_values[0] * edge0_row)
-        + (texture_u_over_depth_values[1] * edge1_row)
-        + (texture_u_over_depth_values[2] * edge2_row)) * inv_area;
-    texture_v_over_depth_row = ((texture_v_over_depth_values[0] * edge0_row)
-        + (texture_v_over_depth_values[1] * edge1_row)
-        + (texture_v_over_depth_values[2] * edge2_row)) * inv_area;
-    texture = TextureAtlas::prepare_triangle_texture(block_id, face);
-    framebuffer_width = static_cast<size_t>(framebuffer.width);
-    row_start_index = static_cast<size_t>(start_y) * framebuffer_width
-        + static_cast<size_t>(start_x);
-    y = start_y;
-    while (y <= end_y)
+void PerspectiveTriangleRasterizer::compute_steps(Interpolants &it, double inv_area)
+{
+    it.step_x_id = (it.inv_depth[0]*it.sx[0] + it.inv_depth[1]*it.sx[1] + it.inv_depth[2]*it.sx[2]) * inv_area;
+    it.step_y_id = (it.inv_depth[0]*it.sy[0] + it.inv_depth[1]*it.sy[1] + it.inv_depth[2]*it.sy[2]) * inv_area;
+    it.step_x_u  = (it.u_over_d[0]*it.sx[0]  + it.u_over_d[1]*it.sx[1]  + it.u_over_d[2]*it.sx[2])  * inv_area;
+    it.step_y_u  = (it.u_over_d[0]*it.sy[0]  + it.u_over_d[1]*it.sy[1]  + it.u_over_d[2]*it.sy[2])  * inv_area;
+    it.step_x_v  = (it.v_over_d[0]*it.sx[0]  + it.v_over_d[1]*it.sx[1]  + it.v_over_d[2]*it.sx[2])  * inv_area;
+    it.step_y_v  = (it.v_over_d[0]*it.sy[0]  + it.v_over_d[1]*it.sy[1]  + it.v_over_d[2]*it.sy[2])  * inv_area;
+}
+
+void PerspectiveTriangleRasterizer::compute_row_starts(const ScreenVertex vertices[3],
+                                                        Interpolants &it, double inv_area,
+                                                        int32_t start_x, int32_t start_y)
+{
+    double e0 = edge(vertices[1], vertices[2], start_x + 0.5, start_y + 0.5);
+    double e1 = edge(vertices[2], vertices[0], start_x + 0.5, start_y + 0.5);
+    double e2 = edge(vertices[0], vertices[1], start_x + 0.5, start_y + 0.5);
+    it.row_id = (it.inv_depth[0]*e0 + it.inv_depth[1]*e1 + it.inv_depth[2]*e2) * inv_area;
+    it.row_u  = (it.u_over_d[0]*e0  + it.u_over_d[1]*e1  + it.u_over_d[2]*e2)  * inv_area;
+    it.row_v  = (it.v_over_d[0]*e0  + it.v_over_d[1]*e1  + it.v_over_d[2]*e2)  * inv_area;
+}
+
+void PerspectiveTriangleRasterizer::compute_interpolants(const ScreenVertex vertices[3],
+                                                         double inv_area, int32_t start_x,
+                                                         int32_t start_y, Interpolants &it)
+{
+    for (int i = 0; i < 3; ++i)
     {
-        edge0 = edge0_row;
-        edge1 = edge1_row;
-        edge2 = edge2_row;
-        inv_depth = inv_depth_row;
-        texture_u_over_depth = texture_u_over_depth_row;
-        texture_v_over_depth = texture_v_over_depth_row;
-        pixel_index = row_start_index;
-        framebuffer_row = framebuffer.pixels + row_start_index;
-        depth_row = depth_buffer.data() + row_start_index;
-        row_end_index = row_start_index
-            + static_cast<size_t>(end_x - start_x);
-        while (pixel_index <= row_end_index)
-        {
-            if ((edge0 >= 0.0 && edge1 >= 0.0 && edge2 >= 0.0)
-                || (edge0 <= 0.0 && edge1 <= 0.0 && edge2 <= 0.0))
-            {
-                if (inv_depth > 0.0)
-                {
-                    depth = 1.0 / inv_depth;
-                    if (depth > 0.0 && depth < *depth_row)
-                    {
-                        texture_u = texture_u_over_depth / inv_depth;
-                        texture_v = texture_v_over_depth / inv_depth;
-                        *depth_row = depth;
-                        *framebuffer_row =
-                            RendererColor::shade_color(
-                                TextureAtlas::sample_triangle_texture(texture,
-                                    texture_u, texture_v), texture.shade);
-                    }
-                }
-            }
-            edge0 += step_x0;
-            edge1 += step_x1;
-            edge2 += step_x2;
-            inv_depth += inv_depth_step_x;
-            texture_u_over_depth += texture_u_over_depth_step_x;
-            texture_v_over_depth += texture_v_over_depth_step_x;
-            framebuffer_row += 1;
-            depth_row += 1;
-            pixel_index = pixel_index + 1U;
-        }
-        edge0_row += step_y0;
-        edge1_row += step_y1;
-        edge2_row += step_y2;
-        inv_depth_row += inv_depth_step_y;
-        texture_u_over_depth_row += texture_u_over_depth_step_y;
-        texture_v_over_depth_row += texture_v_over_depth_step_y;
-        row_start_index += framebuffer_width;
-        y = y + 1;
+        it.inv_depth[i] = 1.0 / vertices[i].depth;
+        it.u_over_d[i] = vertices[i].texture_u * it.inv_depth[i];
+        it.v_over_d[i] = vertices[i].texture_v * it.inv_depth[i];
     }
+    it.sx[0] = edge_step_x(vertices[1], vertices[2]);
+    it.sx[1] = edge_step_x(vertices[2], vertices[0]);
+    it.sx[2] = edge_step_x(vertices[0], vertices[1]);
+    it.sy[0] = edge_step_y(vertices[1], vertices[2]);
+    it.sy[1] = edge_step_y(vertices[2], vertices[0]);
+    it.sy[2] = edge_step_y(vertices[0], vertices[1]);
+    compute_steps(it, inv_area);
+    compute_row_starts(vertices, it, inv_area, start_x, start_y);
+}
+
+void PerspectiveTriangleRasterizer::write_pixel(uint32_t *pixel, double &depth_entry,
+                                                double inv_depth, double u, double v,
+                                                const TriangleTexture &texture)
+{
+    if (inv_depth <= 0.0)
+        return;
+    double d = 1.0 / inv_depth;
+    if (d <= 0.0 || d >= depth_entry)
+        return;
+    depth_entry = d;
+    *pixel = RendererColor::shade_color(
+        TextureAtlas::sample_triangle_texture(texture, u / inv_depth, v / inv_depth),
+        texture.shade);
+}
+
+void PerspectiveTriangleRasterizer::rasterize(ft_render_framebuffer &framebuffer,
+                                              std::vector<double> &depth_buffer,
+                                              const ScreenVertex vertices[3], int32_t start_x,
+                                              int32_t end_x, int32_t start_y, int32_t end_y,
+                                              const Interpolants &it,
+                                              const TriangleTexture &texture) const
+{
+    size_t fw = static_cast<size_t>(framebuffer.width);
+    size_t row_base = static_cast<size_t>(start_y) * fw + static_cast<size_t>(start_x);
+    double e0r = edge(vertices[1], vertices[2], start_x + 0.5, start_y + 0.5);
+    double e1r = edge(vertices[2], vertices[0], start_x + 0.5, start_y + 0.5);
+    double e2r = edge(vertices[0], vertices[1], start_x + 0.5, start_y + 0.5);
+    double id_r = it.row_id, u_r = it.row_u, v_r = it.row_v;
+    for (int32_t y = start_y; y <= end_y; ++y)
+    {
+        double e0 = e0r, e1 = e1r, e2 = e2r, id = id_r, u = u_r, v = v_r;
+        size_t pi = row_base;
+        for (int32_t x = start_x; x <= end_x; ++x, ++pi)
+        {
+            bool inside = (e0 >= 0.0 && e1 >= 0.0 && e2 >= 0.0) ||
+                          (e0 <= 0.0 && e1 <= 0.0 && e2 <= 0.0);
+            if (inside)
+                write_pixel(&framebuffer.pixels[pi], depth_buffer[pi], id, u, v, texture);
+            e0 += it.sx[0];
+            e1 += it.sx[1];
+            e2 += it.sx[2];
+            id += it.step_x_id;
+            u += it.step_x_u;
+            v += it.step_x_v;
+        }
+        e0r += it.sy[0];
+        e1r += it.sy[1];
+        e2r += it.sy[2];
+        id_r += it.step_y_id;
+        u_r += it.step_y_u;
+        v_r += it.step_y_v;
+        row_base += fw;
+    }
+}
+
+void PerspectiveTriangleRasterizer::draw_triangle(ft_render_framebuffer &framebuffer,
+                                                  std::vector<double> &depth_buffer,
+                                                  const ScreenVertex vertices[3], uint32_t block_id,
+                                                  uint8_t face) const
+{
+    double area = edge(vertices[0], vertices[1], vertices[2].x, vertices[2].y);
+    if (std::fabs(area) < 0.000001)
+        return;
+    int32_t sx, ex, sy, ey;
+    if (!compute_bounds(vertices, framebuffer, sx, ex, sy, ey))
+        return;
+    Interpolants it;
+    compute_interpolants(vertices, 1.0 / area, sx, sy, it);
+    TriangleTexture texture = TextureAtlas::prepare_triangle_texture(block_id, face);
+    rasterize(framebuffer, depth_buffer, vertices, sx, ex, sy, ey, it, texture);
 }
