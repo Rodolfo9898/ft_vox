@@ -1,17 +1,25 @@
 #include "../../src/menu/CreditsScene.hpp"
 
-CreditsScene::CreditsScene()
-    : MenuScene() {}
-CreditsScene::CreditsScene(const CreditsScene &other)
-    : MenuScene() { (void)other; }
-CreditsScene::~CreditsScene() {}
-CreditsScene &CreditsScene::operator=(const CreditsScene &other) { (void)other; return *this; }
-
+CreditsScene::CreditsScene() : MenuScene()
+{
+}
+CreditsScene::CreditsScene(const CreditsScene &other) : MenuScene()
+{
+    (void)other;
+}
+CreditsScene::~CreditsScene()
+{
+}
+CreditsScene &CreditsScene::operator=(const CreditsScene &other)
+{
+    (void)other;
+    return *this;
+}
 
 void CreditsScene::update(const MenuCanvas::MenuInput &in, MenuController &ctl)
 {
-    if (in.key_escape || ctl.canvas().was_clicked(
-            (MenuCanvas::W - 200) / 2, MenuCanvas::H - 70, 200, 36, in))
+    if (in.key_escape ||
+        ctl.canvas().was_clicked((MenuCanvas::W - 200) / 2, MenuCanvas::H - 70, 200, 36, in))
         ctl.request_back();
 }
 

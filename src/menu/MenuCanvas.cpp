@@ -1,21 +1,19 @@
 #include "../../src/menu/MenuCanvas.hpp"
-#include "../../src/font/FontRenderer.hpp"
 const int MenuCanvas::W = 960;
 const int MenuCanvas::H = 540;
 
-const uint32_t MenuCanvas::Colors::BG       = 0x0D0D1AU;
-const uint32_t MenuCanvas::Colors::PANEL     = 0x151525U;
-const uint32_t MenuCanvas::Colors::BTN_N     = 0x1C2E50U;
-const uint32_t MenuCanvas::Colors::BTN_H     = 0x2A507AU;
-const uint32_t MenuCanvas::Colors::BTN_A     = 0x3A78B0U;
-const uint32_t MenuCanvas::Colors::TEXT      = 0xEEEEFFU;
-const uint32_t MenuCanvas::Colors::TEXT_DIM  = 0x8888AAU;
-const uint32_t MenuCanvas::Colors::TITLE     = 0xFFCC00U;
-const uint32_t MenuCanvas::Colors::ACCENT    = 0x00B4D8U;
-const uint32_t MenuCanvas::Colors::GREEN     = 0x4CAF50U;
-const uint32_t MenuCanvas::Colors::SLIDER    = 0x5DA3FAU;
-const uint32_t MenuCanvas::Colors::WHITE     = 0xFFFFFFU;
-
+const uint32_t MenuCanvas::Colors::BG = 0x0D0D1AU;
+const uint32_t MenuCanvas::Colors::PANEL = 0x151525U;
+const uint32_t MenuCanvas::Colors::BTN_N = 0x1C2E50U;
+const uint32_t MenuCanvas::Colors::BTN_H = 0x2A507AU;
+const uint32_t MenuCanvas::Colors::BTN_A = 0x3A78B0U;
+const uint32_t MenuCanvas::Colors::TEXT = 0xEEEEFFU;
+const uint32_t MenuCanvas::Colors::TEXT_DIM = 0x8888AAU;
+const uint32_t MenuCanvas::Colors::TITLE = 0xFFCC00U;
+const uint32_t MenuCanvas::Colors::ACCENT = 0x00B4D8U;
+const uint32_t MenuCanvas::Colors::GREEN = 0x4CAF50U;
+const uint32_t MenuCanvas::Colors::SLIDER = 0x5DA3FAU;
+const uint32_t MenuCanvas::Colors::WHITE = 0xFFFFFFU;
 
 MenuCanvas::MenuCanvas(const MenuCanvas &other)
 {
@@ -37,11 +35,9 @@ MenuCanvas &MenuCanvas::operator=(const MenuCanvas &other)
     return (*this);
 }
 
-
-
 MenuCanvas::MenuCanvas() : pixels_(static_cast<size_t>(W * H), MenuCanvas::Colors::BG)
 {
-    fb_.width  = W;
+    fb_.width = W;
     fb_.height = H;
     fb_.pixels = pixels_.data();
 }
@@ -73,15 +69,16 @@ void MenuCanvas::fill_rect(int x, int y, int w, int h, uint32_t color)
 
 void MenuCanvas::draw_border(int x, int y, int w, int h, uint32_t color, int thickness)
 {
-    fill_rect(x,                 y,                 w,         thickness, color);
-    fill_rect(x,                 y + h - thickness, w,         thickness, color);
-    fill_rect(x,                 y,                 thickness, h,         color);
-    fill_rect(x + w - thickness, y,                 thickness, h,         color);
+    fill_rect(x, y, w, thickness, color);
+    fill_rect(x, y + h - thickness, w, thickness, color);
+    fill_rect(x, y, thickness, h, color);
+    fill_rect(x + w - thickness, y, thickness, h, color);
 }
 
 void MenuCanvas::draw_text(int x, int y, const char *text, int /*scale*/, uint32_t color)
 {
-    if (!text) return;
+    if (!text)
+        return;
     FontRenderer &fr = FontRenderer::instance();
     if (fr.is_loaded())
         fr.draw_text(pixels_.data(), W, H, x, y, text, color);
@@ -89,7 +86,8 @@ void MenuCanvas::draw_text(int x, int y, const char *text, int /*scale*/, uint32
 
 void MenuCanvas::draw_text_centered(int cx, int y, const char *text, int /*scale*/, uint32_t color)
 {
-    if (!text) return;
+    if (!text)
+        return;
     FontRenderer &fr = FontRenderer::instance();
     if (fr.is_loaded())
         fr.draw_text_centered(pixels_.data(), W, H, cx, y, text, color);
@@ -97,8 +95,7 @@ void MenuCanvas::draw_text_centered(int cx, int y, const char *text, int /*scale
 
 bool MenuCanvas::is_hovered(int x, int y, int w, int h, const MenuInput &in) const
 {
-    return in.mouse_x >= x && in.mouse_x < x + w
-        && in.mouse_y >= y && in.mouse_y < y + h;
+    return in.mouse_x >= x && in.mouse_x < x + w && in.mouse_y >= y && in.mouse_y < y + h;
 }
 
 bool MenuCanvas::was_clicked(int x, int y, int w, int h, const MenuInput &in) const
@@ -106,25 +103,24 @@ bool MenuCanvas::was_clicked(int x, int y, int w, int h, const MenuInput &in) co
     return in.mouse_clicked && is_hovered(x, y, w, h, in);
 }
 
-bool MenuCanvas::button(int x, int y, int w, int h,
-    const char *label, int scale,
-    const MenuInput &in, bool selected)
+bool MenuCanvas::button(int x, int y, int w, int h, const char *label, int scale,
+                        const MenuInput &in, bool selected)
 {
-    bool hov  = is_hovered(x, y, w, h, in);
+    bool hov = is_hovered(x, y, w, h, in);
     uint32_t bg = selected ? MenuCanvas::Colors::BTN_A : (hov ? MenuCanvas::Colors::BTN_H : MenuCanvas::Colors::BTN_N);
     fill_rect(x, y, w, h, bg);
     draw_border(x, y, w, h, hov ? MenuCanvas::Colors::ACCENT : MenuCanvas::Colors::TEXT_DIM);
     int tw = 0;
-    for (const char *p = label; *p; ++p) tw += 4 * scale;
+    for (const char *p = label; *p; ++p)
+        tw += 4 * scale;
     int tx = x + (w - tw) / 2;
     int ty = y + (h - 5 * scale) / 2;
     draw_text(tx, ty, label, scale, MenuCanvas::Colors::TEXT);
     return was_clicked(x, y, w, h, in);
 }
 
-bool MenuCanvas::checkbox(int x, int y, bool checked,
-    const char *label, int scale,
-    const MenuInput &in)
+bool MenuCanvas::checkbox(int x, int y, bool checked, const char *label, int scale,
+                          const MenuInput &in)
 {
     int box = scale * 6;
     fill_rect(x, y, box, box, checked ? MenuCanvas::Colors::GREEN : MenuCanvas::Colors::PANEL);
@@ -138,18 +134,17 @@ bool MenuCanvas::checkbox(int x, int y, bool checked,
     return checked;
 }
 
-float MenuCanvas::slider(int x, int y, int w,
-    float value, float vmin, float vmax,
-    const char *label, int scale,
-    const MenuInput &in)
+float MenuCanvas::slider(int x, int y, int w, float value, float vmin, float vmax, const char *label, int scale, const MenuInput &in)
 {
-    int th  = scale * 3;
-    int ty  = y + scale * 2;
+    int th = scale * 3;
+    int ty = y + scale * 2;
     fill_rect(x, ty, w, th, MenuCanvas::Colors::PANEL);
     draw_border(x, ty, w, th, MenuCanvas::Colors::TEXT_DIM);
     float frac = (value - vmin) / (vmax - vmin);
-    if (frac < 0.0f) frac = 0.0f;
-    if (frac > 1.0f) frac = 1.0f;
+    if (frac < 0.0f)
+        frac = 0.0f;
+    if (frac > 1.0f)
+        frac = 1.0f;
     int fw = static_cast<int>(frac * static_cast<float>(w));
     fill_rect(x, ty, fw, th, MenuCanvas::Colors::SLIDER);
     int kx = x + fw - scale;
@@ -166,7 +161,19 @@ float MenuCanvas::slider(int x, int y, int w,
     return value;
 }
 
-const uint32_t *MenuCanvas::pixels() const { return pixels_.data(); }
-int MenuCanvas::width()  const { return W; }
-int MenuCanvas::height() const { return H; }
-ft_render_framebuffer &MenuCanvas::framebuffer() { return fb_; }
+const uint32_t *MenuCanvas::pixels() const
+{
+    return pixels_.data();
+}
+int MenuCanvas::width() const
+{
+    return W;
+}
+int MenuCanvas::height() const
+{
+    return H;
+}
+ft_render_framebuffer &MenuCanvas::framebuffer()
+{
+    return fb_;
+}
