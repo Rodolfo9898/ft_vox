@@ -1,5 +1,5 @@
 #ifndef VOXEL_RENDERER_HPP
-# define VOXEL_RENDERER_HPP
+#define VOXEL_RENDERER_HPP
 
 #include "../../src/debug/RenderDebug.hpp"
 #include "../../src/debug/DebugOverlayRenderer.hpp"
@@ -26,31 +26,35 @@
 
 class VoxelRenderer
 {
-    public:
-        VoxelRenderer();
-        VoxelRenderer(const VoxelRenderer &other);
-        ~VoxelRenderer();
-        VoxelRenderer &operator=(const VoxelRenderer &other);
+  public:
+    VoxelRenderer();
+    VoxelRenderer(const VoxelRenderer &other);
+    ~VoxelRenderer();
+    VoxelRenderer &operator=(const VoxelRenderer &other);
 
-        void render_world(ft_render_framebuffer &framebuffer,
-            const Camera &camera, const World &world, double display_fps);
-        void render_world(ft_render_framebuffer &framebuffer,
-            const Camera &camera, const World &world,
-            const RenderDebug *debug);
-        void preload_assets();
-        void initialize_gpu(int width, int height);
-        GpuRenderer *get_gpu_renderer();
+    void render_world(ft_render_framebuffer &framebuffer, const Camera &camera, const World &world,
+                      double display_fps);
+    void render_world(ft_render_framebuffer &framebuffer, const Camera &camera, const World &world,
+                      const RenderDebug *debug);
+    void preload_assets();
+    void initialize_gpu(int width, int height);
+    GpuRenderer *get_gpu_renderer();
 
-    private:
-        static const int OVERLAY_W;
-        static const int OVERLAY_H;
-        uint32_t              _overlay_buf[512 * 360];
-        ft_render_framebuffer _overlay_fb;
-        uint64_t              _overlay_frame;
-        RenderTarget      target;
-        ChunkMeshRenderer mesh_renderer;
-        GpuRenderer       gpu;
+  private:
+    static const int OVERLAY_W;
+    static const int OVERLAY_H;
 
+    uint32_t _overlay_buf[512 * 360];
+    ft_render_framebuffer _overlay_fb;
+    uint64_t _overlay_frame;
+    RenderTarget target;
+    ChunkMeshRenderer mesh_renderer;
+    GpuRenderer gpu;
+
+    void render_world_gpu(const Camera &camera, const World &world, const RenderDebug *debug);
+    void render_gpu_overlay(const RenderDebug *debug);
+    void render_world_software(ft_render_framebuffer &framebuffer, const Camera &camera,
+                               const World &world, const RenderDebug *debug);
 };
 
 #endif
