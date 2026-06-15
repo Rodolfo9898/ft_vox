@@ -4,8 +4,7 @@ RenderStrategyFactory::RenderStrategyFactory()
 {
 }
 
-RenderStrategyFactory::RenderStrategyFactory(
-    const RenderStrategyFactory &other)
+RenderStrategyFactory::RenderStrategyFactory(const RenderStrategyFactory &other)
 {
     *this = other;
 }
@@ -14,8 +13,7 @@ RenderStrategyFactory::~RenderStrategyFactory()
 {
 }
 
-RenderStrategyFactory &RenderStrategyFactory::operator=(
-    const RenderStrategyFactory &other)
+RenderStrategyFactory &RenderStrategyFactory::operator=(const RenderStrategyFactory &other)
 {
     (void)other;
     return (*this);
@@ -23,9 +21,10 @@ RenderStrategyFactory &RenderStrategyFactory::operator=(
 
 const RenderDistanceStrategy &RenderStrategyFactory::select(bool headless_mode)
 {
-    static AdaptiveRenderStrategy adaptive_strategy;
-    static FixedRenderStrategy fixed_strategy;
+    static AdaptiveRenderStrategy adaptive;
+    static FixedRenderStrategy fixed;
 
-    (void)headless_mode;
-    return (adaptive_strategy);
+    if (headless_mode)
+        return (fixed);
+    return (adaptive);
 }

@@ -1,7 +1,6 @@
 #include "../../src/policy/AdaptiveRenderStrategy.hpp"
 
-AdaptiveRenderStrategy::AdaptiveRenderStrategy()
-    : RenderDistanceStrategy()
+AdaptiveRenderStrategy::AdaptiveRenderStrategy() : RenderDistanceStrategy()
 {
 }
 
@@ -21,8 +20,7 @@ AdaptiveRenderStrategy &AdaptiveRenderStrategy::operator=(const AdaptiveRenderSt
     return (*this);
 }
 
-int32_t AdaptiveRenderStrategy::clamp_int(int32_t value, int32_t minimum,
-    int32_t maximum)
+int32_t AdaptiveRenderStrategy::clamp_int(int32_t value, int32_t minimum, int32_t maximum)
 {
     if (value < minimum)
         return (minimum);
@@ -31,8 +29,8 @@ int32_t AdaptiveRenderStrategy::clamp_int(int32_t value, int32_t minimum,
     return (value);
 }
 
-int32_t AdaptiveRenderStrategy::update_render_distance(
-    int32_t current_distance, double frame_ms, bool boost_enabled) const
+int32_t AdaptiveRenderStrategy::update_render_distance(int32_t current_distance, double frame_ms,
+                                                       bool boost_enabled) const
 {
     int32_t next_distance;
 
@@ -43,12 +41,12 @@ int32_t AdaptiveRenderStrategy::update_render_distance(
         next_distance = next_distance - 8;
     else if (frame_ms < 15.0)
         next_distance = next_distance + 8;
-    return (clamp_int(next_distance, WORLD_MIN_RENDER_DISTANCE,
-        WORLD_REQUIRED_VISIBLE_DISTANCE));
+    return (clamp_int(next_distance, WorldCoordinates::MIN_RENDER_DISTANCE,
+                      WorldCoordinates::REQUIRED_VISIBLE_DISTANCE));
 }
 
 int32_t AdaptiveRenderStrategy::generation_budget_for_frame(double frame_ms,
-    bool boost_enabled) const
+                                                            bool boost_enabled) const
 {
     if (boost_enabled == true || frame_ms > 25.0)
         return (1);
@@ -57,8 +55,7 @@ int32_t AdaptiveRenderStrategy::generation_budget_for_frame(double frame_ms,
     return (2);
 }
 
-bool AdaptiveRenderStrategy::should_update_render_distance(
-    double elapsed_since_update) const
+bool AdaptiveRenderStrategy::should_update_render_distance(double elapsed_since_update) const
 {
     return (elapsed_since_update >= 0.25);
 }
