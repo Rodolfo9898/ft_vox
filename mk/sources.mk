@@ -66,6 +66,11 @@ SRC = \
     src/edits/WorldBlockEditor.cpp \
     src/gpur/GpuChunkMesh.cpp \
     src/gpur/GpuTextureAtlas.cpp \
+    src/gpur/GlslLoader.cpp \
+    src/gpur/GpuMvpBuilder.cpp \
+    src/gpur/GpuGeometryBatch.cpp \
+    src/gpur/GpuOverlayRenderer.cpp \
+    src/gpur/GpuWorldRenderer.cpp \
     src/gpur/GpuRenderer.cpp \
     src/font/FontRenderer.cpp \
     src/settings/Settings.cpp \

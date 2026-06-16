@@ -1,15 +1,17 @@
 #ifndef WORLD_VISIBILITY_VALIDATOR_HPP
 # define WORLD_VISIBILITY_VALIDATOR_HPP
 
-#include "../../src/world/World.hpp"
+# include "../../src/validators/IValidator.hpp"
+# include "../../src/world/World.hpp"
+# include "../../src/camera/Camera.hpp"
+# include "../../src/player/PlayerController.hpp"
+# include "../../src/coordinates/WorldCoordinates.hpp"
+# include "../../Libft/Modules/Errno/errno.hpp"
+# include <cmath>
+# include <cstdint>
+# include <cstdio>
 
-#include "../../src/coordinates/WorldCoordinates.hpp"
-#include <cmath>
-#include <cstdint>
-
-class World;
-
-class WorldVisibilityValidator
+class WorldVisibilityValidator : public IValidator
 {
     public:
         WorldVisibilityValidator();
@@ -17,9 +19,12 @@ class WorldVisibilityValidator
         ~WorldVisibilityValidator();
         WorldVisibilityValidator &operator=(const WorldVisibilityValidator &other);
 
-        static bool validate_visible_distance(const World &world,
-            double camera_x, double camera_z, double yaw,
-            int32_t required_distance);
+        virtual int  validate() const override;
+        static bool  validate_visible_distance(const World &world,
+                                               double       camera_x,
+                                               double       camera_z,
+                                               double       yaw,
+                                               int32_t      required_distance);
 };
 
 #endif

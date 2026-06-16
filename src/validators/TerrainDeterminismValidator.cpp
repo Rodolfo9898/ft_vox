@@ -22,11 +22,11 @@ TerrainDeterminismValidator &TerrainDeterminismValidator::operator=(
 }
 
 int TerrainDeterminismValidator::compare_chunks(const game_voxel_chunk &left,
-    const game_voxel_chunk &right)
+                                                const game_voxel_chunk &right)
 {
-    int32_t local_x;
-    int32_t local_y;
-    int32_t local_z;
+    int32_t  local_x;
+    int32_t  local_y;
+    int32_t  local_z;
     uint32_t left_block;
     uint32_t right_block;
 
@@ -39,10 +39,10 @@ int TerrainDeterminismValidator::compare_chunks(const game_voxel_chunk &left,
             local_x = 0;
             while (local_x < GAME_VOXEL_CHUNK_WIDTH)
             {
-                if (left.read_block(local_x, local_y, local_z,
-                        &left_block) != FT_ERR_SUCCESS
-                    || right.read_block(local_x, local_y, local_z,
-                        &right_block) != FT_ERR_SUCCESS
+                if (left.read_block(local_x, local_y, local_z, &left_block)
+                        != FT_ERR_SUCCESS
+                    || right.read_block(local_x, local_y, local_z, &right_block)
+                           != FT_ERR_SUCCESS
                     || left_block != right_block)
                     return (1);
                 local_x = local_x + 1;
@@ -54,12 +54,13 @@ int TerrainDeterminismValidator::compare_chunks(const game_voxel_chunk &left,
     return (0);
 }
 
-int TerrainDeterminismValidator::generate_pair(int32_t world_x,
-    int32_t world_z, const char *seed)
+int TerrainDeterminismValidator::generate_pair(int32_t     world_x,
+                                               int32_t     world_z,
+                                               const char *seed)
 {
     game_voxel_chunk first;
     game_voxel_chunk second;
-    int32_t error_code;
+    int32_t          error_code;
 
     error_code = first.initialize();
     if (error_code == FT_ERR_SUCCESS)
@@ -75,7 +76,7 @@ int TerrainDeterminismValidator::generate_pair(int32_t world_x,
     return (error_code);
 }
 
-int TerrainDeterminismValidator::validate()
+int TerrainDeterminismValidator::validate() const
 {
     int32_t positions[6];
     int32_t index;
@@ -91,12 +92,12 @@ int TerrainDeterminismValidator::validate()
     while (index < 6)
     {
         error_code = generate_pair(positions[index], positions[index + 1],
-            "integration-seed");
+                                   "integration-seed");
         if (error_code != FT_ERR_SUCCESS)
         {
             std::fprintf(stderr,
-                "terrain-determinism: failed origin=(%d,%d) error=%d\n",
-                positions[index], positions[index + 1], error_code);
+                         "terrain-determinism: failed origin=(%d,%d) error=%d\n",
+                         positions[index], positions[index + 1], error_code);
             return (1);
         }
         index = index + 2;
