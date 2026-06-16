@@ -1,4 +1,5 @@
 #include "../../src/edits/WorldBlockEditor.hpp"
+#include "../../src/world/World.hpp"
 
 WorldBlockEditor::WorldBlockEditor()
 {

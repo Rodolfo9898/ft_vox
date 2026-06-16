@@ -1,4 +1,5 @@
 #include "../../src/queries/WorldRaycaster.hpp"
+#include "../../src/world/World.hpp"
 
 WorldRaycaster::WorldRaycaster()
 {

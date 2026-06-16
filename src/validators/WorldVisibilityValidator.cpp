@@ -1,4 +1,5 @@
 #include "../../src/validators/WorldVisibilityValidator.hpp"
+#include "../../src/world/World.hpp"
 
 WorldVisibilityValidator::WorldVisibilityValidator()
 {

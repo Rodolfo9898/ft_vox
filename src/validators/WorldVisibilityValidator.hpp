@@ -2,7 +2,6 @@
 # define WORLD_VISIBILITY_VALIDATOR_HPP
 
 #include "../../src/validators/IValidator.hpp"
-#include "../../src/world/World.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/player/PlayerController.hpp"
 #include "../../src/coordinates/WorldCoordinates.hpp"
@@ -10,6 +9,8 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+
+class World;
 
 class WorldVisibilityValidator : public IValidator
 {

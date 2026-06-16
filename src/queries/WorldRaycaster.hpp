@@ -1,12 +1,13 @@
 #ifndef WORLD_RAYCASTER_HPP
 #define WORLD_RAYCASTER_HPP
 
-#include "../../src/world/World.hpp"
 #include "../../src/queries/WorldBlockQuery.hpp"
 #include "../../Libft/Modules/Errno/errno.hpp"
 #include "../../Libft/Modules/Voxel/voxel.hpp"
 #include <cmath>
 #include <cstdint>
+
+class World;
 
 class WorldRaycaster
 {

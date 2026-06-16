@@ -1,4 +1,5 @@
 #include "../../src/queries/WorldBlockQuery.hpp"
+#include "../../src/world/World.hpp"
 
 WorldBlockQuery::WorldBlockQuery()
 {

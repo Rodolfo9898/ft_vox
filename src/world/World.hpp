@@ -5,6 +5,10 @@
 #include "../../src/chunks/WorldChunkLoader.hpp"
 #include "../../src/chunks/WorldChunkStore.hpp"
 #include "../../src/coordinates/WorldCoordinates.hpp"
+#include "../../src/queries/WorldBlockQuery.hpp"
+#include "../../src/edits/WorldBlockEditor.hpp"
+#include "../../src/queries/WorldRaycaster.hpp"
+#include "../../src/validators/WorldVisibilityValidator.hpp"
 #include "../../Libft/Modules/Errno/errno.hpp"
 #include "../../Libft/Modules/Voxel/voxel.hpp"
 #include <cmath>
@@ -63,10 +67,5 @@ class World
     int32_t try_load_chunk_at(int32_t chunk_x, int32_t chunk_z);
     int32_t stream_chunks(int32_t stream_radius, int32_t budget, int32_t *generated);
 };
-
-#include "../../src/queries/WorldBlockQuery.hpp"
-#include "../../src/edits/WorldBlockEditor.hpp"
-#include "../../src/queries/WorldRaycaster.hpp"
-#include "../../src/validators/WorldVisibilityValidator.hpp"
 
 #endif

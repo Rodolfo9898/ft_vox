@@ -3,9 +3,10 @@
 
 #include "../../src/edits/DeleteBlockCommand.hpp"
 #include "../../src/edits/PlaceBlockCommand.hpp"
-#include "../../src/world/World.hpp"
 #include "../../Libft/Modules/Errno/errno.hpp"
 #include <cstdint>
+
+class World;
 
 class WorldBlockEditor
 {
