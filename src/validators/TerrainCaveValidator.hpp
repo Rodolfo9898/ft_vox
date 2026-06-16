@@ -1,12 +1,15 @@
 #ifndef TERRAIN_CAVE_VALIDATOR_HPP
 # define TERRAIN_CAVE_VALIDATOR_HPP
 
-# include "../../src/validators/IValidator.hpp"
-# include "../../Libft/Modules/Errno/errno.hpp"
-# include "../../Libft/Modules/Game/game_voxel_chunk.hpp"
-# include "../../Libft/Modules/Voxel/voxel.hpp"
-# include <cstdint>
-# include <cstdio>
+#include "../../src/validators/IValidator.hpp"
+#include "../../Libft/Modules/Errno/errno.hpp"
+#include "../../Libft/Modules/Game/game_voxel_chunk.hpp"
+#ifndef GAME_USE_VOXEL_REGION_BACKEND
+# define GAME_USE_VOXEL_REGION_BACKEND
+#endif
+#include "../../Libft/Modules/Voxel/voxel.hpp"
+#include <cstdint>
+#include <cstdio>
 
 class TerrainCaveValidator : public IValidator
 {

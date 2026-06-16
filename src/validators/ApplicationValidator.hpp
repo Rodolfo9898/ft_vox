@@ -1,13 +1,13 @@
 #ifndef APPLICATION_VALIDATOR_HPP
 # define APPLICATION_VALIDATOR_HPP
 
-# include "../../src/validators/CameraSpeedValidator.hpp"
-# include "../../src/validators/CollisionValidator.hpp"
-# include "../../src/validators/BlockEditValidator.hpp"
-# include "../../src/validators/TerrainDeterminismValidator.hpp"
-# include "../../src/validators/TerrainCaveValidator.hpp"
-# include "../../src/validators/WorldScaleValidator.hpp"
-# include "../../src/validators/WorldVisibilityValidator.hpp"
+#include "../../src/validators/CameraSpeedValidator.hpp"
+#include "../../src/validators/CollisionValidator.hpp"
+#include "../../src/validators/BlockEditValidator.hpp"
+#include "../../src/validators/TerrainDeterminismValidator.hpp"
+#include "../../src/validators/TerrainCaveValidator.hpp"
+#include "../../src/validators/WorldScaleValidator.hpp"
+#include "../../src/validators/WorldVisibilityValidator.hpp"
 
 class ApplicationValidator
 {
