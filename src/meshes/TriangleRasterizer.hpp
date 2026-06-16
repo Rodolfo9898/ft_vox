@@ -1,10 +1,8 @@
 #ifndef TRIANGLE_RASTERIZER_HPP
 #define TRIANGLE_RASTERIZER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/geometry/ScreenVertex.hpp"
-#include "../../Libft/Modules/DUMB/render_window.hpp"
-#include <cstdint>
-#include <vector>
 
 class TriangleRasterizer
 {

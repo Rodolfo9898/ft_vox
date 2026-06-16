@@ -4,10 +4,9 @@
 #ifndef GAME_USE_VOXEL_REGION_BACKEND
 #define GAME_USE_VOXEL_REGION_BACKEND
 #endif
+#include "../ft_vox.hpp"
 #include "../../src/coordinates/WorldCoordinates.hpp"
 #include "../../src/chunks/WorldChunkLoader.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include <cstdint>
 
 class World;
 class WorldChunk;

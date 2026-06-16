@@ -1,14 +1,8 @@
 #ifndef MENU_CANVAS_HPP
 #define MENU_CANVAS_HPP
 
-#include "../../Libft/Modules/DUMB/render_window.hpp"
+#include "../ft_vox.hpp"
 #include "../../src/font/FontRenderer.hpp"
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <vector>
 
 class MenuCanvas
 {

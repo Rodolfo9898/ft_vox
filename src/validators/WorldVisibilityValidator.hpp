@@ -1,14 +1,11 @@
 #ifndef WORLD_VISIBILITY_VALIDATOR_HPP
 # define WORLD_VISIBILITY_VALIDATOR_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/validators/IValidator.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/player/PlayerController.hpp"
 #include "../../src/coordinates/WorldCoordinates.hpp"
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include <cmath>
-#include <cstdint>
-#include <cstdio>
 
 class World;
 

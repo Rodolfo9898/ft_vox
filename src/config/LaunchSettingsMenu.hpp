@@ -1,14 +1,10 @@
 #ifndef LAUNCH_SETTINGS_MENU_HPP
 #define LAUNCH_SETTINGS_MENU_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/config/LaunchSettings.hpp"
 #include "../../src/gpur/GpuRenderer.hpp"
 #include "../../src/platform/ApplicationWindow.hpp"
-#include "../../Libft/Modules/DUMB/controls.hpp"
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <vector>
 
 class LaunchSettingsMenu
 {

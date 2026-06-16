@@ -1,9 +1,8 @@
 #ifndef PLAYER_SPAWNER_HPP
 #define PLAYER_SPAWNER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/physics/PlayerCollision.hpp"
-#include <cmath>
-#include <cstdint>
 
 class PlayerSpawner
 {

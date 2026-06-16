@@ -1,6 +1,7 @@
 #ifndef PERF_SESSION_HPP
 #define PERF_SESSION_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/config/ApplicationOptions.hpp"
 #include "../../src/config/LaunchSettings.hpp"
 #include "../../src/platform/ApplicationWindow.hpp"
@@ -13,12 +14,6 @@
 #include "../../src/diagnostics/FramebufferHasher.hpp"
 #include "../../src/policy/RenderDistanceStrategy.hpp"
 #include "../../src/diagnostics/ApplicationError.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include "../../Libft/Modules/DUMB/controls.hpp"
-#include <algorithm>
-#include <chrono>
-#include <cstdint>
-#include <cstdio>
 
 class PerfSession
 {

@@ -4,13 +4,10 @@
 #ifndef GAME_USE_VOXEL_REGION_BACKEND
 #define GAME_USE_VOXEL_REGION_BACKEND
 #endif
-#include "../../Libft/Modules/Game/game_voxel_chunk.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/chunks/WorldChunk.hpp"
 #include "../../src/frame/RenderCache.hpp"
-#include <cmath>
 
 class MeshCuller
 {

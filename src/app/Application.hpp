@@ -1,6 +1,7 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/diagnostics/ApplicationError.hpp"
 #include "../../src/config/ApplicationOptions.hpp"
 #include "../../src/config/LaunchSettings.hpp"
@@ -18,20 +19,6 @@
 #include "../../src/app/GameSession.hpp"
 #include "../../src/app/PerfSession.hpp"
 #include "../../src/font/FontRenderer.hpp"
-#include "../../Libft/Modules/DUMB/controls.hpp"
-#include <algorithm>
-#include <chrono>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#if defined(_WIN32)
-#include <windows.h>
-#endif
-#if defined(__APPLE__)
-#include <Carbon/Carbon.h>
-#endif
 
 class Application
 {

@@ -1,9 +1,8 @@
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/camera/CameraInput.hpp"
-#include <cmath>
-#include <cstdio>
 
 class Camera
 {

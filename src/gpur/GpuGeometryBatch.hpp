@@ -4,16 +4,13 @@
 #ifndef GAME_USE_VOXEL_REGION_BACKEND
 #define GAME_USE_VOXEL_REGION_BACKEND
 #endif
-#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/chunks/WorldChunk.hpp"
 #include "../../src/frame/RenderCache.hpp"
 #include "../../src/gpur/GpuTextureAtlas.hpp"
 #include "../../src/meshes/MeshCuller.hpp"
 #include "../../src/world/World.hpp"
-#include <cstdint>
-#include <vector>
 
 class GpuGeometryBatch
 {

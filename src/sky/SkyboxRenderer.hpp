@@ -1,13 +1,9 @@
 #ifndef SKYBOX_RENDERER_HPP
 #define SKYBOX_RENDERER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/frame/RendererColor.hpp"
-#include "../../Libft/Modules/DUMB/render_window.hpp"
 #include "../../src/camera/Camera.hpp"
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <vector>
 
 class SkyboxRenderer
 {

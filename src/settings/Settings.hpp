@@ -1,11 +1,7 @@
 #ifndef SETTINGS_HPP
 #define SETTINGS_HPP
 
-#include "../../Libft/Modules/DUMB/controls.hpp"
-#include <cstdint>
-#include <functional>
-#include <vector>
-#include <algorithm>
+#include "../ft_vox.hpp"
 
 class Settings
 {

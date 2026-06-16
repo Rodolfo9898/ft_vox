@@ -1,9 +1,7 @@
 #ifndef FRAMEBUFFER_HASHER_HPP
 #define FRAMEBUFFER_HASHER_HPP
 
-#include "../../Libft/Modules/DUMB/render_window.hpp"
-#include <cstdint>
-#include <cstddef>
+#include "../ft_vox.hpp"
 
 class FramebufferHasher
 {

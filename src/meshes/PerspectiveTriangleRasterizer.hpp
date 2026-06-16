@@ -4,11 +4,10 @@
 #ifndef GAME_USE_VOXEL_REGION_BACKEND
 #define GAME_USE_VOXEL_REGION_BACKEND
 #endif
+#include "../ft_vox.hpp"
 #include "../../src/assets/TextureAtlas.hpp"
 #include "../../src/frame/RendererColor.hpp"
 #include "../../src/meshes/TriangleRasterizer.hpp"
-#include <algorithm>
-#include <cmath>
 
 class PerspectiveTriangleRasterizer : public TriangleRasterizer
 {

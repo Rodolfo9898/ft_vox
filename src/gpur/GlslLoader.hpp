@@ -1,8 +1,8 @@
 #ifndef GLSL_LOADER_HPP
 #define GLSL_LOADER_HPP
 
-#include <string>
 
+#include "../ft_vox.hpp"
 class GlslLoader
 {
   public:

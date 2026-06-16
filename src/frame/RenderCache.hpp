@@ -1,9 +1,8 @@
 #ifndef RENDER_CACHE_HPP
 #define RENDER_CACHE_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
-#include <cmath>
-#include <cstdint>
 
 class RenderCache
 {

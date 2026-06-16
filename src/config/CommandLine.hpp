@@ -1,9 +1,8 @@
 #ifndef COMMAND_LINE_HPP
 #define COMMAND_LINE_HPP
 
-#include <cstdlib>
-#include <cstring>
 
+#include "../ft_vox.hpp"
 class CommandLine
 {
   public:

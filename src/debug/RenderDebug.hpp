@@ -1,9 +1,8 @@
 #ifndef RENDER_DEBUG_HPP
 #define RENDER_DEBUG_HPP
 
-#include <cstdint>
-#include <cstring>
 
+#include "../ft_vox.hpp"
 class RenderDebug
 {
   public:

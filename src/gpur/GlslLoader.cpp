@@ -1,7 +1,6 @@
 #include "../../src/gpur/GlslLoader.hpp"
-#include <cstdio>
-#include <cstring>
 
+#include "../ft_vox.hpp"
 const char *GlslLoader::SHADER_DIR = "src/gpur/shaders/";
 
 GlslLoader::GlslLoader()

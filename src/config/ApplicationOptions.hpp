@@ -1,8 +1,8 @@
 #ifndef APPLICATION_OPTIONS_HPP
 #define APPLICATION_OPTIONS_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/config/CommandLine.hpp"
-#include <cstdio>
 
 class ApplicationOptions
 {

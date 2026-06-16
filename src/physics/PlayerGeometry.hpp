@@ -1,9 +1,8 @@
 #ifndef PLAYER_GEOMETRY_HPP
 #define PLAYER_GEOMETRY_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
-#include <cmath>
-#include <cstdint>
 
 class PlayerGeometry
 {

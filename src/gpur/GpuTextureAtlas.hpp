@@ -4,13 +4,9 @@
 #ifndef GAME_USE_VOXEL_REGION_BACKEND
 #define GAME_USE_VOXEL_REGION_BACKEND
 #endif
-#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
+#include "../ft_vox.hpp"
 #include "../../src/assets/TextureAtlas.hpp"
 #include "../../src/frame/RendererColor.hpp"
-#include <algorithm>
-#include <cstring>
 
 class GpuTextureAtlas
 {

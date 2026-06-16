@@ -4,9 +4,7 @@
 #ifndef GAME_USE_VOXEL_REGION_BACKEND
 #define GAME_USE_VOXEL_REGION_BACKEND
 #endif
-#include "../../Libft/Modules/GPGR/GpuShader.hpp"
-#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
+#include "../ft_vox.hpp"
 #include "../../src/assets/TextureAtlas.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/gpur/GlslLoader.hpp"
@@ -14,8 +12,6 @@
 #include "../../src/gpur/GpuMvpBuilder.hpp"
 #include "../../src/gpur/GpuTextureAtlas.hpp"
 #include "../../src/world/World.hpp"
-#include <cstdint>
-#include <string>
 
 class GpuWorldRenderer
 {

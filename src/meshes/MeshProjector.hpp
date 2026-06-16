@@ -1,12 +1,11 @@
 #ifndef MESH_PROJECTOR_HPP
 #define MESH_PROJECTOR_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/frame/RenderCache.hpp"
 #include "../../src/geometry/ClipVertex.hpp"
 #include "../../src/geometry/ScreenVertex.hpp"
-#include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
-#include <cstdint>
 
 class MeshProjector
 {

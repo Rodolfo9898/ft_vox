@@ -1,8 +1,7 @@
 #ifndef CHUNK_MESH_RENDERER_HPP
 #define CHUNK_MESH_RENDERER_HPP
 
-#include "../../Libft/Modules/DUMB/render_window.hpp"
-#include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/chunks/WorldChunk.hpp"
 #include "../../src/frame/RenderCache.hpp"
@@ -13,7 +12,6 @@
 #include "../../src/meshes/MeshProjector.hpp"
 #include "../../src/meshes/PerspectiveTriangleRasterizer.hpp"
 #include "../../src/meshes/TriangleRasterizer.hpp"
-#include <vector>
 
 class ChunkMeshRenderer
 {

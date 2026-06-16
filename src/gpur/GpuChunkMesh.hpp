@@ -1,10 +1,7 @@
 #ifndef GPUR_CHUNK_MESH_HPP
 #define GPUR_CHUNK_MESH_HPP
 
-#include <cstdint>
-#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
-#include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
-#include <cstddef>
+#include "../ft_vox.hpp"
 
 class GpuChunkMesh
 {

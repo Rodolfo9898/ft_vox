@@ -4,9 +4,9 @@
 #ifndef GAME_USE_VOXEL_REGION_BACKEND
 #define GAME_USE_VOXEL_REGION_BACKEND
 #endif
+#include "../ft_vox.hpp"
 #include "../../src/chunks/WorldChunk.hpp"
 #include "../../src/coordinates/WorldCoordinates.hpp"
-#include <cstdint>
 
 class WorldChunkStore
 {

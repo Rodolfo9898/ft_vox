@@ -1,8 +1,8 @@
 #ifndef MESH_CLIPPER_HPP
 #define MESH_CLIPPER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/geometry/ClipVertex.hpp"
-#include <cstddef>
 
 class MeshClipper
 {

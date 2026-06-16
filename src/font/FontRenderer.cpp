@@ -1,9 +1,6 @@
 #include "../../src/font/FontRenderer.hpp"
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
+#include "../ft_vox.hpp"
 #include <ft2build.h>
 #include FT_FREETYPE_H
 

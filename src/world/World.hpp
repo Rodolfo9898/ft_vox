@@ -1,6 +1,7 @@
 #ifndef WORLD_HPP
 #define WORLD_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/chunks/WorldChunk.hpp"
 #include "../../src/chunks/WorldChunkLoader.hpp"
 #include "../../src/chunks/WorldChunkStore.hpp"
@@ -9,11 +10,6 @@
 #include "../../src/edits/WorldBlockEditor.hpp"
 #include "../../src/queries/WorldRaycaster.hpp"
 #include "../../src/validators/WorldVisibilityValidator.hpp"
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include <cmath>
-#include <cstdint>
-#include <cstring>
 
 class World
 {

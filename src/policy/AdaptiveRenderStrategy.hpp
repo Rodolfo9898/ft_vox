@@ -1,9 +1,9 @@
 #ifndef ADAPTIVE_RENDER_STRATEGY_HPP
 #define ADAPTIVE_RENDER_STRATEGY_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/policy/RenderDistanceStrategy.hpp"
 #include "../../src/world/World.hpp"
-#include <cstdint>
 
 class AdaptiveRenderStrategy : public RenderDistanceStrategy
 {

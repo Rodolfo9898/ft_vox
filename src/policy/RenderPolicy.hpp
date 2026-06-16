@@ -1,8 +1,8 @@
 #ifndef RENDER_POLICY_HPP
 #define RENDER_POLICY_HPP
 
-#include <cstdint>
 
+#include "../ft_vox.hpp"
 class RenderPolicy
 {
   public:

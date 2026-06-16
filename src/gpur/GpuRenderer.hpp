@@ -1,12 +1,11 @@
 #ifndef GPUR_RENDERER_HPP
 #define GPUR_RENDERER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/gpur/GpuOverlayRenderer.hpp"
 #include "../../src/gpur/GpuWorldRenderer.hpp"
 #include "../../src/world/World.hpp"
-#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
-#include <cstdint>
 
 class GpuRenderer
 {

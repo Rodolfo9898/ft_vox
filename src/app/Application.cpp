@@ -1,5 +1,14 @@
 #include "../../src/app/Application.hpp"
 
+#if defined(_WIN32)
+# ifndef NOMINMAX
+#  define NOMINMAX
+# endif
+# include <windows.h>
+#elif defined(__APPLE__)
+# include <Carbon/Carbon.h>
+#endif
+
 Application::Application()
 {
 }

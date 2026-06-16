@@ -1,6 +1,6 @@
 #include "../../src/gpur/GpuWorldRenderer.hpp"
-#include <cstring>
 
+#include "../ft_vox.hpp"
 GpuWorldRenderer::GpuWorldRenderer()
     : _sky_vao(0), _crosshair_vao(0), _crosshair_vbo(0), _width(0), _height(0), _u_mvp(-1),
       _u_atlas(-1), _u_atlas_loaded(-1), _u_tile_uvs(-1), _u_fallback(-1), _u_sky_size(-1),

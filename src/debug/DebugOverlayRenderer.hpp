@@ -1,12 +1,10 @@
 #ifndef DEBUG_OVERLAY_RENDERER_HPP
 #define DEBUG_OVERLAY_RENDERER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/debug/RenderDebug.hpp"
 #include "../../src/font/FontRenderer.hpp"
 #include "../../src/frame/RendererColor.hpp"
-#include "../../Libft/Modules/DUMB/render_window.hpp"
-#include <cstdint>
-#include <cstdio>
 
 class DebugOverlayRenderer
 {

@@ -1,12 +1,8 @@
 #ifndef APPLICATION_WINDOW_HPP
 #define APPLICATION_WINDOW_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/diagnostics/ApplicationError.hpp"
-#include "../../Libft/Modules/DUMB/render_window.hpp"
-#include "../../Libft/Modules/GPGR/GpuWindow.hpp"
-#include <cstdint>
-#include <memory>
-#include <vector>
 
 class ApplicationWindow
 {

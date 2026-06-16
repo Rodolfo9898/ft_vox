@@ -1,13 +1,7 @@
 #ifndef LAUNCH_SETTINGS_HPP
 #define LAUNCH_SETTINGS_HPP
 
-#include "../../Libft/Modules/JSon/json.hpp"
-#include "../../Libft/Modules/DUMB/controls.hpp"
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <string>
+#include "../ft_vox.hpp"
 
 class LaunchSettings
 {

@@ -1,8 +1,8 @@
 #ifndef FONT_RENDERER_HPP
 #define FONT_RENDERER_HPP
 
-#include <cstdint>
 
+#include "../ft_vox.hpp"
 class FontRenderer
 {
   public:

@@ -1,9 +1,8 @@
 #ifndef DEBUG_VIEW_HPP
 #define DEBUG_VIEW_HPP
 
-#include "../../Libft/Modules/DUMB/render_window.hpp"
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
-#include <cstdint>
 
 class DebugView
 {

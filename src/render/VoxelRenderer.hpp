@@ -1,6 +1,7 @@
 #ifndef VOXEL_RENDERER_HPP
 #define VOXEL_RENDERER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/debug/RenderDebug.hpp"
 #include "../../src/debug/DebugOverlayRenderer.hpp"
 #include "../../src/frame/RendererColor.hpp"
@@ -11,18 +12,9 @@
 #include "../../src/frame/RenderCache.hpp"
 #include "../../src/assets/TextureAtlas.hpp"
 #include "../../src/geometry/TriangleTexture.hpp"
-#include "../../Libft/Modules/DUMB/render_window.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/world/World.hpp"
 #include "../../src/gpur/GpuRenderer.hpp"
-#include <algorithm>
-#include <cmath>
-#include <cstdio>
-#include <cstdint>
-#include <vector>
-#include <cstring>
 
 class VoxelRenderer
 {

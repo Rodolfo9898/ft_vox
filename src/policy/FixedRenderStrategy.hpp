@@ -1,8 +1,8 @@
 #ifndef FIXED_RENDER_STRATEGY_HPP
 #define FIXED_RENDER_STRATEGY_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/policy/RenderDistanceStrategy.hpp"
-#include <cstdint>
 
 class FixedRenderStrategy : public RenderDistanceStrategy
 {

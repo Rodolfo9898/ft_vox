@@ -1,13 +1,10 @@
 #ifndef MENU_CONTROLLER_HPP
 #define MENU_CONTROLLER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/gpur/GpuRenderer.hpp"
 #include "../../src/menu/MenuCanvas.hpp"
 #include "../../src/menu/MenuScene.hpp"
-#include <cstdio>
-#include <ctime>
-#include <memory>
-#include <string>
 
 class MainMenuScene;
 class SettingsScene;

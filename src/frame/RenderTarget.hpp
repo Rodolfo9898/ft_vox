@@ -1,10 +1,7 @@
 #ifndef RENDER_TARGET_HPP
 #define RENDER_TARGET_HPP
 
-#include "../../Libft/Modules/DUMB/render_window.hpp"
-#include <cstddef>
-#include <cstdint>
-#include <vector>
+#include "../ft_vox.hpp"
 
 class RenderTarget
 {

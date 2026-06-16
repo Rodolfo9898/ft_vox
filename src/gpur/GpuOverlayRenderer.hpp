@@ -1,12 +1,8 @@
 #ifndef GPU_OVERLAY_RENDERER_HPP
 #define GPU_OVERLAY_RENDERER_HPP
 
-#include "../../Libft/Modules/GPGR/GpuShader.hpp"
-#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
+#include "../ft_vox.hpp"
 #include "../../src/gpur/GlslLoader.hpp"
-#include <cstdint>
-#include <string>
-#include <vector>
 
 class GpuOverlayRenderer
 {

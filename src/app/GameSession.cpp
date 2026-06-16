@@ -1,5 +1,10 @@
 #include "../../src/app/GameSession.hpp"
 
+#if defined(__APPLE__)
+# include <mach/mach.h>
+# include <mach/task.h>
+#endif
+
 const char *GameSession::BIOME_NAMES[5] = {"PLAINS", "HILLS", "DESERT", "SNOW", "MOUNTAINS"};
 
 GameSession::GameSession()

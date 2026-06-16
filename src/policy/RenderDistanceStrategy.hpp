@@ -1,8 +1,8 @@
 #ifndef RENDER_DISTANCE_STRATEGY_HPP
 #define RENDER_DISTANCE_STRATEGY_HPP
 
-#include <cstdint>
 
+#include "../ft_vox.hpp"
 class RenderDistanceStrategy
 {
   public:

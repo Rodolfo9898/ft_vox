@@ -1,6 +1,7 @@
 #ifndef GAME_SESSION_HPP
 #define GAME_SESSION_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/world/World.hpp"
 #include "../../src/debug/RenderDebug.hpp"
@@ -12,19 +13,6 @@
 #include "../../src/interaction/BlockInteractor.hpp"
 #include "../../src/policy/RenderDistanceStrategy.hpp"
 #include "../../src/settings/Settings.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include "../../Libft/Modules/DUMB/controls.hpp"
-#include <algorithm>
-#include <chrono>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <string>
-
-#if defined(__APPLE__)
-#include <mach/task.h>
-#include <mach/mach.h>
-#endif
 
 class GameSession
 {

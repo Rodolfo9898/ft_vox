@@ -1,10 +1,9 @@
 #ifndef WORLD_BLOCK_EDITOR_HPP
 #define WORLD_BLOCK_EDITOR_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/edits/DeleteBlockCommand.hpp"
 #include "../../src/edits/PlaceBlockCommand.hpp"
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include <cstdint>
 
 class World;
 

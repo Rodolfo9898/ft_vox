@@ -1,9 +1,8 @@
 #ifndef GPU_MVP_BUILDER_HPP
 #define GPU_MVP_BUILDER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
-#include <cmath>
-#include <cstring>
 
 class GpuMvpBuilder
 {

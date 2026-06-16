@@ -5,12 +5,8 @@
 # define GAME_USE_VOXEL_REGION_BACKEND
 #endif
 
+#include "../ft_vox.hpp"
 #include "../../src/validators/IValidator.hpp"
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include "../../Libft/Modules/Game/game_voxel_chunk.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include <cstdint>
-#include <cstdio>
 
 class TerrainDeterminismValidator : public IValidator
 {

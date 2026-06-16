@@ -1,9 +1,7 @@
 #ifndef APPLICATION_ERROR_HPP
 #define APPLICATION_ERROR_HPP
 
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include <cstdint>
-#include <cstdio>
+#include "../ft_vox.hpp"
 
 class ApplicationError
 {

@@ -1,11 +1,9 @@
 #ifndef WORLD_BLOCK_QUERY_HPP
 #define WORLD_BLOCK_QUERY_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/chunks/WorldChunkStore.hpp"
 #include "../../src/coordinates/WorldCoordinates.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include <cmath>
-#include <cstdint>
 
 class World;
 

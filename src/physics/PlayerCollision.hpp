@@ -1,11 +1,10 @@
 #ifndef PLAYER_COLLISION_HPP
 #define PLAYER_COLLISION_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/physics/PlayerGround.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/world/World.hpp"
-#include <cmath>
-#include <cstdint>
 
 class PlayerCollision
 {

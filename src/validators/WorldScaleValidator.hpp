@@ -1,12 +1,9 @@
 #ifndef WORLD_SCALE_VALIDATOR_HPP
 # define WORLD_SCALE_VALIDATOR_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/validators/IValidator.hpp"
 #include "../../src/chunks/WorldChunkLoader.hpp"
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include "../../Libft/Modules/Game/game_voxel_chunk.hpp"
-#include <cstdint>
-#include <cstdio>
 
 class WorldScaleValidator : public IValidator
 {

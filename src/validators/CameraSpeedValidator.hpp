@@ -1,11 +1,10 @@
 #ifndef CAMERA_SPEED_VALIDATOR_HPP
 # define CAMERA_SPEED_VALIDATOR_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/validators/IValidator.hpp"
 #include "../../src/platform/InputReader.hpp"
 #include "../../src/camera/Camera.hpp"
-#include <cmath>
-#include <cstdio>
 
 class CameraSpeedValidator : public IValidator
 {

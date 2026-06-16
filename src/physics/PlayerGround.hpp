@@ -1,9 +1,9 @@
 #ifndef PLAYER_GROUND_HPP
 #define PLAYER_GROUND_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/physics/PlayerGeometry.hpp"
 #include "../../src/world/World.hpp"
-#include <cmath>
 
 class PlayerGround
 {

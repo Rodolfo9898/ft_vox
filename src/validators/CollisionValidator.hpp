@@ -1,15 +1,11 @@
 #ifndef COLLISION_VALIDATOR_HPP
 # define COLLISION_VALIDATOR_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/validators/IValidator.hpp"
 #include "../../src/diagnostics/ApplicationError.hpp"
 #include "../../src/platform/InputReader.hpp"
 #include "../../src/player/PlayerController.hpp"
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include <cmath>
-#include <cstdint>
-#include <cstdio>
 
 class World;
 class Camera;

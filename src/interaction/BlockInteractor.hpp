@@ -4,14 +4,12 @@
 #ifndef GAME_USE_VOXEL_REGION_BACKEND
 #define GAME_USE_VOXEL_REGION_BACKEND
 #endif
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
+#include "../ft_vox.hpp"
 #include "../../src/camera/Camera.hpp"
 #include "../../src/edits/DeleteBlockCommand.hpp"
 #include "../../src/edits/PlaceBlockCommand.hpp"
 #include "../../src/player/PlayerController.hpp"
 #include "../../src/world/World.hpp"
-#include <cstdint>
 
 class BlockInteractor
 {

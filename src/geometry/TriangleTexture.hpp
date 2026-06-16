@@ -1,8 +1,8 @@
 #ifndef TRIANGLE_TEXTURE_HPP
 #define TRIANGLE_TEXTURE_HPP
 
-#include <cstdint>
 
+#include "../ft_vox.hpp"
 class TextureAtlas;
 
 class TriangleTexture

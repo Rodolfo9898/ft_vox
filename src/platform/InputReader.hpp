@@ -1,8 +1,8 @@
 #ifndef INPUT_READER_HPP
 #define INPUT_READER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/camera/CameraInput.hpp"
-#include "../../Libft/Modules/DUMB/controls.hpp"
 
 class InputReader
 {

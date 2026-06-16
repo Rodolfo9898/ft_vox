@@ -1,16 +1,11 @@
 #ifndef BLOCK_EDIT_VALIDATOR_HPP
 # define BLOCK_EDIT_VALIDATOR_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/validators/IValidator.hpp"
 #include "../../src/diagnostics/ApplicationError.hpp"
 #include "../../src/world/World.hpp"
 #include "../../src/coordinates/WorldCoordinates.hpp"
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <cstdio>
 
 class BlockEditValidator : public IValidator
 {

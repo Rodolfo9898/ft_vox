@@ -7,13 +7,7 @@
 #ifndef GAME_USE_VOXEL_REGION_BACKEND
 #define GAME_USE_VOXEL_REGION_BACKEND
 #endif
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include "../../Libft/Modules/Voxel/voxel_mesh.hpp"
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <cstdio>
-#include <vector>
+#include "../ft_vox.hpp"
 
 class TextureAtlas
 {
