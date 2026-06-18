@@ -27,9 +27,4 @@
 # include <string>
 # include <vector>
 
-#if defined(__APPLE__)
-# include <mach/mach.h>
-# include <mach/task.h>
-#endif
-
 #endif
