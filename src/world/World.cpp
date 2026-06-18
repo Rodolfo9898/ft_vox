@@ -1,8 +1,5 @@
 #include "../../src/world/World.hpp"
 
-#include <algorithm>
-#include <vector>
-
 World::World()
 {
     this->chunk_count = WorldCoordinates::CHUNK_COUNT;
