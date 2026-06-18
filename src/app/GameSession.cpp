@@ -130,7 +130,7 @@ GameSession::Action GameSession::handle_navigation(ApplicationWindow &window)
     ft_dumb_controls_poll();
     if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_BACK) == FT_TRUE)
         return Action::EXIT_TO_MENU;
-    if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_SETTINGS) == FT_TRUE)
+    if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_CONFIRM) == FT_TRUE)
         return Action::OPEN_SETTINGS;
     if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_BOOST) == FT_TRUE)
         boost_enabled_ = !boost_enabled_;

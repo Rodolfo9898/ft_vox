@@ -1,5 +1,8 @@
 #include "../../src/world/World.hpp"
 
+#include <algorithm>
+#include <vector>
+
 World::World()
 {
     this->chunk_count = WorldCoordinates::CHUNK_COUNT;
@@ -174,53 +177,64 @@ int32_t World::try_load_chunk_at(int32_t chunk_x, int32_t chunk_z)
     return (1);
 }
 
-static bool chunk_is_on_ring_circle(int32_t offset_x, int32_t offset_z, int32_t radius,
-                                    int32_t center_x, int32_t center_z)
-{
-    int32_t dist_sq;
-
-    if (offset_x != -radius && offset_x != radius && offset_z != -radius && offset_z != radius)
-        return (false);
-    dist_sq = WorldCoordinates::chunk_distance_squared(center_x + offset_x, center_z + offset_z,
-                                                       center_x, center_z);
-    return (dist_sq <= radius * radius);
-}
-
 int32_t World::stream_chunks(int32_t stream_radius, int32_t budget, int32_t *generated)
 {
-    int32_t radius;
+    int32_t result;
+    struct Candidate
+    {
+        int32_t offset_x;
+        int32_t offset_z;
+        int32_t dist_sq;
+    };
+    std::vector<Candidate> candidates;
     int32_t offset_x;
     int32_t offset_z;
-    int32_t result;
+    int32_t radius_sq;
 
-    radius = 0;
-    while (radius <= stream_radius)
+    radius_sq = stream_radius * stream_radius;
+    candidates.reserve(static_cast<size_t>((stream_radius * 2 + 1) * (stream_radius * 2 + 1)));
+    offset_z = -stream_radius;
+    while (offset_z <= stream_radius)
     {
-        offset_z = -radius;
-        while (offset_z <= radius)
+        offset_x = -stream_radius;
+        while (offset_x <= stream_radius)
         {
-            offset_x = -radius;
-            while (offset_x <= radius)
-            {
-                if (chunk_is_on_ring_circle(offset_x, offset_z, radius, this->center_chunk_x,
-                                            this->center_chunk_z))
-                {
-                    result = this->try_load_chunk_at(this->center_chunk_x + offset_x,
-                                                     this->center_chunk_z + offset_z);
-                    if (result < 0)
-                        return (result);
-                    if (result > 0)
-                    {
-                        *generated = *generated + 1;
-                        if (budget > 0 && *generated >= budget)
-                            return (FT_ERR_SUCCESS);
-                    }
-                }
-                offset_x = offset_x + 1;
-            }
-            offset_z = offset_z + 1;
+            Candidate candidate;
+
+            candidate.offset_x = offset_x;
+            candidate.offset_z = offset_z;
+            candidate.dist_sq = (offset_x * offset_x) + (offset_z * offset_z);
+            if (candidate.dist_sq <= radius_sq)
+                candidates.push_back(candidate);
+            offset_x = offset_x + 1;
         }
-        radius = radius + 1;
+        offset_z = offset_z + 1;
+    }
+    std::sort(candidates.begin(), candidates.end(),
+              [](const Candidate &a, const Candidate &b) -> bool
+              {
+                  if (a.dist_sq != b.dist_sq)
+                      return (a.dist_sq < b.dist_sq);
+                  int32_t a_manhattan = std::abs(a.offset_x) + std::abs(a.offset_z);
+                  int32_t b_manhattan = std::abs(b.offset_x) + std::abs(b.offset_z);
+                  if (a_manhattan != b_manhattan)
+                      return (a_manhattan < b_manhattan);
+                  if (a.offset_z != b.offset_z)
+                      return (a.offset_z < b.offset_z);
+                  return (a.offset_x < b.offset_x);
+              });
+    for (const Candidate &candidate : candidates)
+    {
+        result = this->try_load_chunk_at(this->center_chunk_x + candidate.offset_x,
+                                         this->center_chunk_z + candidate.offset_z);
+        if (result < 0)
+            return (result);
+        if (result > 0)
+        {
+            *generated = *generated + 1;
+            if (budget > 0 && *generated >= budget)
+                return (FT_ERR_SUCCESS);
+        }
     }
     return (FT_ERR_SUCCESS);
 }

@@ -35,9 +35,15 @@ std::string GlslLoader::load(const char *path)
         std::fclose(f);
         return std::string();
     }
-    std::fseek(f, 0, SEEK_SET);
+    if (std::fseek(f, 0, SEEK_SET) != 0)
+    {
+        std::fclose(f);
+        return std::string();
+    }
     std::string src(static_cast<size_t>(sz), '\0');
-    std::fread(&src[0], 1, static_cast<size_t>(sz), f);
+    size_t read = std::fread(src.data(), 1, static_cast<size_t>(sz), f);
     std::fclose(f);
+    if (read != static_cast<size_t>(sz))
+        return std::string();
     return src;
 }

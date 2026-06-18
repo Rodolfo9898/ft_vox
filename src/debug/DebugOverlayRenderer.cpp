@@ -88,8 +88,8 @@ void DebugOverlayRenderer::draw_debug_text(ft_render_framebuffer &framebuffer, i
         return;
     FontRenderer &fr = FontRenderer::instance();
     if (fr.is_loaded())
-        fr.draw_text(reinterpret_cast<uint32_t *>(framebuffer.pixels), framebuffer.width,
-                     framebuffer.height, origin_x, origin_y, text, 0xEEEEFFU);
+        fr.draw_text(framebuffer.pixels, framebuffer.width, framebuffer.height, origin_x,
+                     origin_y, text, 0xEEEEFFU);
 }
 
 void DebugOverlayRenderer::draw_line(ft_render_framebuffer &fb, int32_t x, int32_t &line,
