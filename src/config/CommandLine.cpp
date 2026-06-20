@@ -33,8 +33,7 @@ bool CommandLine::has_flag(int argc, char **argv, const char *flag)
     return (false);
 }
 
-int CommandLine::parse_perf_seconds(int argc, char **argv,
-    double *seconds_out)
+int CommandLine::parse_perf_seconds(int argc, char **argv, double *seconds_out)
 {
     int index;
     const char *argument;
@@ -62,8 +61,7 @@ int CommandLine::parse_perf_seconds(int argc, char **argv,
             if (*value_string == '\0')
                 return (-1);
             parsed_value = std::strtod(value_string, &end_pointer);
-            if (end_pointer == value_string || *end_pointer != '\0'
-                || parsed_value <= 0.0)
+            if (end_pointer == value_string || *end_pointer != '\0' || parsed_value <= 0.0)
                 return (-1);
             *seconds_out = parsed_value;
             return (1);

@@ -1,19 +1,20 @@
 #ifndef TERRAIN_DETERMINISM_VALIDATOR_HPP
 # define TERRAIN_DETERMINISM_VALIDATOR_HPP
 
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include "../../Libft/Modules/Game/game_voxel_chunk.hpp"
-#include "../../Libft/Modules/Voxel/voxel.hpp"
-#include <cstdint>
-#include <cstdio>
+#ifndef GAME_USE_VOXEL_REGION_BACKEND
+# define GAME_USE_VOXEL_REGION_BACKEND
+#endif
 
-class TerrainDeterminismValidator
+#include "../ft_vox.hpp"
+#include "../../src/validators/IValidator.hpp"
+
+class TerrainDeterminismValidator : public IValidator
 {
     private:
         static int compare_chunks(const game_voxel_chunk &left,
-            const game_voxel_chunk &right);
+                                  const game_voxel_chunk &right);
         static int generate_pair(int32_t world_x, int32_t world_z,
-            const char *seed);
+                                 const char *seed);
 
     public:
         TerrainDeterminismValidator();
@@ -21,7 +22,7 @@ class TerrainDeterminismValidator
         ~TerrainDeterminismValidator();
         TerrainDeterminismValidator &operator=(const TerrainDeterminismValidator &other);
 
-        static int validate();
+        virtual int validate() const override;
 };
 
 #endif

@@ -1,20 +1,18 @@
 #include "../../src/frame/RenderCache.hpp"
 
+const double RenderCache::FOV_DEGREES = 40.0;
+const double RenderCache::DEG_TO_RAD = 0.017453292519943295;
+const double RenderCache::HEIGHT_SCALE = 0.52;
+
 RenderCache::RenderCache()
+    : yaw_cos(1.0), yaw_sin(0.0), pitch_cos(1.0), pitch_sin(0.0), fov_tangent(1.0),
+      aspect_ratio(1.0), focal_length(1.0), half_width(0.0), half_height(0.0), render_distance(0.0)
 {
-    this->yaw_cos = 1.0;
-    this->yaw_sin = 0.0;
-    this->pitch_cos = 1.0;
-    this->pitch_sin = 0.0;
-    this->fov_tangent = 1.0;
-    this->aspect_ratio = 1.0;
-    this->focal_length = 1.0;
-    this->half_width = 0.0;
-    this->half_height = 0.0;
-    this->render_distance = 0.0;
 }
 
 RenderCache::RenderCache(const RenderCache &other)
+    : yaw_cos(1.0), yaw_sin(0.0), pitch_cos(1.0), pitch_sin(0.0), fov_tangent(1.0),
+      aspect_ratio(1.0), focal_length(1.0), half_width(0.0), half_height(0.0), render_distance(0.0)
 {
     *this = other;
 }
@@ -27,33 +25,33 @@ RenderCache &RenderCache::operator=(const RenderCache &other)
 {
     if (this != &other)
     {
-        this->yaw_cos = other.yaw_cos;
-        this->yaw_sin = other.yaw_sin;
-        this->pitch_cos = other.pitch_cos;
-        this->pitch_sin = other.pitch_sin;
-        this->fov_tangent = other.fov_tangent;
-        this->aspect_ratio = other.aspect_ratio;
-        this->focal_length = other.focal_length;
-        this->half_width = other.half_width;
-        this->half_height = other.half_height;
-        this->render_distance = other.render_distance;
+        yaw_cos = other.yaw_cos;
+        yaw_sin = other.yaw_sin;
+        pitch_cos = other.pitch_cos;
+        pitch_sin = other.pitch_sin;
+        fov_tangent = other.fov_tangent;
+        aspect_ratio = other.aspect_ratio;
+        focal_length = other.focal_length;
+        half_width = other.half_width;
+        half_height = other.half_height;
+        render_distance = other.render_distance;
     }
-    return (*this);
+    return *this;
 }
 
 void RenderCache::configure(const Camera &camera, int32_t width, int32_t height,
-    int32_t active_render_distance)
+                            int32_t active_render_distance)
 {
-    this->yaw_cos = std::cos(camera.yaw);
-    this->yaw_sin = std::sin(camera.yaw);
-    this->pitch_cos = std::cos(camera.pitch);
-    this->pitch_sin = std::sin(camera.pitch);
-    this->fov_tangent = std::tan(40.0 * 0.017453292519943295);
-    this->aspect_ratio = (static_cast<double>(width) * 0.5)
-        / (static_cast<double>(height) * 0.52);
-    this->focal_length = (static_cast<double>(width) * 0.5)
-        / this->fov_tangent;
-    this->half_width = static_cast<double>(width) * 0.5;
-    this->half_height = static_cast<double>(height) * 0.52;
-    this->render_distance = static_cast<double>(active_render_distance);
+    double w = static_cast<double>(width);
+    double h = static_cast<double>(height);
+    yaw_cos = std::cos(camera.yaw);
+    yaw_sin = std::sin(camera.yaw);
+    pitch_cos = std::cos(camera.pitch);
+    pitch_sin = std::sin(camera.pitch);
+    fov_tangent = std::tan(FOV_DEGREES * DEG_TO_RAD);
+    aspect_ratio = (w * 0.5) / (h * HEIGHT_SCALE);
+    focal_length = (w * 0.5) / fov_tangent;
+    half_width = w * 0.5;
+    half_height = h * HEIGHT_SCALE;
+    render_distance = static_cast<double>(active_render_distance);
 }

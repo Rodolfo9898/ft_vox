@@ -19,23 +19,19 @@ MeshClipper &MeshClipper::operator=(const MeshClipper &other)
     return (*this);
 }
 
-ClipVertex MeshClipper::lerp(const ClipVertex &from,
-    const ClipVertex &to, double amount)
+ClipVertex MeshClipper::lerp(const ClipVertex &from, const ClipVertex &to, double amount)
 {
     ClipVertex result;
 
     result.view_x = from.view_x + ((to.view_x - from.view_x) * amount);
     result.view_y = from.view_y + ((to.view_y - from.view_y) * amount);
     result.view_z = from.view_z + ((to.view_z - from.view_z) * amount);
-    result.texture_u = from.texture_u
-        + ((to.texture_u - from.texture_u) * amount);
-    result.texture_v = from.texture_v
-        + ((to.texture_v - from.texture_v) * amount);
+    result.texture_u = from.texture_u + ((to.texture_u - from.texture_u) * amount);
+    result.texture_v = from.texture_v + ((to.texture_v - from.texture_v) * amount);
     return (result);
 }
 
-size_t MeshClipper::clip_near(const ClipVertex input[3],
-    ClipVertex output[4])
+size_t MeshClipper::clip_near(const ClipVertex input[3], ClipVertex output[4])
 {
     ClipVertex previous;
     ClipVertex current;
@@ -55,8 +51,7 @@ size_t MeshClipper::clip_near(const ClipVertex input[3],
         current_inside = current.view_z >= NEAR_PLANE;
         if (current_inside != previous_inside)
         {
-            amount = (NEAR_PLANE - previous.view_z)
-                / (current.view_z - previous.view_z);
+            amount = (NEAR_PLANE - previous.view_z) / (current.view_z - previous.view_z);
             if (output_count < 4U)
                 output[output_count++] = lerp(previous, current, amount);
         }

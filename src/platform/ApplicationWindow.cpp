@@ -1,13 +1,28 @@
 #include "../../src/platform/ApplicationWindow.hpp"
 
+ApplicationWindow::ApplicationWindow()
+{
+    this->active_framebuffer.width = 0;
+    this->active_framebuffer.height = 0;
+    this->active_framebuffer.pixels = nullptr;
+    this->gpu_window.reset();
+    this->headless = false;
+    this->opened = false;
+}
+
 ApplicationWindow::ApplicationWindow(const ApplicationWindow &other)
 {
     this->active_framebuffer = other.active_framebuffer;
-    this->headless_pixels    = other.headless_pixels;
-    this->headless           = other.headless;
-    this->opened             = false;
+    this->headless_pixels = other.headless_pixels;
+    this->headless = other.headless;
+    this->opened = false;
     if (!this->headless_pixels.empty())
         this->active_framebuffer.pixels = this->headless_pixels.data();
+}
+
+ApplicationWindow::~ApplicationWindow()
+{
+    (void)this->destroy();
 }
 
 ApplicationWindow &ApplicationWindow::operator=(const ApplicationWindow &other)
@@ -15,90 +30,61 @@ ApplicationWindow &ApplicationWindow::operator=(const ApplicationWindow &other)
     if (this != &other)
     {
         this->active_framebuffer = other.active_framebuffer;
-        this->headless_pixels    = other.headless_pixels;
+        this->headless_pixels = other.headless_pixels;
         this->gpu_window.reset();
-        this->headless           = other.headless;
-        this->opened             = false;
+        this->headless = other.headless;
+        this->opened = false;
         if (!this->headless_pixels.empty())
             this->active_framebuffer.pixels = this->headless_pixels.data();
     }
     return (*this);
 }
 
-
-ApplicationWindow::ApplicationWindow()
+int ApplicationWindow::initialize_headless_mode(int width, int height)
 {
-    this->active_framebuffer.width  = 0;
-    this->active_framebuffer.height = 0;
+    this->active_framebuffer.width = width;
+    this->active_framebuffer.height = height;
+    this->headless_pixels.resize(static_cast<size_t>(width) * static_cast<size_t>(height));
+    this->active_framebuffer.pixels = this->headless_pixels.data();
+    return (0);
+}
+
+int ApplicationWindow::initialize_gpu_mode(int width, int height, bool fullscreen)
+{
+    this->gpu_window.reset(GpuWindow::create());
+    if (this->gpu_window == nullptr)
+        return (-1);
+    if (!this->gpu_window->initialize("Voxel World", width, height, fullscreen))
+    {
+        this->gpu_window.reset();
+        return (-1);
+    }
+    this->active_framebuffer.width = this->gpu_window->get_width();
+    this->active_framebuffer.height = this->gpu_window->get_height();
     this->active_framebuffer.pixels = nullptr;
-    this->gpu_window.reset();
-    this->headless   = false;
-    this->opened     = false;
+    this->opened = true;
+    return (0);
 }
 
-
-ApplicationWindow::~ApplicationWindow()
+int ApplicationWindow::initialize_software_mode(int width, int height, bool fullscreen)
 {
-    (void)this->destroy();
-}
-
-
-int ApplicationWindow::initialize(bool headless_mode, int width, int height,
-    bool fullscreen, bool allow_gpu)
-{
-    this->headless = headless_mode;
-    if (width <= 0)
-        width = 1280;
-    if (height <= 0)
-        height = 720;
-    if (this->headless == true)
-    {
-        this->active_framebuffer.width  = width;
-        this->active_framebuffer.height = height;
-        this->headless_pixels.resize(
-            static_cast<size_t>(this->active_framebuffer.width)
-            * static_cast<size_t>(this->active_framebuffer.height));
-        this->active_framebuffer.pixels = this->headless_pixels.data();
-        return (0);
-    }
-
-    if (allow_gpu == true)
-    {
-        this->gpu_window.reset(GpuWindow::create());
-        if (this->gpu_window != nullptr)
-        {
-            if (this->gpu_window->initialize("Voxel World", width, height,
-                    fullscreen))
-            {
-                this->active_framebuffer.width  = this->gpu_window->get_width();
-                this->active_framebuffer.height = this->gpu_window->get_height();
-                this->active_framebuffer.pixels = nullptr;
-                this->opened = true;
-                return (0);
-            }
-            this->gpu_window.reset();
-        }
-    }
-
     ft_render_window_desc description;
     int32_t error_code;
 
     error_code = this->sw_window.initialize();
     if (error_code != FT_ERR_SUCCESS)
-        return (ApplicationError::fail("window object initialization",
-            error_code));
-    description.width  = width;
+        return (ApplicationError::fail("window object initialization", error_code));
+    description.width = width;
     description.height = height;
-    description.title  = "Voxel World";
-    description.flags  = fullscreen == true
-        ? FT_RENDER_WINDOW_FLAG_FULLSCREEN : FT_RENDER_WINDOW_FLAG_NONE;
+    description.title = "Voxel World";
+    description.flags = fullscreen ? FT_RENDER_WINDOW_FLAG_FULLSCREEN : FT_RENDER_WINDOW_FLAG_NONE;
     error_code = this->sw_window.initialize(description);
     if (error_code != FT_ERR_SUCCESS)
     {
         (void)this->sw_window.destroy();
         return (ApplicationError::fail("window creation", error_code));
     }
-    if (fullscreen == true)
+    if (fullscreen)
     {
         error_code = this->sw_window.set_fullscreen(FT_TRUE);
         if (error_code != FT_ERR_SUCCESS)
@@ -112,9 +98,24 @@ int ApplicationWindow::initialize(bool headless_mode, int width, int height,
     return (0);
 }
 
+int ApplicationWindow::initialize(bool headless_mode, int width, int height, bool fullscreen,
+                                  bool allow_gpu)
+{
+    this->headless = headless_mode;
+    if (width <= 0)
+        width = 1280;
+    if (height <= 0)
+        height = 720;
+    if (this->headless)
+        return (initialize_headless_mode(width, height));
+    if (allow_gpu && initialize_gpu_mode(width, height, fullscreen) == 0)
+        return (0);
+    return (initialize_software_mode(width, height, fullscreen));
+}
+
 int ApplicationWindow::poll_events()
 {
-    if (this->headless == true)
+    if (this->headless)
         return (FT_ERR_SUCCESS);
     if (this->gpu_window != nullptr)
     {
@@ -126,7 +127,7 @@ int ApplicationWindow::poll_events()
 
 int ApplicationWindow::present()
 {
-    if (this->headless == true)
+    if (this->headless)
         return (FT_ERR_SUCCESS);
     if (this->gpu_window != nullptr)
     {
@@ -138,7 +139,7 @@ int ApplicationWindow::present()
 
 int ApplicationWindow::destroy()
 {
-    if (this->opened == false)
+    if (!this->opened)
         return (FT_ERR_SUCCESS);
     this->opened = false;
     if (this->gpu_window != nullptr)
@@ -152,7 +153,7 @@ int ApplicationWindow::destroy()
 
 bool ApplicationWindow::should_close() const
 {
-    if (this->headless == true)
+    if (this->headless)
         return (false);
     if (this->gpu_window != nullptr)
         return (this->gpu_window->should_close());

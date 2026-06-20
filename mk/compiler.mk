@@ -82,14 +82,18 @@ endif
 
 export COMPILE_FLAGS
 
+FT_CFLAGS := $(shell pkg-config --cflags freetype2 2>/dev/null)
+FT_LIBS   := $(shell pkg-config --libs   freetype2 2>/dev/null)
+COMPILE_FLAGS += $(FT_CFLAGS)
+
 ifeq ($(OS),Windows_NT)
-    LDFLAGS = -lopengl32 -lgdi32 -lws2_32 -ldbghelp
+    LDFLAGS = -lopengl32 -lgdi32 -lws2_32 -ldbghelp $(FT_LIBS)
 else
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
-        LDFLAGS = -lz -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore -framework AudioToolbox -framework OpenGL -framework Carbon -lobjc -lpthread -lsqlite3
+        LDFLAGS = -lz -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore -framework AudioToolbox -framework OpenGL -framework Carbon -lobjc -lpthread -lsqlite3 $(FT_LIBS)
     else
-        LDFLAGS = -lX11 -lXext -lXi -lGL
+        LDFLAGS = -lX11 -lXext -lXi -lGL $(FT_LIBS)
     endif
 endif
 

@@ -19,9 +19,9 @@ MeshProjector &MeshProjector::operator=(const MeshProjector &other)
     return (*this);
 }
 
-bool MeshProjector::transform_vertex(const Camera &camera,
-    const chunk_mesh_vertex &vertex, int32_t origin_x, int32_t origin_z,
-    const RenderCache &render_cache, ClipVertex *clip_vertex)
+bool MeshProjector::transform_vertex(const Camera &camera, const chunk_mesh_vertex &vertex,
+                                     int32_t origin_x, int32_t origin_z,
+                                     const RenderCache &render_cache, ClipVertex *clip_vertex)
 {
     double world_x;
     double world_y;
@@ -37,23 +37,17 @@ bool MeshProjector::transform_vertex(const Camera &camera,
 
     if (clip_vertex == nullptr)
         return (false);
-    world_x = static_cast<double>(origin_x)
-        + static_cast<double>(vertex.coordinate_x);
+    world_x = static_cast<double>(origin_x) + static_cast<double>(vertex.coordinate_x);
     world_y = static_cast<double>(vertex.coordinate_y);
-    world_z = static_cast<double>(origin_z)
-        + static_cast<double>(vertex.coordinate_z);
+    world_z = static_cast<double>(origin_z) + static_cast<double>(vertex.coordinate_z);
     translated_x = world_x - camera.x;
     translated_y = world_y - camera.y;
     translated_z = world_z - camera.z;
-    view_x = (translated_x * render_cache.yaw_cos)
-        - (translated_z * render_cache.yaw_sin);
-    view_z = (translated_x * render_cache.yaw_sin)
-        + (translated_z * render_cache.yaw_cos);
+    view_x = (translated_x * render_cache.yaw_cos) - (translated_z * render_cache.yaw_sin);
+    view_z = (translated_x * render_cache.yaw_sin) + (translated_z * render_cache.yaw_cos);
     view_y = translated_y;
-    pitched_y = (view_y * render_cache.pitch_cos)
-        - (view_z * render_cache.pitch_sin);
-    pitched_z = (view_y * render_cache.pitch_sin)
-        + (view_z * render_cache.pitch_cos);
+    pitched_y = (view_y * render_cache.pitch_cos) - (view_z * render_cache.pitch_sin);
+    pitched_z = (view_y * render_cache.pitch_sin) + (view_z * render_cache.pitch_cos);
     clip_vertex->view_x = view_x;
     clip_vertex->view_y = pitched_y;
     clip_vertex->view_z = pitched_z;
@@ -62,18 +56,18 @@ bool MeshProjector::transform_vertex(const Camera &camera,
     return (true);
 }
 
-bool MeshProjector::project_vertex(const RenderCache &render_cache,
-    const ClipVertex &clip_vertex, ScreenVertex *screen_vertex)
+bool MeshProjector::project_vertex(const RenderCache &render_cache, const ClipVertex &clip_vertex,
+                                   ScreenVertex *screen_vertex)
 {
     double inv_view_z;
 
     if (screen_vertex == nullptr || clip_vertex.view_z < NEAR_PLANE)
         return (false);
     inv_view_z = 1.0 / clip_vertex.view_z;
-    screen_vertex->x = render_cache.half_width
-        + ((clip_vertex.view_x * inv_view_z) * render_cache.focal_length);
-    screen_vertex->y = render_cache.half_height
-        - ((clip_vertex.view_y * inv_view_z) * render_cache.focal_length);
+    screen_vertex->x =
+        render_cache.half_width + ((clip_vertex.view_x * inv_view_z) * render_cache.focal_length);
+    screen_vertex->y =
+        render_cache.half_height - ((clip_vertex.view_y * inv_view_z) * render_cache.focal_length);
     screen_vertex->depth = clip_vertex.view_z;
     screen_vertex->texture_u = clip_vertex.texture_u;
     screen_vertex->texture_v = clip_vertex.texture_v;

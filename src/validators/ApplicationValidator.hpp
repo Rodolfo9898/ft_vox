@@ -7,11 +7,7 @@
 #include "../../src/validators/TerrainDeterminismValidator.hpp"
 #include "../../src/validators/TerrainCaveValidator.hpp"
 #include "../../src/validators/WorldScaleValidator.hpp"
-#include "../../src/world/World.hpp"
-#include "../../src/camera/Camera.hpp"
-#include "../../src/player/PlayerController.hpp"
-#include "../../Libft/Modules/Errno/errno.hpp"
-#include <cstdio>
+#include "../../src/validators/WorldVisibilityValidator.hpp"
 
 class ApplicationValidator
 {

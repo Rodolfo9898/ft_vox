@@ -1,83 +1,80 @@
 #ifndef MENU_CONTROLLER_HPP
-# define MENU_CONTROLLER_HPP
+#define MENU_CONTROLLER_HPP
 
+#include "../ft_vox.hpp"
 #include "../../src/gpur/GpuRenderer.hpp"
 #include "../../src/menu/MenuCanvas.hpp"
 #include "../../src/menu/MenuScene.hpp"
-#include <string>
-#include <memory>
-#include <ctime>
-#include <cstdio>
 
-class GpuRenderer;
 class MainMenuScene;
 class SettingsScene;
 class CreditsScene;
 class LoadingScene;
 class InGameSettingsScene;
 
-enum class MenuPhase
-{
-    MAIN_MENU,
-    SETTINGS,
-    CREDITS,
-    LOADING,
-    IN_GAME_SETTINGS
-};
-
 class MenuController
 {
-    public:
-        MenuController();
-        MenuController(const MenuController &other);
-        ~MenuController();
-        MenuController &operator=(const MenuController &other);
+  public:
+    enum class Phase
+    {
+        MAIN_MENU,
+        SETTINGS,
+        CREDITS,
+        LOADING,
+        IN_GAME_SETTINGS
+    };
 
-        void show_main_menu();
-        void show_settings();
-        void show_credits();
-        void show_loading();
-        void show_in_game_settings();
+    MenuController();
+    MenuController(const MenuController &other);
+    ~MenuController();
+    MenuController &operator=(const MenuController &other);
 
-        void update(const MenuInput &in);
-        void render(GpuRenderer *gpu);
-        void render_overlay(GpuRenderer *gpu);
+    void show_main_menu();
+    void show_settings();
+    void show_credits();
+    void show_loading();
+    void show_in_game_settings();
 
-        bool wants_start()       const;
-        bool wants_exit()        const;
-        bool dismissed_in_game() const;
-        bool wants_main_menu()   const;
+    void update(const MenuCanvas::MenuInput &in);
+    void render(GpuRenderer *gpu);
+    void render_overlay(GpuRenderer *gpu);
 
-        const std::string &start_seed() const;
-        void clear_flags();
+    bool wants_start() const;
+    bool wants_exit() const;
+    bool dismissed_in_game() const;
+    bool wants_main_menu() const;
 
-        void request_start(const std::string &seed);
-        void request_exit();
-        void request_settings();
-        void request_credits();
-        void request_back();
-        void request_dismiss_in_game();
-        void request_main_menu_from_game();
+    const std::string &start_seed() const;
+    void clear_flags();
 
-        MenuCanvas &canvas();
+    void request_start(const std::string &seed);
+    void request_exit();
+    void request_settings();
+    void request_credits();
+    void request_back();
+    void request_dismiss_in_game();
+    void request_main_menu_from_game();
 
-    private:
-        MenuCanvas    canvas_;
-        MenuPhase     phase_    = MenuPhase::MAIN_MENU;
+    MenuCanvas &canvas();
 
-        std::unique_ptr<MainMenuScene>        main_scene_;
-        std::unique_ptr<SettingsScene>        settings_scene_;
-        std::unique_ptr<CreditsScene>         credits_scene_;
-        std::unique_ptr<LoadingScene>         loading_scene_;
-        std::unique_ptr<InGameSettingsScene>  in_game_scene_;
+  private:
+    MenuCanvas canvas_;
+    Phase phase_;
 
-        bool        wants_start_       = false;
-        bool        wants_exit_        = false;
-        bool        dismissed_in_game_ = false;
-        bool        wants_main_menu_   = false;
-        std::string start_seed_;
+    std::unique_ptr<MainMenuScene> main_scene_;
+    std::unique_ptr<SettingsScene> settings_scene_;
+    std::unique_ptr<CreditsScene> credits_scene_;
+    std::unique_ptr<LoadingScene> loading_scene_;
+    std::unique_ptr<InGameSettingsScene> in_game_scene_;
 
-        MenuScene *current_scene();
+    bool wants_start_;
+    bool wants_exit_;
+    bool dismissed_in_game_;
+    bool wants_main_menu_;
+    std::string start_seed_;
+
+    MenuScene *current_scene();
+    static std::string make_seed();
 };
 
 #endif

@@ -1,76 +1,90 @@
 #include "../../src/menu/MainMenuScene.hpp"
 
-MainMenuScene::MainMenuScene()
-    : MenuScene() {}
-MainMenuScene::MainMenuScene(const MainMenuScene &other)
-    : MenuScene() { (void)other; }
-MainMenuScene::~MainMenuScene() {}
-MainMenuScene &MainMenuScene::operator=(const MainMenuScene &other) { (void)other; return *this; }
+const int MainMenuScene::Layout::BTN_W = 280;
+const int MainMenuScene::Layout::BTN_H = 44;
+const int MainMenuScene::Layout::BTN_X = (MenuCanvas::W - BTN_W) / 2;
+const int MainMenuScene::Layout::BTN_Y0 = 210;
+const int MainMenuScene::Layout::BTN_STRIDE = BTN_H + 12;
 
+const char *MainMenuScene::BTN_LABELS[4] = {"START", "SETTINGS", "CREDITS", "EXIT"};
 
-static const int BTN_W = 280;
-static const int BTN_H = 44;
-static const int BTN_X = (MenuCanvas::W - BTN_W) / 2;
-
-static const char *BTN_LABELS[4] = {"START", "SETTINGS", "CREDITS", "EXIT"};
-
-void MainMenuScene::update(const MenuInput &in, MenuController &ctl)
+MainMenuScene::MainMenuScene() : MenuScene(), selected_(0)
 {
-    if (in.key_up)   { --selected_; if (selected_ < 0) selected_ = 3; }
-    if (in.key_down) { ++selected_; if (selected_ > 3) selected_ = 0; }
+}
+MainMenuScene::MainMenuScene(const MainMenuScene &other) : MenuScene(), selected_(other.selected_)
+{
+}
+MainMenuScene::~MainMenuScene()
+{
+}
+MainMenuScene &MainMenuScene::operator=(const MainMenuScene &other)
+{
+    (void)other;
+    return *this;
+}
+
+static void handle_button_action(int index, MenuController &ctl)
+{
+    switch (index)
+    {
+    case 0:
+        ctl.request_start("");
+        break;
+    case 1:
+        ctl.request_settings();
+        break;
+    case 2:
+        ctl.request_credits();
+        break;
+    case 3:
+        ctl.request_exit();
+        break;
+    default:
+        break;
+    }
+}
+
+void MainMenuScene::update(const MenuCanvas::MenuInput &in, MenuController &ctl)
+{
+    if (in.key_up)
+    {
+        --selected_;
+        if (selected_ < 0)
+            selected_ = 3;
+    }
+    if (in.key_down)
+    {
+        ++selected_;
+        if (selected_ > 3)
+            selected_ = 0;
+    }
+
     for (int i = 0; i < 4; ++i)
     {
-        int by = 210 + i * (BTN_H + 12);
-        bool hov = ctl.canvas().is_hovered(BTN_X, by, BTN_W, BTN_H, in);
-        if (hov) selected_ = i;
+        int by = Layout::BTN_Y0 + i * Layout::BTN_STRIDE;
+        if (ctl.canvas().is_hovered(Layout::BTN_X, by, Layout::BTN_W, Layout::BTN_H, in))
+            selected_ = i;
+        if (ctl.canvas().was_clicked(Layout::BTN_X, by, Layout::BTN_W, Layout::BTN_H, in))
+            handle_button_action(i, ctl);
     }
     if (in.key_enter)
-    {
-        switch (selected_)
-        {
-            case 0: ctl.request_start(""); break;
-            case 1: ctl.request_settings(); break;
-            case 2: ctl.request_credits(); break;
-            case 3: ctl.request_exit(); break;
-            default: break;
-        }
-    }
-    for (int i = 0; i < 4; ++i)
-    {
-        int by = 210 + i * (BTN_H + 12);
-        MenuInput tmp = in;
-        tmp.mouse_clicked = in.mouse_clicked &&
-            ctl.canvas().is_hovered(BTN_X, by, BTN_W, BTN_H, in);
-        if (tmp.mouse_clicked)
-        {
-            switch (i)
-            {
-                case 0: ctl.request_start(""); break;
-                case 1: ctl.request_settings(); break;
-                case 2: ctl.request_credits(); break;
-                case 3: ctl.request_exit(); break;
-                default: break;
-            }
-        }
-    }
+        handle_button_action(selected_, ctl);
 }
 
 void MainMenuScene::render(MenuCanvas &c) const
 {
-    c.clear(MC::BG);
-    c.draw_text_centered(MenuCanvas::W / 2, 80, "FT_VOX", 6, MC::TITLE);
+    c.clear(MenuCanvas::Colors::BG);
+    c.draw_text_centered(MenuCanvas::W / 2, 80, "FT_VOX", 6, MenuCanvas::Colors::TITLE);
     for (int i = 0; i < 4; ++i)
     {
-        int by = 210 + i * (BTN_H + 12);
+        int by = Layout::BTN_Y0 + i * Layout::BTN_STRIDE;
         bool sel = (i == selected_);
-        uint32_t bg = sel ? MC::BTN_A : MC::BTN_N;
-        c.fill_rect(BTN_X, by, BTN_W, BTN_H, bg);
-        c.draw_border(BTN_X, by, BTN_W, BTN_H, sel ? MC::ACCENT : MC::TEXT_DIM);
-        int tw = 0;
-        for (const char *p = BTN_LABELS[i]; *p; ++p) tw += 16;
-        c.draw_text(BTN_X + (BTN_W - tw) / 2, by + (BTN_H - 20) / 2,
-            BTN_LABELS[i], 3, MC::TEXT);
+        uint32_t bg = sel ? MenuCanvas::Colors::BTN_A : MenuCanvas::Colors::BTN_N;
+        uint32_t bd = sel ? MenuCanvas::Colors::ACCENT : MenuCanvas::Colors::TEXT_DIM;
+        c.fill_rect(Layout::BTN_X, by, Layout::BTN_W, Layout::BTN_H, bg);
+        c.draw_border(Layout::BTN_X, by, Layout::BTN_W, Layout::BTN_H, bd);
+        c.draw_text_centered(Layout::BTN_X + Layout::BTN_W / 2, by + (Layout::BTN_H - 20) / 2, BTN_LABELS[i], 3, MenuCanvas::Colors::TEXT);
     }
-    c.draw_text_centered(MenuCanvas::W / 2, MenuCanvas::H - 24,
-        "USE ARROWS OR MOUSE TO NAVIGATE  ENTER TO SELECT", 1, MC::TEXT_DIM);
+    const char *nav_hint = "USE ARROWS OR MOUSE TO NAVIGATE  ENTER TO SELECT";
+    c.draw_text_centered(MenuCanvas::W / 2, MenuCanvas::H - 24, nav_hint, 1, MenuCanvas::Colors::TEXT_DIM);
 }

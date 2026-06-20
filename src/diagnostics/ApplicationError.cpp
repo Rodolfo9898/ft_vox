@@ -21,7 +21,7 @@ ApplicationError &ApplicationError::operator=(const ApplicationError &other)
 
 int ApplicationError::fail(const char *operation, int32_t error_code)
 {
-    std::fprintf(stderr, "Application: %s failed: %s (%d)\n", operation,
-        ft_strerror(error_code), error_code);
+    std::fprintf(stderr, "Application: %s failed: %s (%d)\n", operation, ft_strerror(error_code),
+                 error_code);
     return (1);
 }

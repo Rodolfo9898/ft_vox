@@ -1,15 +1,11 @@
 #include "../../src/geometry/ScreenVertex.hpp"
 
-ScreenVertex::ScreenVertex()
+ScreenVertex::ScreenVertex() : x(0.0), y(0.0), depth(0.0), texture_u(0.0), texture_v(0.0)
 {
-    this->x = 0.0;
-    this->y = 0.0;
-    this->depth = 0.0;
-    this->texture_u = 0.0;
-    this->texture_v = 0.0;
 }
 
 ScreenVertex::ScreenVertex(const ScreenVertex &other)
+    : x(0.0), y(0.0), depth(0.0), texture_u(0.0), texture_v(0.0)
 {
     *this = other;
 }
@@ -22,11 +18,11 @@ ScreenVertex &ScreenVertex::operator=(const ScreenVertex &other)
 {
     if (this != &other)
     {
-        this->x = other.x;
-        this->y = other.y;
-        this->depth = other.depth;
-        this->texture_u = other.texture_u;
-        this->texture_v = other.texture_v;
+        x = other.x;
+        y = other.y;
+        depth = other.depth;
+        texture_u = other.texture_u;
+        texture_v = other.texture_v;
     }
-    return (*this);
+    return *this;
 }

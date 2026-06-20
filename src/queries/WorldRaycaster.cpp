@@ -1,4 +1,5 @@
 #include "../../src/queries/WorldRaycaster.hpp"
+#include "../../src/world/World.hpp"
 
 WorldRaycaster::WorldRaycaster()
 {
@@ -19,105 +20,76 @@ WorldRaycaster &WorldRaycaster::operator=(const WorldRaycaster &other)
     return (*this);
 }
 
-int32_t WorldRaycaster::raycast_solid(const World &world, double origin_x, double origin_y, double origin_z,
-    double direction_x, double direction_y, double direction_z,
-    double max_distance, int32_t *block_x, int32_t *block_y,
-    int32_t *block_z)
+void WorldRaycaster::compute_cell(double ox, double oy, double oz, double dx, double dy, double dz,
+                                  double dist, int32_t &tx, int32_t &ty, int32_t &tz)
 {
-    const double step_distance = 0.0625;
-    double distance;
-    double sample_x;
-    double sample_y;
-    double sample_z;
-    int32_t test_x;
-    int32_t test_y;
-    int32_t test_z;
+    tx = static_cast<int32_t>(std::floor(ox + dx * dist));
+    ty = static_cast<int32_t>(std::floor(oy + dy * dist));
+    tz = static_cast<int32_t>(std::floor(oz + dz * dist));
+}
+
+int32_t WorldRaycaster::raycast_solid(const World &world, double origin_x, double origin_y,
+                                      double origin_z, double direction_x, double direction_y,
+                                      double direction_z, double max_distance, int32_t *block_x,
+                                      int32_t *block_y, int32_t *block_z)
+{
+    int32_t tx, ty, tz;
     uint32_t block_id;
 
-    if (block_x == nullptr || block_y == nullptr || block_z == nullptr
-        || max_distance <= 0.0)
+    if (block_x == nullptr || block_y == nullptr || block_z == nullptr || max_distance <= 0.0)
         return (FT_ERR_INVALID_ARGUMENT);
-    distance = step_distance;
-    while (distance <= max_distance)
+    for (double dist = STEP_DISTANCE; dist <= max_distance; dist += STEP_DISTANCE)
     {
-        sample_x = origin_x + (direction_x * distance);
-        sample_y = origin_y + (direction_y * distance);
-        sample_z = origin_z + (direction_z * distance);
-        test_x = static_cast<int32_t>(std::floor(sample_x));
-        test_y = static_cast<int32_t>(std::floor(sample_y));
-        test_z = static_cast<int32_t>(std::floor(sample_z));
-        if (WorldBlockQuery::block_id_at(world, test_x, test_y, test_z, &block_id) == true
-            && block_id != GAME_VOXEL_AIR_BLOCK)
+        compute_cell(origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, dist, tx,
+                     ty, tz);
+        if (WorldBlockQuery::block_id_at(world, tx, ty, tz, &block_id) &&
+            block_id != GAME_VOXEL_AIR_BLOCK)
         {
-            *block_x = test_x;
-            *block_y = test_y;
-            *block_z = test_z;
+            *block_x = tx;
+            *block_y = ty;
+            *block_z = tz;
             return (FT_ERR_SUCCESS);
         }
-        distance = distance + step_distance;
     }
     return (FT_ERR_INVALID_ARGUMENT);
 }
 
 int32_t WorldRaycaster::raycast_edit_target(const World &world, double origin_x, double origin_y,
-    double origin_z, double direction_x, double direction_y,
-    double direction_z, double max_distance, int32_t *hit_block_x,
-    int32_t *hit_block_y, int32_t *hit_block_z, int32_t *place_block_x,
-    int32_t *place_block_y, int32_t *place_block_z,
-    uint32_t *hit_block_id)
+                                            double origin_z, double direction_x, double direction_y,
+                                            double direction_z, double max_distance, int32_t *hit_x,
+                                            int32_t *hit_y, int32_t *hit_z, int32_t *place_x,
+                                            int32_t *place_y, int32_t *place_z, uint32_t *hit_id)
 {
-    const double step_distance = 0.0625;
-    double distance;
-    double sample_x;
-    double sample_y;
-    double sample_z;
-    int32_t test_x;
-    int32_t test_y;
-    int32_t test_z;
-    int32_t previous_x;
-    int32_t previous_y;
-    int32_t previous_z;
+    int32_t tx, ty, tz;
+    int32_t prev_x = static_cast<int32_t>(std::floor(origin_x));
+    int32_t prev_y = static_cast<int32_t>(std::floor(origin_y));
+    int32_t prev_z = static_cast<int32_t>(std::floor(origin_z));
     uint32_t block_id;
 
-    if (hit_block_x == nullptr || hit_block_y == nullptr
-        || hit_block_z == nullptr || place_block_x == nullptr
-        || place_block_y == nullptr || place_block_z == nullptr
-        || hit_block_id == nullptr || max_distance <= 0.0)
+    if (!hit_x || !hit_y || !hit_z || !place_x || !place_y || !place_z || !hit_id ||
+        max_distance <= 0.0)
         return (FT_ERR_INVALID_ARGUMENT);
-    previous_x = static_cast<int32_t>(std::floor(origin_x));
-    previous_y = static_cast<int32_t>(std::floor(origin_y));
-    previous_z = static_cast<int32_t>(std::floor(origin_z));
-    distance = step_distance;
-    while (distance <= max_distance)
+    for (double dist = STEP_DISTANCE; dist <= max_distance; dist += STEP_DISTANCE)
     {
-        sample_x = origin_x + (direction_x * distance);
-        sample_y = origin_y + (direction_y * distance);
-        sample_z = origin_z + (direction_z * distance);
-        test_x = static_cast<int32_t>(std::floor(sample_x));
-        test_y = static_cast<int32_t>(std::floor(sample_y));
-        test_z = static_cast<int32_t>(std::floor(sample_z));
-        if (test_x == previous_x && test_y == previous_y
-            && test_z == previous_z)
+        compute_cell(origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, dist, tx,
+                     ty, tz);
+        if (tx == prev_x && ty == prev_y && tz == prev_z)
+            continue;
+        if (WorldBlockQuery::block_id_at(world, tx, ty, tz, &block_id) &&
+            block_id != GAME_VOXEL_AIR_BLOCK)
         {
-            distance = distance + step_distance;
-            continue ;
-        }
-        if (WorldBlockQuery::block_id_at(world, test_x, test_y, test_z, &block_id) == true
-            && block_id != GAME_VOXEL_AIR_BLOCK)
-        {
-            *hit_block_x = test_x;
-            *hit_block_y = test_y;
-            *hit_block_z = test_z;
-            *place_block_x = previous_x;
-            *place_block_y = previous_y;
-            *place_block_z = previous_z;
-            *hit_block_id = block_id;
+            *hit_x = tx;
+            *hit_y = ty;
+            *hit_z = tz;
+            *place_x = prev_x;
+            *place_y = prev_y;
+            *place_z = prev_z;
+            *hit_id = block_id;
             return (FT_ERR_SUCCESS);
         }
-        previous_x = test_x;
-        previous_y = test_y;
-        previous_z = test_z;
-        distance = distance + step_distance;
+        prev_x = tx;
+        prev_y = ty;
+        prev_z = tz;
     }
     return (FT_ERR_NOT_FOUND);
 }

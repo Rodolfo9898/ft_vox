@@ -1,124 +1,98 @@
 #include "../../src/meshes/MeshCuller.hpp"
 
+const double MeshCuller::CHUNK_CENTER_X_OFFSET = static_cast<double>(GAME_VOXEL_CHUNK_WIDTH) * 0.5;
+const double MeshCuller::CHUNK_CENTER_Y_OFFSET = static_cast<double>(GAME_VOXEL_CHUNK_HEIGHT) * 0.5;
+const double MeshCuller::CHUNK_CENTER_Z_OFFSET = static_cast<double>(GAME_VOXEL_CHUNK_DEPTH) * 0.5;
+const double MeshCuller::CHUNK_HALF_EXTENT_X = static_cast<double>(GAME_VOXEL_CHUNK_WIDTH) * 0.5;
+const double MeshCuller::CHUNK_HALF_EXTENT_Y = static_cast<double>(GAME_VOXEL_CHUNK_HEIGHT) * 0.5;
+const double MeshCuller::CHUNK_HALF_EXTENT_Z = static_cast<double>(GAME_VOXEL_CHUNK_DEPTH) * 0.5;
+const double MeshCuller::CHUNK_SPHERE_RADIUS =
+    std::sqrt(MeshCuller::CHUNK_HALF_EXTENT_X * MeshCuller::CHUNK_HALF_EXTENT_X +
+              MeshCuller::CHUNK_HALF_EXTENT_Y * MeshCuller::CHUNK_HALF_EXTENT_Y +
+              MeshCuller::CHUNK_HALF_EXTENT_Z * MeshCuller::CHUNK_HALF_EXTENT_Z);
+
 MeshCuller::MeshCuller()
 {
 }
-
 MeshCuller::MeshCuller(const MeshCuller &other)
 {
-    *this = other;
+    (void)other;
 }
-
 MeshCuller::~MeshCuller()
 {
 }
-
 MeshCuller &MeshCuller::operator=(const MeshCuller &other)
 {
     (void)other;
-    return (*this);
+    return *this;
 }
 
-bool MeshCuller::triangle_faces_camera(const Camera &camera,
-    const WorldChunk &world_chunk, const chunk_mesh_vertex triangle_vertices[3])
+void MeshCuller::face_normal(uint8_t face, double &nx, double &ny, double &nz)
 {
-    double normal_x;
-    double normal_y;
-    double normal_z;
-    double to_camera_x;
-    double to_camera_y;
-    double to_camera_z;
-    uint8_t face;
-    double world_x;
-    double world_y;
-    double world_z;
-
-    face = triangle_vertices[0].face;
-    normal_x = 0.0;
-    normal_y = 0.0;
-    normal_z = 0.0;
+    nx = 0.0;
+    ny = 0.0;
+    nz = 0.0;
     if (face == CHUNK_MESH_FACE_WEST)
-        normal_x = -1.0;
+        nx = -1.0;
     else if (face == CHUNK_MESH_FACE_EAST)
-        normal_x = 1.0;
+        nx = 1.0;
     else if (face == CHUNK_MESH_FACE_DOWN)
-        normal_y = -1.0;
+        ny = -1.0;
     else if (face == CHUNK_MESH_FACE_UP)
-        normal_y = 1.0;
+        ny = 1.0;
     else if (face == CHUNK_MESH_FACE_NORTH)
-        normal_z = -1.0;
+        nz = -1.0;
     else
-        normal_z = 1.0;
-    world_x = static_cast<double>(world_chunk.world_x)
-        + static_cast<double>(triangle_vertices[0].coordinate_x);
-    world_y = static_cast<double>(triangle_vertices[0].coordinate_y);
-    world_z = static_cast<double>(world_chunk.world_z)
-        + static_cast<double>(triangle_vertices[0].coordinate_z);
-    to_camera_x = camera.x - world_x;
-    to_camera_y = camera.y - world_y;
-    to_camera_z = camera.z - world_z;
-    if ((normal_x * to_camera_x) + (normal_y * to_camera_y)
-        + (normal_z * to_camera_z) <= 0.0)
-        return (false);
-    return (true);
+        nz = 1.0;
 }
 
-bool MeshCuller::chunk_is_visible(const Camera &camera,
-    const WorldChunk &world_chunk, const RenderCache &cache)
+bool MeshCuller::triangle_faces_camera(const Camera &camera, const WorldChunk &world_chunk,
+                                       const chunk_mesh_vertex triangle_vertices[3])
 {
-    static const double chunk_center_x_offset = static_cast<double>(
-        GAME_VOXEL_CHUNK_WIDTH) * 0.5;
-    static const double chunk_center_y_offset = static_cast<double>(
-        GAME_VOXEL_CHUNK_HEIGHT) * 0.5;
-    static const double chunk_center_z_offset = static_cast<double>(
-        GAME_VOXEL_CHUNK_DEPTH) * 0.5;
-    static const double chunk_half_extent_x = static_cast<double>(
-        GAME_VOXEL_CHUNK_WIDTH) * 0.5;
-    static const double chunk_half_extent_y = static_cast<double>(
-        GAME_VOXEL_CHUNK_HEIGHT) * 0.5;
-    static const double chunk_half_extent_z = static_cast<double>(
-        GAME_VOXEL_CHUNK_DEPTH) * 0.5;
-    static const double chunk_radius = std::sqrt((chunk_half_extent_x
-            * chunk_half_extent_x) + (chunk_half_extent_y * chunk_half_extent_y)
-        + (chunk_half_extent_z * chunk_half_extent_z));
-    double center_x;
-    double center_y;
-    double center_z;
-    double delta_x;
-    double delta_y;
-    double delta_z;
-    double view_x;
-    double view_y;
-    double view_z;
-    double pitched_y;
-    double pitched_z;
-    double radius;
-    double horizontal_limit;
-    double vertical_limit;
+    double nx, ny, nz;
+    face_normal(triangle_vertices[0].face, nx, ny, nz);
 
+    double wx = static_cast<double>(world_chunk.world_x) +
+                static_cast<double>(triangle_vertices[0].coordinate_x);
+    double wy = static_cast<double>(triangle_vertices[0].coordinate_y);
+    double wz = static_cast<double>(world_chunk.world_z) +
+                static_cast<double>(triangle_vertices[0].coordinate_z);
+
+    double dot = nx * (camera.x - wx) + ny * (camera.y - wy) + nz * (camera.z - wz);
+    return dot > 0.0;
+}
+
+void MeshCuller::chunk_center_in_view(const Camera &camera, const WorldChunk &wc,
+                                      const RenderCache &cache, double &view_x, double &pitched_y,
+                                      double &pitched_z)
+{
+    double cx = static_cast<double>(wc.world_x) + CHUNK_CENTER_X_OFFSET - camera.x;
+    double cy = CHUNK_CENTER_Y_OFFSET - camera.y;
+    double cz = static_cast<double>(wc.world_z) + CHUNK_CENTER_Z_OFFSET - camera.z;
+
+    view_x = cx * cache.yaw_cos - cz * cache.yaw_sin;
+    double vz = cx * cache.yaw_sin + cz * cache.yaw_cos;
+
+    pitched_y = cy * cache.pitch_cos - vz * cache.pitch_sin;
+    pitched_z = cy * cache.pitch_sin + vz * cache.pitch_cos;
+}
+
+bool MeshCuller::frustum_test(double view_x, double pitched_y, double pitched_z, double radius,
+                              const RenderCache &cache)
+{
+    if (pitched_z < -radius || pitched_z > cache.render_distance + radius)
+        return false;
+    double hlimit = pitched_z * cache.fov_tangent * cache.aspect_ratio + radius;
+    double vlimit = pitched_z * cache.fov_tangent + radius;
+    return std::fabs(view_x) <= hlimit && std::fabs(pitched_y) <= vlimit;
+}
+
+bool MeshCuller::chunk_is_visible(const Camera &camera, const WorldChunk &world_chunk,
+                                  const RenderCache &cache)
+{
     if (world_chunk.mesh.vertices.empty() == FT_TRUE)
-        return (false);
-    center_x = static_cast<double>(world_chunk.world_x) + chunk_center_x_offset;
-    center_y = chunk_center_y_offset;
-    center_z = static_cast<double>(world_chunk.world_z) + chunk_center_z_offset;
-    radius = chunk_radius;
-    delta_x = center_x - camera.x;
-    delta_y = center_y - camera.y;
-    delta_z = center_z - camera.z;
-    view_x = (delta_x * cache.yaw_cos) - (delta_z * cache.yaw_sin);
-    view_z = (delta_x * cache.yaw_sin) + (delta_z * cache.yaw_cos);
-    view_y = delta_y;
-    pitched_y = (view_y * cache.pitch_cos) - (view_z * cache.pitch_sin);
-    pitched_z = (view_y * cache.pitch_sin) + (view_z * cache.pitch_cos);
-    if (pitched_z < -radius)
-        return (false);
-    if (pitched_z > cache.render_distance + radius)
-        return (false);
-    horizontal_limit = (pitched_z * cache.fov_tangent
-            * cache.aspect_ratio) + radius;
-    vertical_limit = (pitched_z * cache.fov_tangent) + radius;
-    if (std::fabs(view_x) > horizontal_limit
-        || std::fabs(pitched_y) > vertical_limit)
-        return (false);
-    return (true);
+        return false;
+    double view_x, pitched_y, pitched_z;
+    chunk_center_in_view(camera, world_chunk, cache, view_x, pitched_y, pitched_z);
+    return frustum_test(view_x, pitched_y, pitched_z, CHUNK_SPHERE_RADIUS, cache);
 }

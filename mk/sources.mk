@@ -67,10 +67,14 @@ SRC = \
     src/gpur/GpuChunkMesh.cpp \
     src/gpur/GpuTextureAtlas.cpp \
     src/gpur/GpuMvpBuilder.cpp \
+    src/gpur/GlslLoader.cpp \
+    src/gpur/GpuGeometryBatch.cpp \
+    src/gpur/GpuOverlayRenderer.cpp \
     src/gpur/GpuSkyRenderer.cpp \
-    src/gpur/GpuWorldRenderer.cpp \
     src/gpur/GpuHudRenderer.cpp \
+    src/gpur/GpuWorldRenderer.cpp \
     src/gpur/GpuRenderer.cpp \
+    src/font/FontRenderer.cpp \
     src/settings/Settings.cpp \
     src/menu/MenuCanvas.cpp \
     src/menu/MenuScene.cpp \
