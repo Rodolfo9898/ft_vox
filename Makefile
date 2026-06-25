@@ -77,6 +77,7 @@ $(OBJ_DIR)/%.o: %.cpp
 		{ \
 			$(MKDIR) $(dir $@); \
 			$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@; \
+			$(FIXDEP); \
 			built=$$(find $(OBJ_DIR) -type f -name '*.o' 2>/dev/null | wc -l); \
 			printf '\033[1;36m[FT_VOX PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_OBJS); \
 		} > "$$log_file" 2>&1; \
@@ -89,6 +90,7 @@ $(OBJ_DIR)/%.o: %.cpp
 	else \
 		$(MKDIR) $(dir $@); \
 		$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@; \
+		$(FIXDEP); \
 		built=$$(find $(OBJ_DIR) -type f -name '*.o' 2>/dev/null | wc -l); \
 		printf '\033[1;36m[FT_VOX PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_OBJS); \
 	fi
@@ -96,6 +98,7 @@ $(OBJ_DIR)/%.o: %.cpp
 $(OBJ_DIR)/%.o: %.mm
 	@$(MKDIR) $(dir $@)
 	@$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
+	@$(FIXDEP)
 	@built=$$(find $(OBJ_DIR) -type f -name '*.o' 2>/dev/null | wc -l); \
 	printf '\033[1;36m[FT_VOX PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_OBJS)
 
@@ -105,6 +108,7 @@ $(OBJ_DIR_TEST)/%.o: %.cpp
 		{ \
 			$(MKDIR) $(dir $@); \
 			$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@; \
+			$(FIXDEP); \
 			built=$$(find $(OBJ_DIR_TEST) -type f -name '*.o' 2>/dev/null | wc -l); \
 			printf '\033[1;36m[FT_VOX TEST PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_TEST_OBJS); \
 		} > "$$log_file" 2>&1; \
@@ -117,6 +121,7 @@ $(OBJ_DIR_TEST)/%.o: %.cpp
 	else \
 		$(MKDIR) $(dir $@); \
 		$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@; \
+		$(FIXDEP); \
 		built=$$(find $(OBJ_DIR_TEST) -type f -name '*.o' 2>/dev/null | wc -l); \
 		printf '\033[1;36m[FT_VOX TEST PROGRESS] %s (%d/%d)\033[0m\n' "$<" $$built $(TOTAL_TEST_OBJS); \
 	fi
