@@ -200,7 +200,7 @@ Application::Phase Application::tick_in_game(ApplicationWindow &window, MenuCont
         window.set_cursor_visible(true);
         return Phase::IN_GAME_SETTINGS;
     }
-    if (action == GameSession::Action::EXIT_TO_MENU || action == GameSession::Action::ERROR)
+    if (action == GameSession::Action::EXIT_TO_MENU || action == GameSession::Action::FAILED)
     {
         session.stop();
         menu.show_main_menu();

@@ -41,8 +41,10 @@ GpuSkyRenderer &GpuSkyRenderer::operator=(const GpuSkyRenderer &other)
 
 bool GpuSkyRenderer::initialize() noexcept
 {
-    if (!_sky_shader.compile(SKY_VERT, SKY_FRAG))   return false;
-    if (!_tint_shader.compile(SKY_VERT, TINT_FRAG)) return false;
+    if (_sky_shader.initialize(SKY_VERT, SKY_FRAG) != 0)
+        return false;
+    if (_tint_shader.initialize(SKY_VERT, TINT_FRAG) != 0)
+        return false;
     _u_sky_size   = _sky_shader.uniform("u_sky_size");
     _u_tint_color = _tint_shader.uniform("u_tint_color");
     glGenVertexArrays(1, &_fullscreen_vao);
@@ -53,8 +55,8 @@ void GpuSkyRenderer::destroy() noexcept
 {
     if (_fullscreen_vao != 0)
     { glDeleteVertexArrays(1, &_fullscreen_vao); _fullscreen_vao = 0; }
-    _sky_shader.destroy();
-    _tint_shader.destroy();
+    (void)_sky_shader.destroy();
+    (void)_tint_shader.destroy();
 }
 
 void GpuSkyRenderer::draw_fullscreen() const noexcept

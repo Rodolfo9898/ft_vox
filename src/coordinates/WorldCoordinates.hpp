@@ -12,7 +12,7 @@ class WorldCoordinates
     static const int STREAM_CHUNK_RADIUS;
     static const int CACHE_CHUNK_RADIUS;
     static const int CHUNK_RADIUS;
-    static const int CHUNK_COUNT;
+    static constexpr int CHUNK_COUNT = ((12 * 2 + 1) * (12 * 2 + 1));
     static const int MIN_RENDER_DISTANCE;
     static const int REQUIRED_VISIBLE_DISTANCE;
 

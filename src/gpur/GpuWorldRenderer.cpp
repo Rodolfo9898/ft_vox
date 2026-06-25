@@ -31,14 +31,14 @@ GpuWorldRenderer &GpuWorldRenderer::operator=(const GpuWorldRenderer &other)
     return *this;
 }
 
-bool GpuWorldRenderer::compile_shader_from_file(GpuShader &shader, const char *vert_path,
+bool GpuWorldRenderer::compile_shader_from_file(ft_gpu_shader &shader, const char *vert_path,
                                                 const char *frag_path)
 {
     std::string vert = GlslLoader::load(vert_path);
     std::string frag = GlslLoader::load(frag_path);
     if (vert.empty() || frag.empty())
         return false;
-    return shader.compile(vert.c_str(), frag.c_str());
+    return shader.initialize(vert.c_str(), frag.c_str()) == FT_ERR_SUCCESS;
 }
 
 bool GpuWorldRenderer::compile_shaders(const std::string &d)
@@ -109,9 +109,9 @@ void GpuWorldRenderer::destroy()
 {
     _atlas.destroy();
     _batch.destroy();
-    _world_shader.destroy();
-    _sky_shader.destroy();
-    _crosshair_shader.destroy();
+    (void)_world_shader.destroy();
+    (void)_sky_shader.destroy();
+    (void)_crosshair_shader.destroy();
 }
 
 void GpuWorldRenderer::resize(int width, int height)

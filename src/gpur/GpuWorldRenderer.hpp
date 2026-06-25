@@ -31,9 +31,9 @@ class GpuWorldRenderer
     size_t gpu_bytes() const;
 
   private:
-    GpuShader _world_shader;
-    GpuShader _sky_shader;
-    GpuShader _crosshair_shader;
+    ft_gpu_shader _world_shader;
+    ft_gpu_shader _sky_shader;
+    ft_gpu_shader _crosshair_shader;
     GpuTextureAtlas _atlas;
     GpuGeometryBatch _batch;
 
@@ -60,7 +60,7 @@ class GpuWorldRenderer
     void draw_sky() const;
     void draw_crosshair() const;
 
-    static bool compile_shader_from_file(GpuShader &shader, const char *vert_path,
+    static bool compile_shader_from_file(ft_gpu_shader &shader, const char *vert_path,
                                          const char *frag_path);
 };
 

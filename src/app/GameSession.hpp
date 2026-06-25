@@ -22,7 +22,7 @@ class GameSession
         CONTINUE,
         OPEN_SETTINGS,
         EXIT_TO_MENU,
-        ERROR
+        FAILED
     };
 
     GameSession();

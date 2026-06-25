@@ -61,11 +61,11 @@ class MenuController
     MenuCanvas canvas_;
     Phase phase_;
 
-    std::unique_ptr<MainMenuScene> main_scene_;
-    std::unique_ptr<SettingsScene> settings_scene_;
-    std::unique_ptr<CreditsScene> credits_scene_;
-    std::unique_ptr<LoadingScene> loading_scene_;
-    std::unique_ptr<InGameSettingsScene> in_game_scene_;
+    ft_uniqueptr<MainMenuScene> main_scene_;
+    ft_uniqueptr<SettingsScene> settings_scene_;
+    ft_uniqueptr<CreditsScene> credits_scene_;
+    ft_uniqueptr<LoadingScene> loading_scene_;
+    ft_uniqueptr<InGameSettingsScene> in_game_scene_;
 
     bool wants_start_;
     bool wants_exit_;
