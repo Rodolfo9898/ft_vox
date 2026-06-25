@@ -1,211 +1,240 @@
 #include "../../src/font/FontRenderer.hpp"
 
-#include "../ft_vox.hpp"
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
-struct FRImpl
+struct BitmapGlyph
 {
-    FT_Library library;
-    FT_Face face;
-    FRImpl() : library(nullptr), face(nullptr)
-    {
-    }
+    char character;
+    const char *rows[7];
 };
 
 // clang-format off
-const char *FontRenderer::COMIC_CANDIDATES[] = {
-#if defined(__APPLE__)
-    "/System/Library/Fonts/Supplemental/Comic Sans MS.ttf",
-    "/Library/Fonts/Comic Sans MS.ttf",
-    "/System/Library/Fonts/Supplemental/Arial.ttf",
-    "/System/Library/Fonts/Helvetica.ttc",
-#elif defined(_WIN32)
-    "C:\\Windows\\Fonts\\comic.ttf",
-    "C:\\Windows\\Fonts\\comicbd.ttf",
-    "C:\\Windows\\Fonts\\arial.ttf",
-#else
-    "/usr/share/fonts/truetype/msttcorefonts/Comic_Sans_MS.ttf",
-    "/usr/share/fonts/truetype/msttcorefonts/comic.ttf",
-    "/usr/share/fonts/ms/Comic_Sans_MS.ttf",
-    "/usr/share/fonts/corefonts/comic.ttf",
-    "/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf",
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-    "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-#endif
-    nullptr
+static const BitmapGlyph GLYPHS[] = {
+    {'A', {" ### ", "#   #", "#   #", "#####", "#   #", "#   #", "#   #"}},
+    {'B', {"#### ", "#   #", "#   #", "#### ", "#   #", "#   #", "#### "}},
+    {'C', {" ####", "#    ", "#    ", "#    ", "#    ", "#    ", " ####"}},
+    {'D', {"#### ", "#   #", "#   #", "#   #", "#   #", "#   #", "#### "}},
+    {'E', {"#####", "#    ", "#    ", "#####", "#    ", "#    ", "#####"}},
+    {'F', {"#####", "#    ", "#    ", "#####", "#    ", "#    ", "#    "}},
+    {'G', {" ####", "#    ", "#    ", "# ###", "#   #", "#   #", " ####"}},
+    {'H', {"#   #", "#   #", "#   #", "#####", "#   #", "#   #", "#   #"}},
+    {'I', {"#####", "  #  ", "  #  ", "  #  ", "  #  ", "  #  ", "#####"}},
+    {'J', {"#####", "   # ", "   # ", "   # ", "#  # ", "#  # ", " ##  "}},
+    {'K', {"#   #", "#  # ", "# #  ", "##   ", "# #  ", "#  # ", "#   #"}},
+    {'L', {"#    ", "#    ", "#    ", "#    ", "#    ", "#    ", "#####"}},
+    {'M', {"#   #", "## ##", "# # #", "#   #", "#   #", "#   #", "#   #"}},
+    {'N', {"#   #", "##  #", "# # #", "#  ##", "#   #", "#   #", "#   #"}},
+    {'O', {" ### ", "#   #", "#   #", "#   #", "#   #", "#   #", " ### "}},
+    {'P', {"#### ", "#   #", "#   #", "#### ", "#    ", "#    ", "#    "}},
+    {'Q', {" ### ", "#   #", "#   #", "#   #", "# # #", "#  # ", " ## #"}},
+    {'R', {"#### ", "#   #", "#   #", "#### ", "# #  ", "#  # ", "#   #"}},
+    {'S', {" ####", "#    ", "#    ", " ### ", "    #", "    #", "#### "}},
+    {'T', {"#####", "  #  ", "  #  ", "  #  ", "  #  ", "  #  ", "  #  "}},
+    {'U', {"#   #", "#   #", "#   #", "#   #", "#   #", "#   #", " ### "}},
+    {'V', {"#   #", "#   #", "#   #", "#   #", " # # ", " # # ", "  #  "}},
+    {'W', {"#   #", "#   #", "#   #", "# # #", "# # #", "## ##", "#   #"}},
+    {'X', {"#   #", " # # ", "  #  ", "  #  ", "  #  ", " # # ", "#   #"}},
+    {'Y', {"#   #", " # # ", "  #  ", "  #  ", "  #  ", "  #  ", "  #  "}},
+    {'Z', {"#####", "    #", "   # ", "  #  ", " #   ", "#    ", "#####"}},
+    {'0', {" ### ", "#   #", "#  ##", "# # #", "##  #", "#   #", " ### "}},
+    {'1', {"  #  ", " ##  ", "  #  ", "  #  ", "  #  ", "  #  ", "#####"}},
+    {'2', {" ### ", "#   #", "    #", "   # ", "  #  ", " #   ", "#####"}},
+    {'3', {"#####", "    #", "   # ", "  ## ", "    #", "#   #", " ### "}},
+    {'4', {"#   #", "#   #", "#   #", "#####", "    #", "    #", "    #"}},
+    {'5', {"#####", "#    ", "#    ", "#### ", "    #", "    #", "#### "}},
+    {'6', {" ### ", "#    ", "#    ", "#### ", "#   #", "#   #", " ### "}},
+    {'7', {"#####", "    #", "   # ", "  #  ", " #   ", " #   ", " #   "}},
+    {'8', {" ### ", "#   #", "#   #", " ### ", "#   #", "#   #", " ### "}},
+    {'9', {" ### ", "#   #", "#   #", " ####", "    #", "    #", " ### "}},
+    {' ', {"     ", "     ", "     ", "     ", "     ", "     ", "     "}},
+    {'_', {"     ", "     ", "     ", "     ", "     ", "     ", "#####"}},
+    {'-', {"     ", "     ", "     ", "#####", "     ", "     ", "     "}},
+    {'.', {"     ", "     ", "     ", "     ", "     ", "  ## ", "  ## "}},
+    {':', {"     ", "  ## ", "  ## ", "     ", "  ## ", "  ## ", "     "}},
+    {'/', {"    #", "   # ", "   # ", "  #  ", " #   ", " #   ", "#    "}},
+    {'%', {"##  #", "## # ", "  #  ", " # ##", "#  ##", "     ", "     "}}
 };
 // clang-format on
 
-const char *FontRenderer::find_comic_sans()
+static const BitmapGlyph *find_glyph(char character)
 {
-    for (int i = 0; COMIC_CANDIDATES[i]; ++i)
+    size_t index;
+
+    if (character >= 'a' && character <= 'z')
+        character = static_cast<char>(character - 'a' + 'A');
+    index = 0U;
+    while (index < sizeof(GLYPHS) / sizeof(GLYPHS[0]))
     {
-        FILE *f = std::fopen(COMIC_CANDIDATES[i], "rb");
-        if (f)
-        {
-            std::fclose(f);
-            return COMIC_CANDIDATES[i];
-        }
+        if (GLYPHS[index].character == character)
+            return (&GLYPHS[index]);
+        ++index;
     }
-    return nullptr;
+    return (ft_nullptr);
 }
 
-FontRenderer::FontRenderer() : impl_(nullptr), pixel_height_(0.0f), loaded_(false)
+static void draw_glyph(uint32_t *pixels, int buf_w, int buf_h, int origin_x, int origin_y,
+    const BitmapGlyph *glyph, int scale, uint32_t colour)
 {
+    int row_index;
+    int col_index;
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+
+    if (glyph == ft_nullptr || pixels == ft_nullptr || scale <= 0)
+        return ;
+    red = static_cast<uint8_t>((colour >> 16) & 0xFFU);
+    green = static_cast<uint8_t>((colour >> 8) & 0xFFU);
+    blue = static_cast<uint8_t>(colour & 0xFFU);
+    row_index = 0;
+    while (row_index < 7)
+    {
+        col_index = 0;
+        while (col_index < 5)
+        {
+            if (glyph->rows[row_index][col_index] != ' ')
+            {
+                int sy = 0;
+
+                while (sy < scale)
+                {
+                    int sx = 0;
+
+                    while (sx < scale)
+                    {
+                        int px = origin_x + col_index * scale + sx;
+                        int py = origin_y + row_index * scale + sy;
+
+                        if (px >= 0 && px < buf_w && py >= 0 && py < buf_h)
+                        {
+                            pixels[py * buf_w + px] = (static_cast<uint32_t>(red) << 16)
+                                | (static_cast<uint32_t>(green) << 8)
+                                | static_cast<uint32_t>(blue);
+                        }
+                        ++sx;
+                    }
+                    ++sy;
+                }
+            }
+            ++col_index;
+        }
+        ++row_index;
+    }
+}
+
+FontRenderer::FontRenderer() : pixel_height_(0.0f), loaded_(false)
+{
+    return ;
 }
 
 FontRenderer::FontRenderer(const FontRenderer &other)
-    : impl_(nullptr), pixel_height_(0.0f), loaded_(false)
+    : pixel_height_(0.0f), loaded_(false)
 {
     (void)other;
+    return ;
 }
 
 FontRenderer::~FontRenderer()
 {
     destroy();
+    return ;
 }
 
 FontRenderer &FontRenderer::operator=(const FontRenderer &other)
 {
     (void)other;
-    return *this;
+    return (*this);
 }
 
 bool FontRenderer::load(float pixel_height)
 {
     destroy();
-    const char *path = find_comic_sans();
-    if (!path)
-        return false;
-    FRImpl *im = new FRImpl();
-    if (FT_Init_FreeType(&im->library) != 0)
-    {
-        delete im;
-        return false;
-    }
-    if (FT_New_Face(im->library, path, 0, &im->face) != 0)
-    {
-        FT_Done_FreeType(im->library);
-        delete im;
-        return false;
-    }
-    if (FT_Set_Pixel_Sizes(im->face, 0, static_cast<FT_UInt>(pixel_height)) != 0)
-    {
-        FT_Done_Face(im->face);
-        FT_Done_FreeType(im->library);
-        delete im;
-        return false;
-    }
-    impl_ = im;
     pixel_height_ = pixel_height;
     loaded_ = true;
-    return true;
+    return (true);
 }
 
 void FontRenderer::destroy()
 {
-    if (impl_)
-    {
-        FRImpl *im = static_cast<FRImpl *>(impl_);
-        if (im->face)
-            FT_Done_Face(im->face);
-        if (im->library)
-            FT_Done_FreeType(im->library);
-        delete im;
-        impl_ = nullptr;
-    }
     loaded_ = false;
+    return ;
 }
 
 bool FontRenderer::is_loaded() const
 {
-    return loaded_;
+    return (loaded_);
 }
 
 int FontRenderer::line_height() const
 {
     if (!loaded_)
-        return static_cast<int>(pixel_height_) + 4;
-    FRImpl *im = static_cast<FRImpl *>(impl_);
-    return static_cast<int>(std::ceil(static_cast<double>(im->face->size->metrics.height) / 64.0));
+        return (0);
+    return (static_cast<int>(std::ceil(static_cast<double>(pixel_height_))));
 }
 
 int FontRenderer::text_width(const char *text) const
 {
-    if (!loaded_ || !text)
-        return 0;
-    FRImpl *im = static_cast<FRImpl *>(impl_);
-    int w = 0;
-    for (int i = 0; text[i]; ++i)
-    {
-        if (FT_Load_Char(im->face, static_cast<FT_ULong>(text[i]), FT_LOAD_DEFAULT) != 0)
-            continue;
-        w += static_cast<int>(im->face->glyph->advance.x >> 6);
-    }
-    return w;
+    int glyph_scale;
+
+    if (!loaded_ || text == ft_nullptr)
+        return (0);
+    glyph_scale = std::max(1, static_cast<int>(std::lround(pixel_height_ / 7.0f)));
+    return (static_cast<int>(std::strlen(text)) * glyph_scale * 6);
 }
 
 void FontRenderer::blend_glyph(uint32_t *pixels, int buf_w, int buf_h, int draw_x, int draw_y,
-                               uint8_t r, uint8_t g, uint8_t b) const
+    uint8_t r, uint8_t g, uint8_t b) const
 {
-    FRImpl *im = static_cast<FRImpl *>(impl_);
-    FT_Bitmap &bm = im->face->glyph->bitmap;
-    for (int gy = 0; gy < static_cast<int>(bm.rows); ++gy)
-    {
-        for (int gx = 0; gx < static_cast<int>(bm.width); ++gx)
-        {
-            int px = draw_x + gx;
-            int py = draw_y + gy;
-            if (px < 0 || px >= buf_w || py < 0 || py >= buf_h)
-                continue;
-            uint8_t alpha = bm.buffer[gy * bm.pitch + gx];
-            if (alpha == 0)
-                continue;
-            uint32_t &dst = pixels[py * buf_w + px];
-            uint8_t dr = static_cast<uint8_t>((dst >> 16) & 0xFF);
-            uint8_t dg = static_cast<uint8_t>((dst >> 8) & 0xFF);
-            uint8_t db = static_cast<uint8_t>(dst & 0xFF);
-            uint8_t nr = static_cast<uint8_t>((r * alpha + dr * (255 - alpha)) / 255);
-            uint8_t ng = static_cast<uint8_t>((g * alpha + dg * (255 - alpha)) / 255);
-            uint8_t nb = static_cast<uint8_t>((b * alpha + db * (255 - alpha)) / 255);
-            dst = (static_cast<uint32_t>(nr) << 16) | (static_cast<uint32_t>(ng) << 8) |
-                  static_cast<uint32_t>(nb);
-        }
-    }
+    (void)pixels;
+    (void)buf_w;
+    (void)buf_h;
+    (void)draw_x;
+    (void)draw_y;
+    (void)r;
+    (void)g;
+    (void)b;
+    return ;
 }
 
 void FontRenderer::draw_text(uint32_t *pixels, int buf_w, int buf_h, int x, int y, const char *text,
-                             uint32_t colour) const
+    uint32_t colour) const
 {
-    if (!loaded_ || !pixels || !text)
-        return;
-    FRImpl *im = static_cast<FRImpl *>(impl_);
-    uint8_t r = static_cast<uint8_t>((colour >> 16) & 0xFF);
-    uint8_t g = static_cast<uint8_t>((colour >> 8) & 0xFF);
-    uint8_t b = static_cast<uint8_t>(colour & 0xFF);
-    int baseline =
-        static_cast<int>(std::ceil(static_cast<double>(im->face->size->metrics.ascender) / 64.0));
-    int cx = x;
-    for (int i = 0; text[i]; ++i)
+    int glyph_scale;
+    int cursor_x;
+    int index;
+
+    if (!loaded_ || pixels == ft_nullptr || text == ft_nullptr)
+        return ;
+    glyph_scale = std::max(1, static_cast<int>(std::lround(pixel_height_ / 7.0f)));
+    cursor_x = x;
+    index = 0;
+    while (text[index] != '\0')
     {
-        if (FT_Load_Char(im->face, static_cast<FT_ULong>(text[i]), FT_LOAD_RENDER) != 0)
-            continue;
-        FT_GlyphSlot slot = im->face->glyph;
-        blend_glyph(pixels, buf_w, buf_h, cx + slot->bitmap_left, y + baseline - slot->bitmap_top,
-                    r, g, b);
-        cx += static_cast<int>(slot->advance.x >> 6);
+        const BitmapGlyph *glyph;
+
+        glyph = find_glyph(text[index]);
+        if (glyph != ft_nullptr)
+            draw_glyph(pixels, buf_w, buf_h, cursor_x, y, glyph, glyph_scale, colour);
+        cursor_x += glyph_scale * 6;
+        ++index;
     }
+    return ;
 }
 
 void FontRenderer::draw_text_centered(uint32_t *pixels, int buf_w, int buf_h, int cx, int y,
-                                      const char *text, uint32_t colour) const
+    const char *text, uint32_t colour) const
 {
-    draw_text(pixels, buf_w, buf_h, cx - text_width(text) / 2, y, text, colour);
+    int glyph_scale;
+    int width;
+
+    if (!loaded_ || text == ft_nullptr)
+        return ;
+    glyph_scale = std::max(1, static_cast<int>(std::lround(pixel_height_ / 7.0f)));
+    width = static_cast<int>(std::strlen(text)) * glyph_scale * 6;
+    draw_text(pixels, buf_w, buf_h, cx - width / 2, y, text, colour);
+    return ;
 }
 
 FontRenderer &FontRenderer::instance()
 {
     static FontRenderer fr;
-    return fr;
+    return (fr);
 }

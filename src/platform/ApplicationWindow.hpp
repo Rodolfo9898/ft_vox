@@ -20,7 +20,7 @@ class ApplicationWindow
     bool should_close() const;
     bool is_headless() const;
     bool is_gpu_mode() const;
-    GpuWindow *get_gpu_window() const;
+    const ft_gpu_window *get_gpu_window() const;
     ft_render_framebuffer &framebuffer();
     int mouse_x() const;
     int mouse_y() const;
@@ -30,7 +30,7 @@ class ApplicationWindow
 
   private:
     ft_render_window sw_window;
-    std::unique_ptr<GpuWindow> gpu_window;
+    ft_uniqueptr<ft_gpu_window> gpu_window;
     ft_render_framebuffer active_framebuffer;
     std::vector<uint32_t> headless_pixels;
     bool headless;

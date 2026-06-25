@@ -1,13 +1,13 @@
 #ifndef GPU_SKY_RENDERER_HPP
 # define GPU_SKY_RENDERER_HPP
 
-#include "../../Libft/Modules/GPGR/GpuShader.hpp"
-#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
+#include "../../Libft/Modules/GPGR/ft_gpu_shader.hpp"
+#include "../../Libft/Modules/GPGR/gpgr_gl_funcs.hpp"
 
 class GpuSkyRenderer
 {
-    GpuShader _sky_shader;
-    GpuShader _tint_shader;
+    ft_gpu_shader _sky_shader;
+    ft_gpu_shader _tint_shader;
     GLuint    _fullscreen_vao;
     GLint     _u_sky_size;
     GLint     _u_tint_color;

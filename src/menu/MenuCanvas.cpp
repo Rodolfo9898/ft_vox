@@ -15,9 +15,6 @@ const uint32_t MenuCanvas::Colors::GREEN = 0x4CAF50U;
 const uint32_t MenuCanvas::Colors::SLIDER = 0x5DA3FAU;
 const uint32_t MenuCanvas::Colors::WHITE = 0xFFFFFFU;
 
-const int MenuCanvas::W;
-const int MenuCanvas::H;
-
 MenuCanvas::MenuCanvas(const MenuCanvas &other)
 {
     *this = other;

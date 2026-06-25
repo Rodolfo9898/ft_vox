@@ -26,11 +26,12 @@ GpuOverlayRenderer &GpuOverlayRenderer::operator=(const GpuOverlayRenderer &othe
 bool GpuOverlayRenderer::initialize(GLuint sky_vao, const std::string &shader_dir)
 {
     _sky_vao = sky_vao;
-    auto load = [&](GpuShader &s, const char *v, const char *f)
+    auto load = [&](ft_gpu_shader &shader, const char *v, const char *f)
     {
         std::string vs = GlslLoader::load((shader_dir + v).c_str());
         std::string fs = GlslLoader::load((shader_dir + f).c_str());
-        return !vs.empty() && !fs.empty() && s.compile(vs.c_str(), fs.c_str());
+        return !vs.empty() && !fs.empty()
+            && shader.initialize(vs.c_str(), fs.c_str()) == FT_ERR_SUCCESS;
     };
     if (!load(_overlay_shader, "overlay.vert.glsl", "overlay.frag.glsl"))
         return false;
@@ -63,9 +64,9 @@ void GpuOverlayRenderer::destroy()
     _menu_tex_w = 0;
     _menu_tex_h = 0;
     _menu_rgba.clear();
-    _overlay_shader.destroy();
-    _overlay_tex_shader.destroy();
-    _tint_shader.destroy();
+    (void)_overlay_shader.destroy();
+    (void)_overlay_tex_shader.destroy();
+    (void)_tint_shader.destroy();
 }
 
 void GpuOverlayRenderer::pixels_to_rgba(const uint32_t *src, size_t count,
@@ -210,15 +211,15 @@ GLint GpuOverlayRenderer::uniform_tint_color() const
 {
     return _u_tint_color;
 }
-const GpuShader &GpuOverlayRenderer::overlay_shader() const
+const ft_gpu_shader &GpuOverlayRenderer::overlay_shader() const
 {
     return _overlay_shader;
 }
-const GpuShader &GpuOverlayRenderer::overlay_tex_shader() const
+const ft_gpu_shader &GpuOverlayRenderer::overlay_tex_shader() const
 {
     return _overlay_tex_shader;
 }
-const GpuShader &GpuOverlayRenderer::tint_shader() const
+const ft_gpu_shader &GpuOverlayRenderer::tint_shader() const
 {
     return _tint_shader;
 }

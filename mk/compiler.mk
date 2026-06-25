@@ -1,6 +1,7 @@
 CC = g++
 
 OPT_LEVEL ?= 2
+UNAME_S    := $(shell uname -s)
 
 ifeq ($(OPT_LEVEL),0)
     OPT_FLAGS = -O0 -g
@@ -16,25 +17,23 @@ endif
 
 COMPILE_FLAGS = -Wall -Werror -Wextra -std=c++17 -Wmissing-declarations \
                 -Wold-style-cast -Wshadow -Wconversion -Wformat=2 -Wundef \
-                -Wfloat-equal -Wconversion -Wzero-as-null-pointer-constant \
+                -Wfloat-equal -Wzero-as-null-pointer-constant -Wodr \
                 -I. -DLIBFT_INTERNAL_HEADERS -DGAME_USE_VOXEL_REGION_BACKEND $(OPT_FLAGS)
 
 ifeq ($(OS),Windows_NT)
-    COMPILE_FLAGS += -Wodr -Wuseless-cast -Wmaybe-uninitialized
+    COMPILE_FLAGS += -Wuseless-cast -Wmaybe-uninitialized
+    ifneq ($(OPT_LEVEL),0)
+        COMPILE_FLAGS += -ffunction-sections -fdata-sections
+    endif
+else ifeq ($(UNAME_S),Darwin)
+    COMPILE_FLAGS += -Wno-format-nonliteral -Wno-tautological-compare
     ifneq ($(OPT_LEVEL),0)
         COMPILE_FLAGS += -flto -ffunction-sections -fdata-sections
     endif
 else
-    UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Darwin)
-        ifneq ($(OPT_LEVEL),0)
-            COMPILE_FLAGS += -flto
-        endif
-    else
-        COMPILE_FLAGS += -Wodr -Wuseless-cast -Wmaybe-uninitialized
-        ifneq ($(OPT_LEVEL),0)
-            COMPILE_FLAGS += -ffunction-sections -fdata-sections
-        endif
+    COMPILE_FLAGS += -Wuseless-cast -Wmaybe-uninitialized
+    ifneq ($(OPT_LEVEL),0)
+        COMPILE_FLAGS += -flto -ffunction-sections -fdata-sections
     endif
 endif
 
@@ -46,7 +45,8 @@ SOURCE_DATE_EPOCH ?= 1700000000
 
 ifneq ($(REPRODUCIBLE),0)
     export SOURCE_DATE_EPOCH
-    COMPILE_FLAGS += -ffile-prefix-map=$(CURDIR)=. -fmacro-prefix-map=$(CURDIR)=. -fdebug-prefix-map=$(CURDIR)=. -frandom-seed=ft_vox
+    COMPILE_FLAGS += -ffile-prefix-map=$(CURDIR)=. -fmacro-prefix-map=$(CURDIR)=. \
+                     -fdebug-prefix-map=$(CURDIR)=. -frandom-seed=ft_vox
 endif
 
 ENABLE_LTO  ?= 0
@@ -82,28 +82,23 @@ endif
 
 export COMPILE_FLAGS
 
-FT_CFLAGS := $(shell pkg-config --cflags freetype2 2>/dev/null)
-FT_LIBS   := $(shell pkg-config --libs   freetype2 2>/dev/null)
-COMPILE_FLAGS += $(FT_CFLAGS)
-
 ifeq ($(OS),Windows_NT)
-    LDFLAGS = -lopengl32 -lgdi32 -lws2_32 -ldbghelp $(FT_LIBS)
-else
-    UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Darwin)
-        LDFLAGS = -lz -framework Cocoa -framework CoreGraphics -framework ApplicationServices -framework QuartzCore -framework AudioToolbox -framework OpenGL -framework Carbon -lobjc -lpthread -lsqlite3 $(FT_LIBS)
-    else
-        LDFLAGS = -lX11 -lXext -lXi -lGL $(FT_LIBS)
+    LDFLAGS = -lopengl32 -lgdi32 -lws2_32 -ldbghelp
+    ifneq ($(OPT_LEVEL),0)
+        LDFLAGS += -s -Wl,--gc-sections
     endif
-endif
-
-ifneq ($(OPT_LEVEL),0)
-    ifneq ($(OS),Windows_NT)
-        ifeq ($(UNAME_S),Darwin)
-            LDFLAGS += -flto
-        else
-            LDFLAGS += -s -Wl,--gc-sections
-        endif
+else ifeq ($(UNAME_S),Darwin)
+    LDFLAGS = -lz -framework Cocoa -framework CoreGraphics \
+              -framework ApplicationServices -framework QuartzCore \
+              -framework AudioToolbox -framework OpenGL \
+              -framework Carbon -lobjc -lpthread -lsqlite3
+    ifneq ($(OPT_LEVEL),0)
+        LDFLAGS += -flto -Wl,-dead_strip
+    endif
+else
+    LDFLAGS = -lX11 -lXext -lXi -lGL
+    ifneq ($(OPT_LEVEL),0)
+        LDFLAGS += -flto -s -Wl,--gc-sections
     endif
 endif
 

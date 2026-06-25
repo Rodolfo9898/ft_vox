@@ -1,15 +1,15 @@
 #ifndef GPU_HUD_RENDERER_HPP
 # define GPU_HUD_RENDERER_HPP
 
-#include "../../Libft/Modules/GPGR/GpuShader.hpp"
-#include "../../Libft/Modules/GPGR/gl_funcs.hpp"
+#include "../../Libft/Modules/GPGR/ft_gpu_shader.hpp"
+#include "../../Libft/Modules/GPGR/gpgr_gl_funcs.hpp"
 #include <cstdint>
 #include <vector>
 
 class GpuHudRenderer
 {
-    GpuShader _overlay_shader;
-    GpuShader _overlay_tex_shader;
+    ft_gpu_shader _overlay_shader;
+    ft_gpu_shader _overlay_tex_shader;
 
     GLuint  _fullscreen_vao;
     GLuint  _crosshair_vao;

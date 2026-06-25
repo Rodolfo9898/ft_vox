@@ -26,14 +26,14 @@ class GpuOverlayRenderer
     GLint uniform_overlay_sampler() const;
     GLint uniform_overlay_ndc_br() const;
     GLint uniform_tint_color() const;
-    const GpuShader &overlay_shader() const;
-    const GpuShader &overlay_tex_shader() const;
-    const GpuShader &tint_shader() const;
+    const ft_gpu_shader &overlay_shader() const;
+    const ft_gpu_shader &overlay_tex_shader() const;
+    const ft_gpu_shader &tint_shader() const;
 
   private:
-    GpuShader _overlay_shader;
-    GpuShader _overlay_tex_shader;
-    GpuShader _tint_shader;
+    ft_gpu_shader _overlay_shader;
+    ft_gpu_shader _overlay_tex_shader;
+    ft_gpu_shader _tint_shader;
 
     GLuint _overlay_tex;
     int _overlay_w;

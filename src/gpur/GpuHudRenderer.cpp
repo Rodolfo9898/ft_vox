@@ -51,8 +51,10 @@ GpuHudRenderer &GpuHudRenderer::operator=(const GpuHudRenderer &other)
 
 bool GpuHudRenderer::initialize() noexcept
 {
-    if (!_overlay_shader.compile(OVERLAY_VERT, OVERLAY_FRAG))         return false;
-    if (!_overlay_tex_shader.compile(OVERLAY_TEX_VERT, OVERLAY_TEX_FRAG)) return false;
+    if (_overlay_shader.initialize(OVERLAY_VERT, OVERLAY_FRAG) != 0)
+        return false;
+    if (_overlay_tex_shader.initialize(OVERLAY_TEX_VERT, OVERLAY_TEX_FRAG) != 0)
+        return false;
     _u_overlay_color   = _overlay_shader.uniform("u_overlay_color");
     _u_overlay_sampler = _overlay_tex_shader.uniform("u_overlay_sampler");
     _u_overlay_ndc_br  = _overlay_tex_shader.uniform("u_overlay_ndc_br");
@@ -71,8 +73,8 @@ void GpuHudRenderer::destroy() noexcept
     if (_menu_tex       != 0) { glDeleteTextures(1, &_menu_tex);             _menu_tex       = 0; }
     _overlay_rgba.clear();
     _menu_rgba.clear();
-    _overlay_shader.destroy();
-    _overlay_tex_shader.destroy();
+    (void)_overlay_shader.destroy();
+    (void)_overlay_tex_shader.destroy();
 }
 
 void GpuHudRenderer::draw_crosshair(int width, int height) const noexcept

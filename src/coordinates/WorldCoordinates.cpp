@@ -3,7 +3,6 @@
 const int WorldCoordinates::STREAM_CHUNK_RADIUS = 10;
 const int WorldCoordinates::CACHE_CHUNK_RADIUS = 12;
 const int WorldCoordinates::CHUNK_RADIUS = 12;
-const int WorldCoordinates::CHUNK_COUNT = ((12 * 2 + 1) * (12 * 2 + 1));
 const int WorldCoordinates::MIN_RENDER_DISTANCE = 14;
 const int WorldCoordinates::REQUIRED_VISIBLE_DISTANCE = 160;
 

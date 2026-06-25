@@ -52,9 +52,9 @@ The following items are done and may be removed from active tracking:
   auto-detection from system keyboard layout at startup
 - AZERTY key codes corrected on macOS (Z=6, Q=12 vs QWERTY W=13, A=0)
 - Makefile: `make`, `make -j4`, `fclean`, `re` all verified clean
-- GPGR module in Libft (46 modules total): GpuWindow, GpuShader, gl_funcs,
-  platform window implementations (macOS/Linux/Windows) now in
-  `Libft/Modules/GPGR/` — linked via `Full_Libft.a`
+- GPGR module in Libft (46 modules total): `ft_gpu_window`, `ft_gpu_shader`,
+  `gpgr_gl_funcs`, platform window implementations (macOS/Linux/Windows) now
+  in `Libft/Modules/GPGR/` — linked via `Full_Libft.a`
 - GpuRenderer refactored (SOLID): 99-line facade delegates to
   `GpuMvpBuilder`, `GpuSkyRenderer`, `GpuWorldRenderer`, `GpuHudRenderer`
 - Orthodox Canonical Form enforced in all `src/` headers: every class has
@@ -73,7 +73,7 @@ The following items are done and may be removed from active tracking:
 The following are code-complete but cannot be verified on this macOS machine:
 
 - **Linux FPS mouse capture**: `XGrabPointer` + `FocusIn`/`FocusOut` handlers +
-  `XWarpPointer`-to-centre implemented in `GpuWindow_linux.cpp` and
+  `XWarpPointer`-to-centre implemented in `gpgr_window_linux.cpp` and
   `Compatebility_dumb_controls_linux_x11.cpp`. Must be tested on a Linux
   machine to confirm infinite mouse look works and alt-tab re-grabs correctly.
 - **Linux full test pass**: no segfaults, aborts, uncaught exceptions, freezes,

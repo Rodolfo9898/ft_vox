@@ -149,7 +149,7 @@ GameSession::Action GameSession::tick_world(double delta_seconds,
     int gen = strategy.generation_budget_for_frame(frame_ms_, boost_enabled_);
     error_code_ = world_.update_around(camera_.x, camera_.z, gen, active_render_distance_);
     if (error_code_ != FT_ERR_SUCCESS)
-        return Action::ERROR;
+        return Action::FAILED;
 
     if (ft_dumb_control_was_pressed(FT_DUMB_CONTROL_MOUSE_PRIMARY) == FT_TRUE)
         BlockInteractor::try_delete_target_block(&world_, camera_);
@@ -187,7 +187,7 @@ GameSession::Action GameSession::update(double delta_seconds,
                                         ApplicationWindow &window)
 {
     if (!active_)
-        return Action::ERROR;
+        return Action::FAILED;
     Action nav = handle_navigation(window);
     if (nav != Action::CONTINUE)
         return nav;
