@@ -5,6 +5,27 @@
 #include "../../src/menu/MainMenuScene.hpp"
 #include "../../src/menu/SettingsScene.hpp"
 
+namespace
+{
+void blit_canvas_to_framebuffer(const MenuCanvas &canvas, ft_render_framebuffer &framebuffer)
+{
+    const uint32_t *src = canvas.pixels();
+    if (src == nullptr || framebuffer.pixels == nullptr || framebuffer.width <= 0 ||
+        framebuffer.height <= 0)
+        return;
+    for (int32_t y = 0; y < framebuffer.height; ++y)
+    {
+        int32_t src_y = (y * canvas.height()) / framebuffer.height;
+        for (int32_t x = 0; x < framebuffer.width; ++x)
+        {
+            int32_t src_x = (x * canvas.width()) / framebuffer.width;
+            framebuffer.pixels[y * framebuffer.width + x] =
+                src[static_cast<size_t>(src_y * canvas.width() + src_x)];
+        }
+    }
+}
+}
+
 std::string MenuController::make_seed()
 {
     static uint64_t counter = 0U;
@@ -128,6 +149,24 @@ void MenuController::render_overlay(GpuRenderer *gpu)
         s->render(canvas_);
     gpu->upload_menu(canvas_.pixels(), canvas_.width(), canvas_.height());
     gpu->draw_menu(0.95f);
+}
+
+void MenuController::render(ft_render_framebuffer &framebuffer)
+{
+    canvas_.clear(MenuCanvas::Colors::BG);
+    MenuScene *s = current_scene();
+    if (s)
+        s->render(canvas_);
+    blit_canvas_to_framebuffer(canvas_, framebuffer);
+}
+
+void MenuController::render_overlay(ft_render_framebuffer &framebuffer)
+{
+    canvas_.clear(0U);
+    MenuScene *s = current_scene();
+    if (s)
+        s->render(canvas_);
+    blit_canvas_to_framebuffer(canvas_, framebuffer);
 }
 
 void MenuController::clear_flags()

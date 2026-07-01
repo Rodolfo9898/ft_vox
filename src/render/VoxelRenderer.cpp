@@ -122,9 +122,17 @@ void VoxelRenderer::preload_assets()
     (void)TextureAtlas::instance();
 }
 
-void VoxelRenderer::initialize_gpu(int width, int height)
+int32_t VoxelRenderer::initialize_gpu(int width, int height)
 {
-    (void)this->gpu.initialize(width, height);
+    if (this->gpu.initialize(width, height))
+        return (FT_ERR_SUCCESS);
+    return (FT_ERR_INVALID_STATE);
+}
+
+void VoxelRenderer::resize_gpu(int width, int height)
+{
+    if (this->gpu.is_ready())
+        this->gpu.resize(width, height);
 }
 
 GpuRenderer *VoxelRenderer::get_gpu_renderer()

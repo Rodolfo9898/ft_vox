@@ -38,6 +38,8 @@ class MenuController
     void update(const MenuCanvas::MenuInput &in);
     void render(GpuRenderer *gpu);
     void render_overlay(GpuRenderer *gpu);
+    void render(ft_render_framebuffer &framebuffer);
+    void render_overlay(ft_render_framebuffer &framebuffer);
 
     bool wants_start() const;
     bool wants_exit() const;

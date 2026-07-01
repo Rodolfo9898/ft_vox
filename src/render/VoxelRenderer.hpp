@@ -29,7 +29,8 @@ class VoxelRenderer
     void render_world(ft_render_framebuffer &framebuffer, const Camera &camera, const World &world,
                       const RenderDebug *debug);
     void preload_assets();
-    void initialize_gpu(int width, int height);
+    int32_t initialize_gpu(int width, int height);
+    void resize_gpu(int width, int height);
     GpuRenderer *get_gpu_renderer();
 
   private:

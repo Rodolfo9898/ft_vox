@@ -140,14 +140,24 @@ int Application::setup_launch_config(ApplicationOptions &options, LaunchSettings
     return 0;
 }
 
-int Application::setup_window(ApplicationWindow &window, VoxelRenderer &renderer)
+int Application::setup_window(ApplicationWindow &window, VoxelRenderer &renderer,
+                              const LaunchSettings &launch_settings)
 {
-    if (window.initialize(false, 0, 0, true, true) != 0)
+    if (window.initialize(false, launch_settings.resolution_width(),
+                          launch_settings.resolution_height(), launch_settings.fullscreen,
+                          true) != 0)
         return 1;
     FontRenderer::instance().load(22.0f);
     if (window.is_gpu_mode())
-        renderer.initialize_gpu(window.get_gpu_window()->get_width(),
-                                window.get_gpu_window()->get_height());
+    {
+        int32_t error_code = renderer.initialize_gpu(window.get_gpu_window()->get_width(),
+                                                     window.get_gpu_window()->get_height());
+        if (error_code != FT_ERR_SUCCESS)
+        {
+            window.destroy();
+            return ApplicationError::fail("GPU renderer initialization", error_code);
+        }
+    }
     renderer.preload_assets();
     window.set_cursor_visible(true);
     return 0;
@@ -236,13 +246,31 @@ Application::Phase Application::tick_in_game_settings(ApplicationWindow &window,
 void Application::render_frame(Phase phase, ApplicationWindow &window, MenuController &menu,
                                GameSession &session, VoxelRenderer &renderer)
 {
-    if (!window.is_gpu_mode())
-        return;
     GpuRenderer *gpu = renderer.get_gpu_renderer();
+    if (window.is_gpu_mode() && gpu != nullptr)
+    {
+        int32_t window_width = window.get_gpu_window()->get_width();
+        int32_t window_height = window.get_gpu_window()->get_height();
+        if (window_width > 0 && window_height > 0)
+            renderer.resize_gpu(window_width, window_height);
+        if (phase == Phase::MAIN_MENU || phase == Phase::LOADING)
+        {
+            menu.render(gpu);
+        }
+        else if (phase == Phase::IN_GAME)
+        {
+            session.render(window, renderer, true);
+        }
+        else if (phase == Phase::IN_GAME_SETTINGS)
+        {
+            session.render(window, renderer, false);
+            menu.render_overlay(gpu);
+        }
+        return;
+    }
     if (phase == Phase::MAIN_MENU || phase == Phase::LOADING)
     {
-        if (gpu)
-            menu.render(gpu);
+        menu.render(window.framebuffer());
     }
     else if (phase == Phase::IN_GAME)
     {
@@ -251,8 +279,7 @@ void Application::render_frame(Phase phase, ApplicationWindow &window, MenuContr
     else if (phase == Phase::IN_GAME_SETTINGS)
     {
         session.render(window, renderer, false);
-        if (gpu)
-            menu.render_overlay(gpu);
+        menu.render_overlay(window.framebuffer());
     }
 }
 
@@ -296,12 +323,12 @@ void Application::run_game_loop(ApplicationWindow &window, MenuController &menu,
     }
 }
 
-int Application::run_game(ApplicationOptions & /*options*/, LaunchSettings & /*launch_settings*/,
+int Application::run_game(ApplicationOptions & /*options*/, LaunchSettings &launch_settings,
                           const RenderDistanceStrategy &strategy)
 {
     ApplicationWindow window;
     VoxelRenderer renderer;
-    if (setup_window(window, renderer) != 0)
+    if (setup_window(window, renderer, launch_settings) != 0)
         return 1;
     MenuController menu_ctl;
     GameSession game_session;

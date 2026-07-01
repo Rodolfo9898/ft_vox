@@ -22,7 +22,7 @@ ft_dumb_keyboard_layout LaunchSettings::clamp_keyboard_layout(int32_t layout)
 
 LaunchSettings::LaunchSettings()
 {
-    this->fullscreen = false;
+    this->fullscreen = true;
     this->resolution_preset = 0;
     this->keyboard_layout = FT_DUMB_KEYBOARD_LAYOUT_AZERTY;
 }

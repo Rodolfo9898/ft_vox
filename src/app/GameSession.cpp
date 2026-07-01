@@ -88,9 +88,16 @@ int GameSession::start(const std::string &seed, ApplicationWindow &window, Voxel
     frame_ms_ = 0.0;
     error_code_ = FT_ERR_SUCCESS;
     active_ = true;
-    if (window.is_gpu_mode() && window.get_gpu_window())
-        renderer.initialize_gpu(window.get_gpu_window()->get_width(),
-                                window.get_gpu_window()->get_height());
+    if (window.is_gpu_mode() && window.get_gpu_window() && renderer.get_gpu_renderer() == nullptr)
+    {
+        error_code_ = renderer.initialize_gpu(window.get_gpu_window()->get_width(),
+                                              window.get_gpu_window()->get_height());
+        if (error_code_ != FT_ERR_SUCCESS)
+        {
+            stop();
+            return error_code_;
+        }
+    }
     renderer.preload_assets();
     return FT_ERR_SUCCESS;
 }

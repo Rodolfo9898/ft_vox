@@ -33,8 +33,16 @@ int PerfSession::init_session(const ApplicationOptions &options,
     camera.initialize();
     PlayerController::spawn_player_on_ground(&camera, world);
     if (window.is_gpu_mode())
-        renderer.initialize_gpu(window.get_gpu_window()->get_width(),
-                                window.get_gpu_window()->get_height());
+    {
+        error_code = renderer.initialize_gpu(window.get_gpu_window()->get_width(),
+                                             window.get_gpu_window()->get_height());
+        if (error_code != FT_ERR_SUCCESS)
+        {
+            world.destroy();
+            window.destroy();
+            return ApplicationError::fail("GPU renderer initialization", error_code);
+        }
+    }
     renderer.preload_assets();
     return 0;
 }

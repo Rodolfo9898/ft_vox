@@ -46,7 +46,8 @@ class Application
 
     static int run_validators(const ApplicationOptions &options);
     static int setup_launch_config(ApplicationOptions &options, LaunchSettings &launch_settings);
-    static int setup_window(ApplicationWindow &window, VoxelRenderer &renderer);
+    static int setup_window(ApplicationWindow &window, VoxelRenderer &renderer,
+                            const LaunchSettings &launch_settings);
 
     static Phase tick_menu(Phase phase, ApplicationWindow &window, MenuController &menu,
                            GameSession &session, VoxelRenderer &renderer, int &loading_frames,

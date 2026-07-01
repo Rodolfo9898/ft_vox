@@ -129,8 +129,10 @@ int32_t World::initialize(const char *seed_value)
         this->chunks[index].initialized = false;
         index = index + 1;
     }
+    // Keep first launch bounded. The game loop keeps streaming chunks after init,
+    // so we only need a small starter set here instead of filling the whole ring.
     error_code =
-        this->update_around(0.0, 0.0, WorldCoordinates::CHUNK_COUNT, this->active_render_distance);
+        this->update_around(0.0, 0.0, 64, this->active_render_distance);
     if (error_code != FT_ERR_SUCCESS)
         this->destroy();
     return (error_code);
