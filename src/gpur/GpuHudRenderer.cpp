@@ -114,7 +114,8 @@ void GpuHudRenderer::upload_tex(GLuint &tex, int &stored_w, int &stored_h,
         uint8_t  b  = static_cast<uint8_t>( p        & 0xFFU);
         uint8_t  a  = opaque_alpha
             ? ((p == 0U) ? 0U : 255U)
-            : static_cast<uint8_t>((r > g2 ? (r > b ? r : b) : (g2 > b ? g2 : b)));
+            : FT_CONDITIONAL_STATIC_CAST(uint8_t,
+                (r > g2 ? (r > b ? r : b) : (g2 > b ? g2 : b)));
         rgba_buf[i*4U+0U] = r; rgba_buf[i*4U+1U] = g2;
         rgba_buf[i*4U+2U] = b; rgba_buf[i*4U+3U] = a;
     }
@@ -128,13 +129,13 @@ void GpuHudRenderer::upload_tex(GLuint &tex, int &stored_w, int &stored_h,
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-            static_cast<GLsizei>(w), static_cast<GLsizei>(h), 0,
+            w, h, 0,
             GL_RGBA, GL_UNSIGNED_BYTE, rgba_buf.data());
         stored_w = w; stored_h = h;
     }
     else
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-            static_cast<GLsizei>(w), static_cast<GLsizei>(h),
+            w, h,
             GL_RGBA, GL_UNSIGNED_BYTE, rgba_buf.data());
     glBindTexture(GL_TEXTURE_2D, 0);
 }
