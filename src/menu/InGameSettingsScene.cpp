@@ -25,9 +25,9 @@ void InGameSettingsScene::update(const MenuCanvas::MenuInput &in, MenuController
 {
     Settings &s = Settings::instance();
     const int togx = Layout::X + Layout::W - 80, togy = Layout::Y + 50;
-    const int slx = Layout::X + 20, sly = Layout::Y + 110, slw = Layout::W - 40;
-    const int qbx = Layout::X + 20, qby = Layout::Y + 185;
-    const int abx = Layout::X + 140, aby = Layout::Y + 185;
+    const int slx = Layout::X + 20, sly = Layout::Y + 110 + MenuCanvas::LINE_GAP, slw = Layout::W - 40;
+    const int qbx = Layout::X + 20, qby = Layout::Y + 185 + MenuCanvas::LINE_GAP * 2;
+    const int abx = Layout::X + 140, aby = Layout::Y + 185 + MenuCanvas::LINE_GAP * 2;
     const int backbx = Layout::X + 20, backby = Layout::Y + Layout::H - 50;
     const int menubx = Layout::X + Layout::W / 2, menuby = Layout::Y + Layout::H - 50;
 
@@ -66,12 +66,12 @@ void InGameSettingsScene::render_fps_toggle(MenuCanvas &c, const Settings &s) co
 
 void InGameSettingsScene::render_render_distance(MenuCanvas &c, const Settings &s) const
 {
-    const int slx = Layout::X + 20, sly = Layout::Y + 110, slw = Layout::W - 40;
+    const int slx = Layout::X + 20, sly = Layout::Y + 110 + MenuCanvas::LINE_GAP, slw = Layout::W - 40;
     int rd = s.render_distance();
     float f = static_cast<float>(rd - 14) / static_cast<float>(160 - 14);
     char rb[32];
     std::snprintf(rb, sizeof(rb), "%d", rd);
-    c.draw_text(Layout::X + 20, Layout::Y + 92, "RENDER DISTANCE", 2, MenuCanvas::Colors::TEXT);
+    c.draw_text(Layout::X + 20, Layout::Y + 92 + MenuCanvas::LINE_GAP, "RENDER DISTANCE", 2, MenuCanvas::Colors::TEXT);
     c.fill_rect(slx, sly, slw, 14, MenuCanvas::Colors::BTN_N);
     c.draw_border(slx, sly, slw, 14, MenuCanvas::Colors::TEXT_DIM);
     c.fill_rect(slx, sly, static_cast<int>(f * static_cast<float>(slw)), 14, MenuCanvas::Colors::SLIDER);
@@ -80,10 +80,10 @@ void InGameSettingsScene::render_render_distance(MenuCanvas &c, const Settings &
 
 void InGameSettingsScene::render_keyboard(MenuCanvas &c, const Settings &s) const
 {
-    const int qbx = Layout::X + 20, qby = Layout::Y + 185;
-    const int abx = Layout::X + 140, aby = Layout::Y + 185;
+    const int qbx = Layout::X + 20, qby = Layout::Y + 185 + MenuCanvas::LINE_GAP * 2;
+    const int abx = Layout::X + 140, aby = Layout::Y + 185 + MenuCanvas::LINE_GAP * 2;
     bool qsel = (s.keyboard_layout() == FT_DUMB_KEYBOARD_LAYOUT_QWERTY);
-    c.draw_text(Layout::X + 20, Layout::Y + 164, "KEYBOARD", 2, MenuCanvas::Colors::TEXT);
+    c.draw_text(Layout::X + 20, Layout::Y + 164 + MenuCanvas::LINE_GAP * 2, "KEYBOARD", 2, MenuCanvas::Colors::TEXT);
     c.fill_rect(qbx, qby, 110, 28, qsel ? MenuCanvas::Colors::BTN_A : MenuCanvas::Colors::BTN_N);
     c.draw_border(qbx, qby, 110, 28, qsel ? MenuCanvas::Colors::ACCENT : MenuCanvas::Colors::TEXT_DIM);
     c.draw_text(qbx + 14, qby + 7, "QWERTY", 2, MenuCanvas::Colors::TEXT);

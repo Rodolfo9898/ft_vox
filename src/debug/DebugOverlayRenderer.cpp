@@ -173,7 +173,7 @@ void DebugOverlayRenderer::draw_debug_overlay(ft_render_framebuffer &framebuffer
     if (!debug)
         return;
     int32_t scale = (framebuffer.width < 900 || framebuffer.height < 520) ? 2 : 3;
-    int32_t lh = 8 * scale;
+    int32_t lh = 8 * scale + 8; // +~2mm extra spacing between each overlay line
     int32_t x = 12;
     int32_t line = 0;
 

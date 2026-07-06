@@ -36,6 +36,7 @@ class MenuCanvas
 
     static const int W;
     static const int H;
+    static const int LINE_GAP;
 
     MenuCanvas();
     MenuCanvas(const MenuCanvas &other);

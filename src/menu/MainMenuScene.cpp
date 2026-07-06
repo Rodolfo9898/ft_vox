@@ -4,7 +4,7 @@ const int MainMenuScene::Layout::BTN_W = 280;
 const int MainMenuScene::Layout::BTN_H = 44;
 const int MainMenuScene::Layout::BTN_X = (MenuCanvas::W - BTN_W) / 2;
 const int MainMenuScene::Layout::BTN_Y0 = 210;
-const int MainMenuScene::Layout::BTN_STRIDE = BTN_H + 12;
+const int MainMenuScene::Layout::BTN_STRIDE = BTN_H + 12 + MenuCanvas::LINE_GAP;
 
 const char *MainMenuScene::BTN_LABELS[4] = {"START", "SETTINGS", "CREDITS", "EXIT"};
 

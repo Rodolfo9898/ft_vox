@@ -1,6 +1,7 @@
 #include "../../src/menu/MenuCanvas.hpp"
 const int MenuCanvas::W = 960;
 const int MenuCanvas::H = 540;
+const int MenuCanvas::LINE_GAP = 8; // ~2mm extra spacing between stacked lines
 
 const uint32_t MenuCanvas::Colors::BG = 0x0D0D1AU;
 const uint32_t MenuCanvas::Colors::PANEL = 0x151525U;

@@ -3,6 +3,22 @@ CC = g++
 OPT_LEVEL ?= 2
 UNAME_S    := $(shell uname -s)
 
+FREETYPE_VERSION       ?= 2.14.3
+FREETYPE_LOCAL_PREFIX  := $(CURDIR)/.deps/freetype/$(FREETYPE_VERSION)
+FREETYPE_CFLAGS        :=
+FREETYPE_LIBS          :=
+HAVE_FREETYPE           := 0
+
+ifneq ($(shell pkg-config --exists freetype2 2>/dev/null && echo yes),)
+    FREETYPE_CFLAGS := $(shell pkg-config --cflags freetype2)
+    FREETYPE_LIBS   := $(shell pkg-config --libs freetype2)
+    HAVE_FREETYPE   := 1
+else ifneq ($(wildcard $(FREETYPE_LOCAL_PREFIX)/include/freetype2/ft2build.h),)
+    FREETYPE_CFLAGS := -I$(FREETYPE_LOCAL_PREFIX)/include/freetype2
+    FREETYPE_LIBS   := -L$(FREETYPE_LOCAL_PREFIX)/lib -lfreetype
+    HAVE_FREETYPE   := 1
+endif
+
 ifeq ($(OPT_LEVEL),0)
     OPT_FLAGS = -O0 -g
 else ifeq ($(OPT_LEVEL),1)
@@ -19,6 +35,10 @@ COMPILE_FLAGS = -Wall -Werror -Wextra -std=c++17 -Wmissing-declarations \
                 -Wold-style-cast -Wshadow -Wconversion -Wformat=2 -Wundef \
                 -Wfloat-equal -Wzero-as-null-pointer-constant -Wodr \
                 -I. -DLIBFT_INTERNAL_HEADERS -DGAME_USE_VOXEL_REGION_BACKEND $(OPT_FLAGS)
+
+ifeq ($(HAVE_FREETYPE),1)
+    COMPILE_FLAGS += -DFT_VOX_HAVE_FREETYPE=1 $(subst -I,-isystem ,$(FREETYPE_CFLAGS))
+endif
 
 ifeq ($(OS),Windows_NT)
     COMPILE_FLAGS += -Wuseless-cast -Wmaybe-uninitialized
@@ -121,4 +141,8 @@ ifeq ($(DEBUG),1)
             LDFLAGS += -rdynamic
         endif
     endif
+endif
+
+ifeq ($(HAVE_FREETYPE),1)
+    LDFLAGS += $(FREETYPE_LIBS)
 endif

@@ -4,12 +4,12 @@
 const int SettingsScene::Layout::TOG_X = MenuCanvas::W - 120;
 const int SettingsScene::Layout::TOG_Y = 110;
 const int SettingsScene::Layout::SLIDER_X = 60;
-const int SettingsScene::Layout::SLIDER_Y = 150 + 24;
+const int SettingsScene::Layout::SLIDER_Y = 150 + 24 + MenuCanvas::LINE_GAP;
 const int SettingsScene::Layout::SLIDER_W = MenuCanvas::W - 120;
 const int SettingsScene::Layout::Q_X = 60;
-const int SettingsScene::Layout::Q_Y = 274 + 28;
+const int SettingsScene::Layout::Q_Y = 274 + 28 + MenuCanvas::LINE_GAP * 2;
 const int SettingsScene::Layout::A_X = 180;
-const int SettingsScene::Layout::A_Y = 274 + 28;
+const int SettingsScene::Layout::A_Y = 274 + 28 + MenuCanvas::LINE_GAP * 2;
 const int SettingsScene::Layout::BACK_X = 40;
 const int SettingsScene::Layout::BACK_Y = MenuCanvas::H - 60;
 
@@ -72,7 +72,7 @@ void SettingsScene::render_render_distance(MenuCanvas &c, const Settings &s) con
     int fw = static_cast<int>(frac * static_cast<float>(Layout::SLIDER_W));
     char rbuf[32];
     std::snprintf(rbuf, sizeof(rbuf), "%d CHUNKS", rd);
-    c.draw_text(60, 150, "RENDER DISTANCE", 2, MenuCanvas::Colors::TEXT);
+    c.draw_text(60, 150 + MenuCanvas::LINE_GAP, "RENDER DISTANCE", 2, MenuCanvas::Colors::TEXT);
     c.fill_rect(Layout::SLIDER_X, Layout::SLIDER_Y, Layout::SLIDER_W, 12, MenuCanvas::Colors::PANEL);
     c.draw_border(Layout::SLIDER_X, Layout::SLIDER_Y, Layout::SLIDER_W, 12, MenuCanvas::Colors::TEXT_DIM);
     c.fill_rect(Layout::SLIDER_X, Layout::SLIDER_Y, fw, 12, MenuCanvas::Colors::SLIDER);
@@ -83,7 +83,7 @@ void SettingsScene::render_render_distance(MenuCanvas &c, const Settings &s) con
 void SettingsScene::render_keyboard(MenuCanvas &c, const Settings &s) const
 {
     bool qsel = (s.keyboard_layout() == FT_DUMB_KEYBOARD_LAYOUT_QWERTY);
-    c.draw_text(60, 274, "KEYBOARD LAYOUT", 2, MenuCanvas::Colors::TEXT);
+    c.draw_text(60, 274 + MenuCanvas::LINE_GAP * 2, "KEYBOARD LAYOUT", 2, MenuCanvas::Colors::TEXT);
     c.fill_rect(Layout::Q_X, Layout::Q_Y, 110, 32, qsel ? MenuCanvas::Colors::BTN_A : MenuCanvas::Colors::BTN_N);
     c.draw_border(Layout::Q_X, Layout::Q_Y, 110, 32, qsel ? MenuCanvas::Colors::ACCENT : MenuCanvas::Colors::TEXT_DIM);
     c.draw_text(Layout::Q_X + 14, Layout::Q_Y + 8, "QWERTY", 2, MenuCanvas::Colors::TEXT);
