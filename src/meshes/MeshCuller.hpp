@@ -23,20 +23,13 @@ class MeshCuller
                                       const chunk_mesh_vertex triangle_vertices[3]);
 
   private:
-    static const double CHUNK_CENTER_X_OFFSET;
-    static const double CHUNK_CENTER_Y_OFFSET;
-    static const double CHUNK_CENTER_Z_OFFSET;
-    static const double CHUNK_HALF_EXTENT_X;
-    static const double CHUNK_HALF_EXTENT_Y;
-    static const double CHUNK_HALF_EXTENT_Z;
-    static const double CHUNK_SPHERE_RADIUS;
-
     static void face_normal(uint8_t face, double &nx, double &ny, double &nz);
-    static void chunk_center_in_view(const Camera &camera, const WorldChunk &wc,
-                                     const RenderCache &cache, double &view_x, double &pitched_y,
+    static void chunk_corner_in_view(const Camera &camera, const WorldChunk &wc,
+                                     const RenderCache &cache, double local_x, double local_y,
+                                     double local_z, double &view_x, double &pitched_y,
                                      double &pitched_z);
-    static bool frustum_test(double view_x, double pitched_y, double pitched_z, double radius,
-                             const RenderCache &cache);
+    static bool chunk_aabb_is_visible(const Camera &camera, const WorldChunk &world_chunk,
+                                      const RenderCache &cache);
 };
 
 #endif
