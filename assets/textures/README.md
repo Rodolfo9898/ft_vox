@@ -12,7 +12,8 @@ The atlas is intentionally original rather than Minecraft-like. It uses a styliz
 - prism leaves
 - ribbed teal cactus
 - dry reed shrub
-- extra mineral, frost, crystal, shimmer, sand, ember, and night-leaf tiles for future block types
+- dark violet mineral bedrock (unbreakable world floor)
+- extra frost, crystal, shimmer, sand, ember, and night-leaf tiles for future block types
 
 Renderer status:
 

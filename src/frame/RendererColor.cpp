@@ -48,6 +48,7 @@ void RendererColor::base_color_for_block(uint32_t block_id, uint8_t &r, uint8_t 
         {TERRAIN_GENERATOR_OAK_LEAVES_BLOCK, 66U, 151U, 132U},
         {TERRAIN_GENERATOR_CACTUS_BLOCK, 67U, 151U, 135U},
         {TERRAIN_GENERATOR_WATER_BLOCK, 30U, 100U, 200U},
+        {TERRAIN_GENERATOR_BEDROCK_BLOCK, 40U, 36U, 58U},
     };
     r = 82U;
     g = 72U;
